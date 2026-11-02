@@ -1,0 +1,35 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Pytest
+.pytest_cache/
+
+# Databases & Evidence Vault
+storage/*.db
+storage/*.db-wal
+storage/*.db-shm
+storage/vault/*.raw
+!storage/vault/.gitkeep
+
+# Environment variables
+.env
+.env.local
+
+# Node & Next.js
+node_modules/
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+
