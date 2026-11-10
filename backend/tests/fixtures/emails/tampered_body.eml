@@ -1,0 +1,20 @@
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=aicte-india.org;
+ i=@aicte-india.org; q=dns/txt; s=sih2026; t=1794335580; h=from : to :
+ subject : date : message-id : mime-version : content-type : from;
+ bh=lBx0O/ZK7Qj1kbQQagCUAWvjOmVnABPgZz/lqkcng0g=;
+ b=B/KHxcd/vHjIZln6N8TP738RmJDe6g7G87plucsc1NYIxegQku2uR6nGqAQ608H9RbqeD
+ 2q3G1LjJB0ATfHJ7E/UhonhndU4imj88e56Au32zvrXNE/vDaVflmCK9fYXdQQQgqJCb3/R
+ tHVhfVaOFdDlJAOmuAdtqKF7qGLxsuw=
+From: AICTE Cyber Cell <no-reply@aicte-india.org>
+To: Security Auditor <auditor@target.ac.in>
+Subject: Official Circular: National Cyber Security Compliance 2026
+Date: Tue, 10 Nov 2026 10:00:00 +0530
+Message-ID: <sih26106-legit-001@aicte-india.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Dear Institutional Head,
+
+CRITICAL: Transfer institutional funds to account 9876543210 immediately!
+Regards,
+AICTE Cyber Security Cell

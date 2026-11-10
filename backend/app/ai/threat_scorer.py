@@ -120,6 +120,8 @@ def compute_threat_score(
         verdict = "BENIGN"
 
     # Collect explainable reasons
+    if auth_res.has_discrepancy:
+        reasons.extend(auth_res.discrepancies)
     reasons.extend(spoof_res.reasons)
     reasons.extend(nlp_res.reasons)
     if override_reason:
@@ -145,6 +147,17 @@ def compute_threat_score(
             "attachment": round(attach_subscore, 1),
         },
         "critical_override_applied": critical_override,
+        "authentication": {
+            "spf_status": auth_res.spf_status,
+            "dkim_status": auth_res.dkim_status,
+            "dmarc_status": auth_res.dmarc_status,
+            "arc_status": auth_res.arc.status,
+            "claimed_by_mta": auth_res.claimed_by_mta,
+            "recomputed_verdict": auth_res.recomputed_verdict,
+            "has_discrepancy": auth_res.has_discrepancy,
+            "discrepancies": auth_res.discrepancies,
+            "dns_key_snapshots": auth_res.dns_key_snapshots,
+        },
     }
 
     return CompositeThreatScore(

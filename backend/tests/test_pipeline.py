@@ -92,13 +92,30 @@ def test_reverse_hop_traversal():
 # =============================================================================
 
 def test_protocol_authentication():
-    """Verify SPF, DKIM, and DMARC alignment validation."""
+    """Verify SPF, DKIM, and DMARC alignment validation both upstream claimed and cryptographically recomputed."""
     auth_header = "mx.ac.in; spf=pass smtp.mailfrom=no-reply@aicte-india.org; dkim=pass header.d=aicte-india.org header.s=k1; dmarc=pass p=reject"
-    res = validate_protocol_authentication(
+    res_claimed = validate_protocol_authentication(
         from_email="no-reply@aicte-india.org",
         return_path="no-reply@aicte-india.org",
         headers_dict={},
         auth_results_header=auth_header,
+    )
+    assert res_claimed.claimed_by_mta["claimed_spf"] == "PASS"
+    assert res_claimed.claimed_by_mta["claimed_dkim"] == "PASS"
+    assert res_claimed.claimed_by_mta["claimed_dmarc"] == "PASS"
+
+    # Real cryptographic recomputation with signed fixture
+    from backend.tests.fixtures.email_corpus import DNS_FIXTURES, build_corpus
+    corpus = build_corpus()
+    raw_bytes, meta = corpus["legit_signed_aicte.eml"]
+    res = validate_protocol_authentication(
+        from_email=meta["from_email"],
+        return_path=meta["from_email"],
+        headers_dict={"From": [meta["from_email"]]},
+        auth_results_header=auth_header,
+        raw_bytes=raw_bytes,
+        connecting_ip=meta["connecting_ip"],
+        custom_dns_records=DNS_FIXTURES,
     )
     assert res.spf_status == "PASS"
     assert res.dkim_status == "PASS"

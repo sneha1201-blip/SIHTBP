@@ -1,0 +1,24 @@
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/simple; d=aicte-india.org;
+ i=@aicte-india.org; l=219; q=dns/txt; s=sih2026; t=1794335580; h=from
+ : to : subject : date : message-id : mime-version : content-type :
+ from; bh=lBx0O/ZK7Qj1kbQQagCUAWvjOmVnABPgZz/lqkcng0g=;
+ b=ClHTQELfTWkHuAGmmLJU4HKPR7GxgK7qHxkP9w0OJpxLawco6VgW6+SkXinTNiUsqoD9i
+ HdOefMWjbjVjJJ7HokmzFSazVVSkfD0rvDb/Mqh1sGRPFG5K/HUG81LRVVXbpWONWW6MYkM
+ VihW9zp1Vevle/ANzcoEWD6dNeuSpcQ=
+From: AICTE Cyber Cell <no-reply@aicte-india.org>
+To: Security Auditor <auditor@target.ac.in>
+Subject: Official Circular: National Cyber Security Compliance 2026
+Date: Tue, 10 Nov 2026 10:00:00 +0530
+Message-ID: <sih26106-legit-001@aicte-india.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+
+Dear Institutional Head,
+
+In compliance with Section 63 of Bharatiya Sakshya Adhiniyam, 2023,
+all technical institutions are mandated to implement forensic email threat logging.
+Regards,
+AICTE Cyber Security Cell
+
+
+[MALICIOUS INJECTION]: Click here immediately to avoid suspension: http://evil-phish.net

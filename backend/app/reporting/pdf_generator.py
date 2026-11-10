@@ -223,6 +223,12 @@ def generate_forensic_pdf(
             Paragraph(f"<b>{analysis.get('dmarc_status', 'NONE')}</b>", body_style),
             Paragraph("PASSED" if analysis.get("dmarc_status") == "PASS" else "FAILED", body_style),
         ],
+        [
+            Paragraph("ARC (RFC 8617)", body_style),
+            Paragraph("Authenticated Received Chain", body_style),
+            Paragraph(f"<b>{analysis.get('score_breakdown', {}).get('authentication', {}).get('arc_status', 'NONE')}</b>", body_style),
+            Paragraph("PASSED" if analysis.get("score_breakdown", {}).get("authentication", {}).get("arc_status") == "PASS" else "N/A", body_style),
+        ],
     ]
     auth_table = Table(auth_data, colWidths=[1.8 * inch, 2.4 * inch, 1.4 * inch, 1.4 * inch])
     auth_table.setStyle(
@@ -237,6 +243,19 @@ def generate_forensic_pdf(
         ])
     )
     story.append(auth_table)
+
+    # Surface any discrepancy warning in the Section 63 BSA report
+    auth_meta = analysis.get("score_breakdown", {}).get("authentication", {})
+    if auth_meta.get("has_discrepancy"):
+        story.append(Spacer(1, 4))
+        discs = "<br/>".join([f"&bull; {d}" for d in auth_meta.get("discrepancies", [])])
+        disc_text = Paragraph(
+            f"<b><font color='#b91c1c'>CRITICAL PROTOCOL DISCREPANCY DETECTED (MTA FORGERY ADVISORY):</font></b><br/>"
+            f"<font size=8>{discs}</font>",
+            body_style,
+        )
+        story.append(disc_text)
+
     story.append(Spacer(1, 10))
 
     # Reverse Hop-Traversal Table

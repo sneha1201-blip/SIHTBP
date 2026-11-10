@@ -139,8 +139,8 @@ async def execute_forensic_pipeline(
         from backend.app.api.v1.endpoints_forensics import get_evidence_dossier
         from backend.app.database.models import User, UserRole
 
-        mock_user = User(username=actor, email="analyst@aicte-india.org", password_hash="", role=UserRole.ANALYST)
-        dossier = await get_evidence_dossier(str(existing_email.id), current_user=mock_user, db=db)
+        analyst_user = User(username=actor, email="analyst@aicte-india.org", password_hash="", role=UserRole.ANALYST)
+        dossier = await get_evidence_dossier(str(existing_email.id), current_user=analyst_user, db=db)
         if job:
             job.status = JobStatus.COMPLETED
             job.stage = JobStage.FINALIZED
@@ -211,16 +211,22 @@ async def execute_forensic_pipeline(
             "is_datacenter": asn.is_datacenter,
         })
 
-    # 5. Protocol Authentication (SPF/DKIM/DMARC)
+    # 5. Protocol Authentication (SPF/DKIM/DMARC/ARC)
     if job:
         job.stage = JobStage.AI_THREAT_SCORING
         job.progress_percent = 75
+
+    connecting_ip_candidate = earliest_ip
+    helo_candidate = hops_analyzed[0].from_mta if hops_analyzed else None
 
     auth_res = validate_protocol_authentication(
         from_email=parsed.sender_email,
         return_path=parsed.return_path,
         headers_dict=parsed.headers_dict,
         auth_results_header=parsed.authentication_results,
+        raw_bytes=raw_bytes,
+        connecting_ip=connecting_ip_candidate,
+        helo_name=helo_candidate,
     )
 
     # 6. Spoofing & Impersonation Engine

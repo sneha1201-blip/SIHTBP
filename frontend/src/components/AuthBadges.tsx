@@ -21,6 +21,9 @@ export function AuthBadges({ analysis }: AuthBadgesProps) {
         };
       case 'SOFTFAIL':
       case 'NEUTRAL':
+      case 'KEY_UNAVAILABLE':
+      case 'TEMPERROR':
+      case 'UNVERIFIABLE':
         return {
           bg: 'bg-amber-500/10 text-amber-400 border-amber-500/30',
           icon: AlertCircle,
@@ -29,6 +32,9 @@ export function AuthBadges({ analysis }: AuthBadgesProps) {
       case 'FAIL':
       case 'PERMERROR':
       case 'INVALID':
+      case 'EXPIRED':
+      case 'KEY_REVOKED':
+      case 'BODY_HASH_MISMATCH':
         return {
           bg: 'bg-red-500/10 text-red-400 border-red-500/30',
           icon: XCircle,
@@ -54,6 +60,8 @@ export function AuthBadges({ analysis }: AuthBadgesProps) {
   const toggleExpand = (badge: string) => {
     setExpanded(expanded === badge ? null : badge);
   };
+
+  const authMeta = (analysis.score_breakdown as Record<string, any>)?.authentication;
 
   return (
     <div className="bg-cyber-card border border-cyber-border rounded-xl p-5 shadow-xl flex flex-col justify-between">
@@ -168,6 +176,20 @@ export function AuthBadges({ analysis }: AuthBadgesProps) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Upstream Discrepancy Alert */}
+      {authMeta?.has_discrepancy && (
+        <div className="mt-3 px-3 py-2 bg-red-950/40 border border-red-500/40 rounded-lg text-xs text-red-300">
+          <div className="font-bold flex items-center gap-1.5 text-red-400">
+            <AlertCircle className="w-3.5 h-3.5" /> Upstream MTA Discrepancy Detected
+          </div>
+          <div className="text-[11px] text-red-300/90 mt-1 space-y-0.5">
+            {authMeta.discrepancies?.map((d: string, idx: number) => (
+              <div key={idx}>• {d}</div>
+            ))}
+          </div>
         </div>
       )}
     </div>

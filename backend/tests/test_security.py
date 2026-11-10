@@ -275,7 +275,7 @@ def test_forged_dkim_header_validation():
         headers_dict=headers,
         auth_results_header=None,
     )
-    assert auth_res.dkim_status in ("FAIL", "INVALID", "NONE", "UNVERIFIABLE")
+    assert auth_res.dkim_status in ("FAIL", "INVALID", "NONE", "UNVERIFIABLE", "KEY_UNAVAILABLE")
 
 
 @pytest.mark.asyncio
