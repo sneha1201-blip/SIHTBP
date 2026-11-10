@@ -1,14 +1,16 @@
-"""Campaign Clustering and Graph Relationship API Endpoints.
+"""Campaign Clustering, Graph Telemetry, and STIX 2.1 API Endpoints.
 
 Provides Cytoscape / D3.js compatible nodes and edges for visualizing multi-incident
-infrastructure linkages, shared bulletproof ASNs, and SimHash body campaign clusters.
+infrastructure linkages, shared bulletproof ASNs, and SimHash body campaign clusters,
+along with RFC-compliant STIX 2.1 threat intelligence bundle exports.
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict, List
+import uuid
+from typing import Any, Dict, List, Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,6 +18,7 @@ from sqlalchemy.orm import selectinload
 from backend.app.core.security import require_any_authenticated
 from backend.app.database.models import Campaign, CampaignEmail, Email, User
 from backend.app.database.session import get_db
+from backend.app.forensics.campaign_clusterer import generate_stix21_bundle
 
 router = APIRouter()
 
@@ -53,10 +56,12 @@ async def list_campaigns(
 
 @router.get("/graph")
 async def get_campaign_graph(
+    min_threat_score: Optional[float] = Query(None, ge=0.0, le=100.0, description="Minimum threat score filter"),
+    cluster_type: Optional[str] = Query(None, description="Cluster pivot type filter (ASN, SIMHASH, IP_SUBNET)"),
     current_user: User = Depends(require_any_authenticated),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Return nodes and edges representing threat campaign relationships for graph visualization."""
+    """Return nodes and edges representing threat campaign relationships for Cytoscape / D3 graph visualization."""
     stmt = (
         select(Campaign)
         .options(
@@ -66,8 +71,15 @@ async def get_campaign_graph(
             selectinload(Campaign.email_associations)
             .selectinload(CampaignEmail.email)
             .selectinload(Email.threat_indicators),
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.forensic_analysis),
         )
     )
+
+    if cluster_type:
+        stmt = stmt.where(Campaign.cluster_type == cluster_type)
+
     result = await db.execute(stmt)
     campaigns = result.scalars().all()
 
@@ -86,8 +98,9 @@ async def get_campaign_graph(
             })
 
     def add_edge(source: str, target: str, relationship: str, metadata: dict | None = None):
+        edge_id = f"{source}->{target}:{relationship}"
         edges.append({
-            "id": f"{source}->{target}",
+            "id": edge_id,
             "source": source,
             "target": target,
             "relationship": relationship,
@@ -98,9 +111,16 @@ async def get_campaign_graph(
         camp_node_id = f"campaign_{camp.id}"
         add_node(
             node_id=camp_node_id,
-            label=camp.name[:32] + "...",
+            label=camp.name[:32] + "..." if len(camp.name) > 32 else camp.name,
             node_type="CAMPAIGN",
-            metadata={"cluster_type": camp.cluster_type, "severity": camp.severity, "total": camp.total_emails},
+            metadata={
+                "cluster_type": camp.cluster_type,
+                "cluster_key": camp.cluster_key,
+                "severity": camp.severity,
+                "total": camp.total_emails,
+                "first_seen": camp.first_seen.isoformat(),
+                "last_seen": camp.last_seen.isoformat(),
+            },
         )
 
         for assoc in camp.email_associations:
@@ -108,12 +128,23 @@ async def get_campaign_graph(
             if not em:
                 continue
 
+            fa = em.forensic_analysis
+            em_score = fa.threat_score if fa else 0.0
+
+            if min_threat_score is not None and em_score < min_threat_score:
+                continue
+
             email_node_id = f"email_{em.id}"
             add_node(
                 node_id=email_node_id,
-                label=em.subject[:28] + "..." if em.subject else "Email",
+                label=em.subject[:28] + "..." if em.subject and len(em.subject) > 28 else (em.subject or "Email"),
                 node_type="EMAIL",
-                metadata={"sha256": em.sha256_hash, "sender": em.sender_email},
+                metadata={
+                    "sha256": em.sha256_hash,
+                    "sender": em.sender_email,
+                    "threat_score": em_score,
+                    "verdict": fa.verdict if fa else "UNKNOWN",
+                },
             )
 
             # Edge: Email -> Campaign
@@ -156,3 +187,70 @@ async def get_campaign_graph(
         }
     }
 
+
+@router.get("/export/stix")
+async def export_all_campaigns_stix(
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Export all attributed campaigns and associated observables as a STIX 2.1 bundle."""
+    stmt = (
+        select(Campaign)
+        .options(
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.header_hops),
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.threat_indicators),
+        )
+    )
+    res = await db.execute(stmt)
+    campaigns = res.scalars().all()
+
+    bundle_id = f"bundle--{uuid.uuid4()}"
+    all_objects: List[Dict[str, Any]] = []
+
+    for camp in campaigns:
+        emails = [assoc.email for assoc in camp.email_associations if assoc.email]
+        bundle = generate_stix21_bundle(camp, emails)
+        all_objects.extend(bundle.get("objects", []))
+
+    return {
+        "type": "bundle",
+        "id": bundle_id,
+        "spec_version": "2.1",
+        "objects": all_objects,
+    }
+
+
+@router.get("/{campaign_id}/stix")
+async def export_single_campaign_stix(
+    campaign_id: uuid.UUID,
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Export a specific threat campaign as an RFC-compliant STIX 2.1 JSON bundle."""
+    stmt = (
+        select(Campaign)
+        .options(
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.header_hops),
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.threat_indicators),
+        )
+        .where(Campaign.id == campaign_id)
+    )
+    res = await db.execute(stmt)
+    camp = res.scalar_one_or_none()
+
+    if not camp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Campaign {campaign_id} not found in intelligence registry",
+        )
+
+    emails = [assoc.email for assoc in camp.email_associations if assoc.email]
+    return generate_stix21_bundle(camp, emails)

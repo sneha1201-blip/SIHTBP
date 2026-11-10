@@ -43,3 +43,4 @@ echo "----------------------------------------------------------------------"
 echo "Successfully updated MaxMind GeoIP databases:"
 ls -lh "${TARGET_DIR}/GeoLite2-City.mmdb" "${TARGET_DIR}/GeoLite2-ASN.mmdb"
 echo "======================================================================"
+

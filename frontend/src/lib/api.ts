@@ -48,7 +48,7 @@ apiClient.interceptors.request.use(async (config) => {
 
 /**
  * Ingest an email file (.eml / .msg) for forensic pipeline analysis.
- * Throws explicit error on failure — zero mock fallback.
+ * Throws explicit error on failure — direct backend telemetry.
  */
 export async function analyzeEmailFile(file: File): Promise<FullForensicDossier> {
   const formData = new FormData();
@@ -62,7 +62,7 @@ export async function analyzeEmailFile(file: File): Promise<FullForensicDossier>
 
 /**
  * Ingest raw RFC 822 email headers for forensic pipeline analysis.
- * Throws explicit error on failure — zero mock fallback.
+ * Throws explicit error on failure — direct backend telemetry.
  */
 export async function analyzeEmailHeaders(rawHeaders: string): Promise<FullForensicDossier> {
   const formData = new FormData();
@@ -83,11 +83,29 @@ export async function fetchEvidenceDossier(id: string): Promise<FullForensicDoss
 }
 
 /**
- * Fetch cross-incident campaign graph relationships.
+ * Fetch cross-incident campaign graph relationships with optional threat score and cluster type filters.
  */
-export async function fetchCampaignGraph(): Promise<CampaignGraphData> {
-  const response = await apiClient.get<CampaignGraphData>('/campaigns/graph');
+export async function fetchCampaignGraph(minScore?: number, clusterType?: string): Promise<CampaignGraphData> {
+  const params: Record<string, any> = {};
+  if (minScore !== undefined) params.min_threat_score = minScore;
+  if (clusterType && clusterType !== 'ALL') params.cluster_type = clusterType;
+  const response = await apiClient.get<CampaignGraphData>('/campaigns/graph', { params });
   return response.data;
+}
+
+/**
+ * Export all threat campaigns as an RFC-compliant STIX 2.1 JSON bundle.
+ */
+export async function downloadStixBundle(campaignId?: string): Promise<void> {
+  const endpoint = campaignId ? `/campaigns/${campaignId}/stix` : '/campaigns/export/stix';
+  const response = await apiClient.get(endpoint);
+  const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(response.data, null, 2));
+  const link = document.createElement('a');
+  link.setAttribute('href', dataStr);
+  link.setAttribute('download', `STIX_2.1_Threat_Bundle_${new Date().toISOString().slice(0, 10)}.json`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
 }
 
 /**

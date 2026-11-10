@@ -121,7 +121,7 @@ export default function SOCDashboardPage() {
             <div>
               <h2 className="text-lg font-bold text-white tracking-tight">AICTE Cyber Threat Intelligence Console</h2>
               <p className="text-xs text-slate-400 max-w-md mt-1">
-                Zero-mock, evidence-backed forensic analysis compliant with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023.
+                Authentic, evidence-backed forensic analysis compliant with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023.
               </p>
             </div>
             <div className="flex items-center gap-3 mt-2">

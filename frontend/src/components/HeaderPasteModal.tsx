@@ -96,12 +96,8 @@ export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps)
           rows={12}
           value={rawHeaders}
           onChange={(e) => setRawHeaders(e.target.value)}
-          placeholder={`Paste raw RFC 822 / MIME email headers here...
-Example:
-Received: from mail.attacker.com (185.220.101.5) by mx.victim.org...
-From: "VIP Target" <vip@spoofed-domain.com>
-Subject: Urgent Payment...`}
-          className="w-full bg-slate-950 font-mono text-xs text-slate-200 border border-cyber-border rounded-xl p-4 placeholder-slate-600 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 selection:bg-cyan-500/30"
+          aria-label="Raw RFC 822 / MIME email headers input"
+          className="w-full bg-slate-950 font-mono text-xs text-slate-200 border border-cyber-border rounded-xl p-4 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 selection:bg-cyan-500/30"
           spellCheck={false}
         />
         <div className="text-[10px] text-slate-500 mt-1 flex justify-between">

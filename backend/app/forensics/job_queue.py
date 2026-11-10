@@ -20,8 +20,6 @@ from backend.app.ai.threat_scorer import compute_threat_score
 from backend.app.ai.url_analyzer import analyze_url
 from backend.app.database.audit_service import record_chained_audit_log
 from backend.app.database.models import (
-    Campaign,
-    CampaignEmail,
     Email,
     ForensicAnalysis,
     HeaderHop,
@@ -30,6 +28,7 @@ from backend.app.database.models import (
 from backend.app.database.session import async_session_factory
 from backend.app.database.vault import store_raw_evidence
 from backend.app.forensics.auth_validator import validate_protocol_authentication
+from backend.app.forensics.campaign_clusterer import cluster_email_dynamically
 from backend.app.forensics.hop_traversal import reverse_hop_traversal
 from backend.app.forensics.ioc_extractor import extract_iocs
 from backend.app.forensics.spoof_detector import detect_spoofing
@@ -376,23 +375,16 @@ async def execute_forensic_pipeline(
         db_iocs.append(db_ioc)
     db.add_all(db_iocs)
 
-    # Campaign correlation check
+    # Dynamic Campaign Clustering
     first_hop_asn = enriched_hops[0]["asn_number"] if enriched_hops else None
-    if first_hop_asn:
-        camp_stmt = select(Campaign).where(Campaign.cluster_key.like(f"%AS{first_hop_asn}%"))
-        camp_result = await db.execute(camp_stmt)
-        campaign = camp_result.scalar_one_or_none()
-        if campaign:
-            camp_email = CampaignEmail(
-                id=uuid.uuid4(),
-                campaign_id=campaign.id,
-                email_id=email_record.id,
-                similarity_score=0.95,
-                matched_criteria={"reason": f"Shared bulletproof ASN {first_hop_asn} or SimHash cluster"},
-                associated_at=now,
-            )
-            db.add(camp_email)
-            campaign.total_emails += 1
+    await cluster_email_dynamically(
+        db=db,
+        email=email_record,
+        origin_ip=earliest_ip,
+        origin_asn=first_hop_asn,
+        detected_vip=spoof_res.detected_vip,
+        threat_score=composite.threat_score,
+    )
 
     # Record sealed, hash-chained audit log with authenticated analyst identity
     audit_details = {

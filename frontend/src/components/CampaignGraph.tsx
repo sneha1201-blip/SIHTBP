@@ -2,7 +2,8 @@
 
 import React, { useState, useMemo } from 'react';
 import { CampaignGraphData, GraphNode, GraphEdge } from '../lib/types';
-import { Network, Shield, AlertTriangle, Layers, ZoomIn, ZoomOut, RotateCcw, Server, Mail, ExternalLink, Hash } from 'lucide-react';
+import { Network, Shield, AlertTriangle, Layers, ZoomIn, ZoomOut, RotateCcw, Server, Mail, ExternalLink, Hash, Download } from 'lucide-react';
+import { downloadStixBundle } from '../lib/api';
 
 interface CampaignGraphProps {
   graphData: CampaignGraphData;
@@ -135,6 +136,16 @@ export function CampaignGraph({ graphData, activeEmailId }: CampaignGraphProps) 
 
         {/* Filter Pills and Zoom Controls */}
         <div className="flex items-center gap-2">
+          {/* STIX 2.1 Export Button */}
+          <button
+            onClick={() => downloadStixBundle()}
+            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-mono font-semibold bg-fuchsia-950/80 hover:bg-fuchsia-900 border border-fuchsia-700/60 text-fuchsia-300 rounded-lg transition shadow"
+            title="Export full campaign intelligence cluster as RFC-compliant STIX 2.1 JSON bundle"
+          >
+            <Download className="w-3.5 h-3.5" />
+            STIX 2.1 Bundle
+          </button>
+
           {/* Filter Pills */}
           <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800 text-[11px]">
             {['ALL', 'CAMPAIGN', 'EMAIL', 'INFRASTRUCTURE_IP', 'IOC'].map((t) => (
@@ -348,6 +359,20 @@ export function CampaignGraph({ graphData, activeEmailId }: CampaignGraphProps) 
                 </div>
               ))}
             </div>
+
+            {selectedNode.type === 'CAMPAIGN' && (
+              <div className="pt-2 mt-2 border-t border-slate-800">
+                <button
+                  onClick={() => {
+                    const cid = selectedNode.id.replace('campaign_', '');
+                    downloadStixBundle(cid);
+                  }}
+                  className="w-full flex items-center justify-center gap-1.5 py-1 px-2 rounded bg-fuchsia-950/70 hover:bg-fuchsia-900 border border-fuchsia-800/60 text-fuchsia-300 text-[10px] font-mono font-bold transition"
+                >
+                  <Download className="w-3 h-3" /> Export STIX 2.1 Bundle
+                </button>
+              </div>
+            )}
           </div>
         )}
 

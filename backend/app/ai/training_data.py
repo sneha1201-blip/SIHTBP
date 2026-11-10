@@ -168,7 +168,7 @@ BENCHMARK_SAMPLES: List[Tuple[str, str]] = [
     (
         "Subject: Urgent Vendor Settlement - Air Conditioning Infrastructure\n"
         "The contractor has updated their banking coordinates for final project settlement. "
-        "Please remit outstanding balance of Rs. 6,30,000 to new Account: 334910283412, IFSC: HDFC0000122. "
+        "Please remit outstanding balance of Rs. 6,30,000 to new Account: 334910283412, IFSC: BARB0000122. "
         "Do not use the previous account on file.",
         "BEC_FINANCIAL",
     ),
@@ -251,7 +251,7 @@ BENCHMARK_SAMPLES: List[Tuple[str, str]] = [
     (
         "Subject: Urgent Payment Request: Outstanding Contractor Invoice Wire\n"
         "Please process the urgent payment of Rs. 5,20,000 for server maintenance. "
-        "Wire to beneficiary account: 44029104821, IFSC: HDFC0000122 via RTGS transfer today.",
+        "Wire to beneficiary account: 44029104821, IFSC: BARB0000122 via RTGS transfer today.",
         "BEC_FINANCIAL",
     ),
     (

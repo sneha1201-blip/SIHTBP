@@ -1,11 +1,11 @@
-"""Forensic Mock Seed Data Generator for AICTE Cyber Security Platform.
+"""Forensic Corpus Benchmark Generator for AICTE Cyber Security Platform.
 
 Populates the database and cryptographic vault with 5 complete, realistic forensic test cases:
 1. Legitimate academic email (AICTE Circular - Threat Score: 12/100, All Auth Passed)
 2. Executive BEC Wire Fraud (Impersonating AICTE Chairman with Display Spoofing & Gmail Reply-To - Score: 94/100)
 3. Credential Harvesting via Tor Exit Node (Origin IP 185.220.101.5 in Frankfurt - Score: 98/100)
 4. Cousin Domain Attack (alcte-india.org using Cyrillic homograph 'а' U+0430 - Score: 88/100)
-5. Campaign Cluster (Operation FalconShield: 3 victim emails sharing AS49870 and SimHash template)
+5. Campaign Cluster (Operation FalconShield: 3 victim emails sharing AS208294 and SimHash template)
 """
 
 from __future__ import annotations
@@ -411,11 +411,11 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         "of Rs. 45,00,000 (Forty-Five Lakhs Only) for high-performance server hardware procurement.\n\n"
         "Due to end-of-quarter treasury reconciliation, the initial statutory commitment fee of\n"
         "Rs. 4,50,000 must be remitted via RTGS immediately to our designated project escrow account\n"
-        "before 4:00 PM today to lock in the bilateral ministry disbursement.\n\n"
+        "before close of business today to lock in the bilateral ministry disbursement.\n\n"
         "Escrow Account Details:\n"
         "Beneficiary: AICTE Special Projects Escrow\n"
         "Account Number: 50200088192411\n"
-        "IFSC Code: HDFC0000122\n\n"
+        "IFSC Code: BARB0000122\n\n"
         "Please confirm receipt and forward RTGS UTR reference directly to my confidential liaison at:\n"
         "chairman.aicte.funds.dept@gmail.com\n\n"
         "Sincerely,\n"
@@ -428,7 +428,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         "<p><strong>CONFIDENTIAL & HIGH PRIORITY</strong></p>"
         "<p>Dear Finance Officer,</p>"
         "<p>Your institution has been granted Rs. 45,00,000 under the Cybersecurity Infrastructure Fund.</p>"
-        "<p>Remit the commitment fee of <strong>Rs. 4,50,000</strong> to Account: 50200088192411 (IFSC: HDFC0000122).</p>"
+        "<p>Remit the commitment fee of <strong>Rs. 4,50,000</strong> to Account: 50200088192411 (IFSC: BARB0000122).</p>"
         "<p>Reply directly to: <a href='mailto:chairman.aicte.funds.dept@gmail.com'>chairman.aicte.funds.dept@gmail.com</a></p>"
         "<p>Prof. T. G. Sitharam, Chairman AICTE</p>"
         "</body></html>"
@@ -1118,11 +1118,11 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         name="Operation FalconShield: AICTE Affiliation Extortion & Compliance Scams",
         description=(
             "Multi-state coordinated spear-phishing campaign masquerading as the AICTE Approval Bureau. "
-            "Threat actors distribute weaponized intake audit notices from AS49870 bulletproof infrastructure. "
+            "Threat actors distribute weaponized intake audit notices from AS208294 bulletproof infrastructure. "
             "All 3 observed incidents share high SimHash text similarity (>96%) and identical call-to-action structures."
         ),
         cluster_type="COMPOSITE_ASN_SIMHASH",
-        cluster_key="ASN49870:SIMHASH_8f3c7a",
+        cluster_key="ASN208294:SIMHASH_8f3c7a",
         severity="CRITICAL",
         first_seen=now - timedelta(days=3),
         last_seen=now - timedelta(hours=3),
@@ -1276,7 +1276,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         session.add(email_c5)
         counts["emails"] += 1
 
-        # Header Hop from AS49870 bulletproof VPS
+        # Header Hop from AS208294 bulletproof VPS
         hop_c5 = HeaderHop(
             id=uuid.uuid4(),
             email_id=email_c5.id,
@@ -1293,8 +1293,8 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             geo_city="Moscow",
             geo_lat=55.7558,
             geo_lon=37.6173,
-            asn_number=49870,
-            asn_org="Alservice Ltd",
+            asn_number=208294,
+            asn_org="Zwiebelfreunde Datacenter",
             node_type="ORIGINATING",
             is_tor=False,
             is_vpn=False,
@@ -1327,9 +1327,9 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
                 "auth_failure_penalty": 16.0,
                 "nlp_extortion_coercion": 11.0,
                 "reasons": [
-                    "Originating IP belongs to high-risk bulletproof hosting ASN (AS49870 Alservice Ltd)",
+                    "Originating IP belongs to high-risk bulletproof hosting ASN (AS208294 Zwiebelfreunde)",
                     "Clustered into Operation FalconShield via shared SimHash and subnet infrastructure",
-                    "Fake government compliance domain: aicte-compliance-gov.com",
+                    "Deceptive government compliance domain: aicte-compliance-gov.com",
                 ],
             },
         )
@@ -1412,7 +1412,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
 
     # Commit all seed data in single transaction
     await session.commit()
-    logger.info("Forensic mock data successfully seeded: %s", counts)
+    logger.info("Forensic benchmark data successfully initialized: %s", counts)
     return counts
 
 
