@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: aicte-forensics-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=false
+      - VAULT_HMAC_SECRET=aicte_sec63_bsa_production_hmac_secret_2026_super_secure_vault_key
+      - SECRET_KEY=aicte_jwt_secret_key_production_2026_argon2_super_secure
+      - DATABASE_URL=sqlite+aiosqlite:///storage/forensic.db
+      - MAX_UPLOAD_SIZE_MB=25
+    volumes:
+      - ./storage:/app/storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - aicte-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: aicte-forensics-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - aicte-network
+
+networks:
+  aicte-network:
+    driver: bridge
+

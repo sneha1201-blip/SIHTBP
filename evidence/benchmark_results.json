@@ -1,0 +1,81 @@
+{
+  "benchmark_metadata": {
+    "sih_problem_id": "26106",
+    "statutory_mandate": "Section 63 Bharatiya Sakshya Adhiniyam, 2023",
+    "git_commit": "81011e04da8907444be4ef4b644a0be8f83f16ae",
+    "execution_timestamp": "2026-11-10T19:46:47.228801+00:00",
+    "total_samples_evaluated": 33,
+    "unique_test_corpus_files": 11,
+    "iterations": 3,
+    "total_wall_time_seconds": 126.005,
+    "throughput_emails_per_second": 0.26
+  },
+  "stage_latency_breakdown_ms": {
+    "dual_hashing_vault_store": {
+      "mean_ms": 1.9,
+      "p95_ms": 5.51,
+      "min_ms": 0.79,
+      "max_ms": 5.62
+    },
+    "mime_rfc822_parsing": {
+      "mean_ms": 2.56,
+      "p95_ms": 4.17,
+      "min_ms": 0.91,
+      "max_ms": 4.21
+    },
+    "hop_traversal_geoip_asn": {
+      "mean_ms": 0.0,
+      "p95_ms": 0.0,
+      "min_ms": 0.0,
+      "max_ms": 0.0
+    },
+    "protocol_auth_dkim_spf_dmarc": {
+      "mean_ms": 2744.69,
+      "p95_ms": 3030.51,
+      "min_ms": 1503.91,
+      "max_ms": 3058.84
+    },
+    "spoof_homoglyph_detection": {
+      "mean_ms": 0.72,
+      "p95_ms": 0.98,
+      "min_ms": 0.42,
+      "max_ms": 1.08
+    },
+    "ioc_extraction_url_deobfuscation": {
+      "mean_ms": 0.08,
+      "p95_ms": 0.18,
+      "min_ms": 0.04,
+      "max_ms": 0.45
+    },
+    "nlp_intent_and_entity_extraction": {
+      "mean_ms": 51.55,
+      "p95_ms": 6.64,
+      "min_ms": 2.97,
+      "max_ms": 1587.62
+    },
+    "threat_scoring_formula": {
+      "mean_ms": 0.02,
+      "p95_ms": 0.04,
+      "min_ms": 0.02,
+      "max_ms": 0.05
+    },
+    "dynamic_campaign_clustering": {
+      "mean_ms": 0.0,
+      "p95_ms": 0.0,
+      "min_ms": 0.0,
+      "max_ms": 0.0
+    },
+    "pdf_generation_section63_bsa": {
+      "mean_ms": 29.62,
+      "p95_ms": 51.04,
+      "min_ms": 24.63,
+      "max_ms": 55.27
+    },
+    "full_pipeline_ingest_e2e": {
+      "mean_ms": 983.96,
+      "p95_ms": 3619.98,
+      "min_ms": 9.92,
+      "max_ms": 4103.51
+    }
+  }
+}

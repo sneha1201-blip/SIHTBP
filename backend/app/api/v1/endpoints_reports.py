@@ -77,6 +77,8 @@ async def stream_forensic_pdf_report(
         analysis=analysis_dict,
         iocs=iocs_list,
         audit_logs=audit_list,
+        examiner_name=current_user.username,
+        examiner_designation=f"Forensic {current_user.role}, AICTE Cyber Security Cell",
     )
 
     filename = f"Forensic_Dossier_BSA63_{email.sha256_hash[:12]}.pdf"
