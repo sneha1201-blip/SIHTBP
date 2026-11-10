@@ -590,6 +590,11 @@ class EvidenceAuditLog(Base):
         nullable=False,
         doc="Cryptographic HMAC-SHA256 signature preventing tampering with audit history",
     )
+    prev_hash: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+        doc="Cryptographic SHA-256 hash chaining to preceding audit ledger entry",
+    )
     details: Mapped[Dict[str, Any]] = mapped_column(
         JSON,
         default=dict,
@@ -614,6 +619,55 @@ class EvidenceAuditLog(Base):
             "evidence_sha256": self.evidence_sha256,
             "integrity_check": self.integrity_check,
             "hmac_signature": self.hmac_signature,
+            "prev_hash": self.prev_hash,
             "details": self.details,
+        }
+
+
+class UserRole:
+    ADMIN = "ADMIN"
+    ANALYST = "ANALYST"
+    AUDITOR = "AUDITOR"
+
+
+class User(Base):
+    """User entity for Role-Based Access Control (RBAC)."""
+
+    __tablename__ = "users"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    username: Mapped[str] = mapped_column(
+        String(64), unique=True, index=True, nullable=False
+    )
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, index=True, nullable=False
+    )
+    password_hash: Mapped[str] = mapped_column(
+        String(255), nullable=False
+    )
+    role: Mapped[str] = mapped_column(
+        String(32), default=UserRole.ANALYST, nullable=False, doc="ADMIN, ANALYST, or AUDITOR"
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, default=True, nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<User username={self.username} role={self.role}>"
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert user record to dictionary (excluding password hash)."""
+        return {
+            "id": str(self.id),
+            "username": self.username,
+            "email": self.email,
+            "role": self.role,
+            "is_active": self.is_active,
+            "created_at": self.created_at.isoformat(),
         }
 

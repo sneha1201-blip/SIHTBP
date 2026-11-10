@@ -2,70 +2,77 @@
 
 Provides endpoints for email ingestion (EML / MSG / raw RFC 822), automated forensic pipeline
 execution (Reverse Hop-Traversal, SPF/DKIM/DMARC, VIP spoofing, IOC extraction, BEC NLP),
-and GeoJSON topological routing exports.
+background job processing, hash-chained audit verification, and GeoJSON topological routing exports.
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import uuid
-from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+    status,
+)
+from fastapi.responses import JSONResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.ai.nlp_engine import analyze_email_content
-from backend.app.ai.threat_scorer import compute_threat_score
-from backend.app.ai.url_analyzer import analyze_url
+from backend.app.core.rate_limiter import rate_limit_guard
+from backend.app.core.security import require_analyst, require_any_authenticated
+from backend.app.core.upload_validator import stream_and_validate_upload, validate_email_bytes
+from backend.app.database.audit_service import record_chained_audit_log, verify_audit_log_chain
 from backend.app.database.models import (
-    Campaign,
     CampaignEmail,
     Email,
-    EvidenceAuditLog,
-    ForensicAnalysis,
     HeaderHop,
-    ThreatIndicator,
+    User,
 )
 from backend.app.database.session import get_db
-from backend.app.database.vault import (
-    canonicalize_audit_payload,
-    generate_hmac_signature,
-    store_raw_evidence,
+from backend.app.database.vault import read_raw_evidence
+from backend.app.forensics.job_queue import (
+    JobStatus,
+    execute_forensic_pipeline,
+    job_manager,
+    run_background_job,
 )
-from backend.app.forensics.auth_validator import validate_protocol_authentication
-from backend.app.forensics.hop_traversal import reverse_hop_traversal
-from backend.app.forensics.ioc_extractor import extract_iocs
-from backend.app.forensics.spoof_detector import detect_spoofing
-from backend.app.osint.asn_lookup import resolve_ip_asn
-from backend.app.osint.geo_resolver import resolve_ip_geo
-from backend.app.osint.tor_detector import is_anonymizing_vpn_or_bulletproof, is_tor_exit_node
-from backend.app.osint.whois_client import lookup_domain_whois
-from backend.app.parsers.eml_parser import parse_eml
-from backend.app.parsers.msg_parser import parse_msg
 
 router = APIRouter()
 
 
-@router.post("/analyze", status_code=status.HTTP_201_CREATED)
+@router.post("/analyze")
 async def analyze_email_evidence(
+    request: Request,
     file: Optional[UploadFile] = File(None),
     raw_headers: Optional[str] = Form(None),
+    sync: bool = Query(False, description="Execute synchronously and return completed dossier immediately"),
+    current_user: User = Depends(require_analyst),
     db: AsyncSession = Depends(get_db),
-) -> Dict[str, Any]:
-    """Ingest an email artifact (.eml / .msg / raw text), execute the complete forensic pipeline,
-    and persist the sealed record in the evidence vault and database.
+    _rate_limit: None = Depends(rate_limit_guard),
+) -> Any:
+    """Ingest an email artifact (.eml / .msg / raw text), stream-validating payload cap and format,
+    and process through the forensic pipeline (async job by default, synchronous if sync=true).
     """
     raw_bytes: bytes = b""
     file_name = "evidence.eml"
 
-    if file and file.filename:
-        file_name = file.filename
-        raw_bytes = await file.read()
+    if file:
+        raw_bytes, file_name = await stream_and_validate_upload(file)
     elif raw_headers:
         raw_bytes = raw_headers.encode("utf-8")
         file_name = "raw_headers_submission.eml"
+        validate_email_bytes(raw_bytes, file_name)
     else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -78,275 +85,94 @@ async def analyze_email_evidence(
             detail="The uploaded evidence file or header stream is empty.",
         )
 
-    # 1. Store in Cryptographic Evidence Vault
-    sha256_hash, md5_hash, stored_path, size_bytes = store_raw_evidence(raw_bytes, file_name)
+    actor = current_user.username
 
-    # Check if duplicate evidence already exists in database
-    existing_stmt = select(Email).where(Email.sha256_hash == sha256_hash)
-    existing_result = await db.execute(existing_stmt)
-    existing_email = existing_result.scalar_one_or_none()
-    if existing_email:
-        # Return existing dossier
-        return await get_evidence_dossier(str(existing_email.id), db=db)
-
-    # 2. Parse MIME structure
-    if file_name.lower().endswith(".msg"):
-        parsed = parse_msg(raw_bytes, filename=file_name)
-    else:
-        parsed = parse_eml(raw_bytes, filename=file_name)
-
-    # 3. Reverse Hop-Traversal
-    hops_analyzed, earliest_ip = reverse_hop_traversal(parsed.received_headers)
-
-    # 4. OSINT & Geolocation Enrichment for Hops
-    enriched_hops = []
-    is_tor_origin = False
-    is_bulletproof_origin = False
-
-    for hop in hops_analyzed:
-        geo = resolve_ip_geo(hop.hop_ip)
-        asn = resolve_ip_asn(hop.hop_ip)
-        is_tor = is_tor_exit_node(hop.hop_ip) if hop.hop_ip else False
-        is_vpn, is_bp = is_anonymizing_vpn_or_bulletproof(hop.hop_ip) if hop.hop_ip else (False, False)
-
-        if hop.hop_order == 1 or hop.node_type == "ORIGINATING":
-            if is_tor:
-                is_tor_origin = True
-                hop.node_type = "TOR_EXIT"
-            if is_bp:
-                is_bulletproof_origin = True
-
-        enriched_hops.append({
-            "hop_order": hop.hop_order,
-            "by_mta": hop.by_mta,
-            "from_mta": hop.from_mta,
-            "hop_ip": hop.hop_ip,
-            "is_private_ip": hop.is_private_ip,
-            "is_reliable": hop.is_reliable,
-            "protocol": hop.protocol,
-            "hop_timestamp": hop.timestamp,
-            "delay_seconds": hop.delay_seconds,
-            "geo_country": geo.country,
-            "geo_city": geo.city,
-            "geo_lat": geo.latitude,
-            "geo_lon": geo.longitude,
-            "asn_number": asn.asn_number,
-            "asn_org": asn.asn_org,
-            "node_type": hop.node_type,
-            "is_tor": is_tor,
-            "is_vpn": is_vpn,
-            "is_datacenter": asn.is_datacenter,
-        })
-
-    # 5. Protocol Authentication (SPF/DKIM/DMARC)
-    auth_res = validate_protocol_authentication(
-        from_email=parsed.sender_email,
-        return_path=parsed.return_path,
-        headers_dict=parsed.headers_dict,
-        auth_results_header=parsed.authentication_results,
-    )
-
-    # 6. Spoofing & Impersonation Engine
-    spoof_res = detect_spoofing(
-        sender_display=parsed.sender_display,
-        sender_email=parsed.sender_email,
-        return_path=parsed.return_path,
-        reply_to=parsed.reply_to,
-    )
-
-    # 7. Extract IOCs
-    hop_ips: list[str] = [str(h["hop_ip"]) for h in enriched_hops if h.get("hop_ip")]
-    raw_iocs = extract_iocs(
-        body_plain=parsed.body_plain,
-        body_html=parsed.body_html,
-        sender_email=parsed.sender_email,
-        reply_to=parsed.reply_to,
-        attachments=parsed.attachments,
-        hop_ips=hop_ips,
-    )
-
-    # 8. URL De-Obfuscation & Risk Analysis
-    url_results = []
-    is_nrd = False
-    for ioc in raw_iocs:
-        if ioc.ioc_type == "URL":
-            u_res = analyze_url(ioc.raw_value)
-            url_results.append(u_res)
-            ioc.metadata.update({"risk_score": u_res.risk_score, "flags": u_res.matched_flags})
-        elif ioc.ioc_type == "DOMAIN":
-            dom_intel = await lookup_domain_whois(ioc.raw_value)
-            if dom_intel.is_newly_registered:
-                is_nrd = True
-            ioc.metadata.update({"domain_age_days": dom_intel.domain_age_days, "registrar": dom_intel.registrar})
-
-    # 9. NLP & Content Analysis
-    nlp_res = analyze_email_content(parsed.subject, parsed.body_plain or parsed.body_html)
-
-    # 10. Composite Threat Score
-    has_dangerous_att = any(a.is_suspicious_extension for a in parsed.attachments)
-    composite = compute_threat_score(
-        auth_res=auth_res,
-        spoof_res=spoof_res,
-        nlp_res=nlp_res,
-        url_results=url_results,
-        is_tor_origin=is_tor_origin,
-        is_bulletproof_origin=is_bulletproof_origin,
-        is_newly_registered_domain=is_nrd,
-        has_dangerous_attachment=has_dangerous_att,
-    )
-
-    # 11. Database Persistence
-    now = datetime.now(timezone.utc)
-    email_record = Email(
-        id=uuid.uuid4(),
-        sha256_hash=sha256_hash,
-        md5_hash=md5_hash,
-        file_name=file_name,
-        file_size_bytes=size_bytes,
-        raw_storage_path=stored_path,
-        rfc822_msg_id=parsed.rfc822_msg_id,
-        subject=parsed.subject,
-        sender_raw=parsed.sender_raw,
-        sender_email=parsed.sender_email,
-        sender_display=parsed.sender_display,
-        return_path=parsed.return_path,
-        reply_to=parsed.reply_to,
-        recipient_list=parsed.recipient_list,
-        date_header=parsed.date_header,
-        body_plain=parsed.body_plain,
-        body_html=parsed.body_html,
-        simhash_body=parsed.simhash_body,
-        ingested_at=now,
-    )
-    db.add(email_record)
-    await db.flush()
-
-    # Save Hops
-    db_hops = []
-    for h in enriched_hops:
-        db_hop = HeaderHop(
-            id=uuid.uuid4(),
-            email_id=email_record.id,
-            hop_order=h["hop_order"],
-            by_mta=h["by_mta"],
-            from_mta=h["from_mta"],
-            hop_ip=h["hop_ip"],
-            is_private_ip=h["is_private_ip"],
-            is_reliable=h["is_reliable"],
-            protocol=h["protocol"],
-            hop_timestamp=h["hop_timestamp"],
-            delay_seconds=h["delay_seconds"],
-            geo_country=h["geo_country"],
-            geo_city=h["geo_city"],
-            geo_lat=h["geo_lat"],
-            geo_lon=h["geo_lon"],
-            asn_number=h["asn_number"],
-            asn_org=h["asn_org"],
-            node_type=h["node_type"],
-            is_tor=h["is_tor"],
-            is_vpn=h["is_vpn"],
-            is_datacenter=h["is_datacenter"],
+    # Synchronous processing (used by automated test suites or synchronous API clients)
+    if sync:
+        dossier = await execute_forensic_pipeline(
+            raw_bytes=raw_bytes,
+            file_name=file_name,
+            actor=actor,
+            db=db,
         )
-        db_hops.append(db_hop)
-    db.add_all(db_hops)
+        return JSONResponse(status_code=status.HTTP_201_CREATED, content=dossier)
 
-    # Save Forensic Analysis
-    db_fa = ForensicAnalysis(
-        id=uuid.uuid4(),
-        email_id=email_record.id,
-        spf_status=auth_res.spf_status,
-        spf_domain=auth_res.spf_domain,
-        dkim_status=auth_res.dkim_status,
-        dkim_selector=auth_res.dkim_selector,
-        dkim_domain=auth_res.dkim_domain,
-        dmarc_status=auth_res.dmarc_status,
-        dmarc_policy=auth_res.dmarc_policy,
-        dmarc_alignment_spf=auth_res.dmarc_alignment_spf,
-        dmarc_alignment_dkim=auth_res.dmarc_alignment_dkim,
-        display_spoof_flag=spoof_res.display_spoof_flag,
-        lookalike_flag=spoof_res.lookalike_flag,
-        homograph_flag=spoof_res.homograph_flag,
-        threat_score=composite.threat_score,
-        verdict=composite.verdict,
-        score_breakdown=composite.score_breakdown,
+    # Asynchronous background job queue
+    job = await job_manager.create_job(file_name=file_name, actor=actor)
+    asyncio.create_task(run_background_job(job.job_id, raw_bytes, file_name, actor))
+
+    return JSONResponse(
+        status_code=status.HTTP_202_ACCEPTED,
+        content={
+            "job_id": job.job_id,
+            "status": job.status,
+            "stage": job.stage,
+            "progress_percent": job.progress_percent,
+            "poll_url": f"/api/v1/forensics/jobs/{job.job_id}",
+            "stream_url": f"/api/v1/forensics/jobs/{job.job_id}/stream",
+        },
     )
-    db.add(db_fa)
 
-    # Save IOCs
-    db_iocs = []
-    for ioc in raw_iocs:
-        db_ioc = ThreatIndicator(
-            id=uuid.uuid4(),
-            email_id=email_record.id,
-            ioc_type=ioc.ioc_type,
-            ioc_value=ioc.raw_value,
-            context=ioc.context,
-            is_defanged=ioc.is_defanged,
-            domain_age_days=ioc.metadata.get("domain_age_days"),
-            registrar=ioc.metadata.get("registrar"),
-            reputation_score=ioc.metadata.get("risk_score") or ioc.metadata.get("reputation"),
-            ioc_metadata=ioc.metadata,
+
+@router.get("/jobs/{job_id}")
+async def get_job_status(
+    job_id: str,
+    current_user: User = Depends(require_any_authenticated),
+) -> Dict[str, Any]:
+    """Poll status and progress of an asynchronous forensic ingestion job."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Forensic job with ID '{job_id}' not found.",
         )
-        db_iocs.append(db_ioc)
-    db.add_all(db_iocs)
+    return job.to_dict()
 
-    # Check / Link Campaign Clusters
-    if is_bulletproof_origin or composite.verdict in ("MALICIOUS", "PHISHING"):
-        # Check if existing campaign matches ASN or SimHash prefix
-        camp_stmt = select(Campaign).where(Campaign.cluster_key.like("%AS49870%")).limit(1)
-        camp_res = await db.execute(camp_stmt)
-        campaign = camp_res.scalar_one_or_none()
-        if campaign:
-            camp_email = CampaignEmail(
-                id=uuid.uuid4(),
-                campaign_id=campaign.id,
-                email_id=email_record.id,
-                similarity_score=0.95,
-                matched_criteria={"reason": "Shared bulletproof ASN or SimHash cluster"},
-                associated_at=now,
-            )
-            db.add(camp_email)
-            campaign.total_emails += 1
 
-    # Save Sealed Audit Log
-    audit_details = {
-        "verdict": composite.verdict,
-        "threat_score": composite.threat_score,
-        "origin_ip": earliest_ip,
-        "is_tor": is_tor_origin,
-    }
-    audit_payload = canonicalize_audit_payload(
-        actor="FORENSIC_INGESTION_SERVICE",
-        action="PIPELINE_ANALYSIS_COMPLETED",
-        evidence_sha256=sha256_hash,
-        recorded_at=now,
-        details=audit_details,
-    )
-    audit_sig = generate_hmac_signature(audit_payload)
-    audit_log = EvidenceAuditLog(
-        id=uuid.uuid4(),
-        email_id=email_record.id,
-        action_performed="PIPELINE_ANALYSIS_COMPLETED",
-        actor="FORENSIC_INGESTION_SERVICE",
-        recorded_at=now,
-        evidence_sha256=sha256_hash,
-        integrity_check=True,
-        hmac_signature=audit_sig,
-        details=audit_details,
-    )
-    db.add(audit_log)
+@router.get("/jobs/{job_id}/stream")
+async def stream_job_progress(
+    job_id: str,
+    current_user: User = Depends(require_any_authenticated),
+) -> StreamingResponse:
+    """Stream Server-Sent Events (SSE) reporting real-time job progress."""
+    job = await job_manager.get_job(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Forensic job with ID '{job_id}' not found.",
+        )
 
-    await db.commit()
+    async def event_generator() -> AsyncGenerator[str, None]:
+        while True:
+            current_job = await job_manager.get_job(job_id)
+            if not current_job:
+                break
+            payload = json.dumps(current_job.to_dict())
+            yield f"data: {payload}\n\n"
+            if current_job.status in (JobStatus.COMPLETED, JobStatus.FAILED):
+                break
+            await asyncio.sleep(0.3)
 
-    return await get_evidence_dossier(str(email_record.id), db=db)
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+
+@router.get("/audit/verify-chain")
+async def verify_audit_ledger_chain(
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Verify cryptographic integrity of the entire audit chain from genesis to head."""
+    result = await verify_audit_log_chain(db)
+    return result
 
 
 @router.get("/evidence/{evidence_id}")
 async def get_evidence_dossier(
     evidence_id: str,
+    current_user: User = Depends(require_any_authenticated),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
-    """Retrieve the full forensic dossier by email UUID."""
+    """Retrieve the full forensic dossier by email UUID, recording analyst access in audit log."""
     try:
         e_uuid = uuid.UUID(evidence_id)
     except ValueError:
@@ -369,6 +195,17 @@ async def get_evidence_dossier(
     if not email:
         raise HTTPException(status_code=404, detail=f"No forensic evidence found for ID: {evidence_id}")
 
+    # Record evidence access in chained audit log
+    await record_chained_audit_log(
+        db=db,
+        action="EVIDENCE_ACCESSED",
+        actor=current_user.username,
+        evidence_sha256=email.sha256_hash,
+        email_id=email.id,
+        details={"analyst_role": current_user.role},
+    )
+    await db.commit()
+
     return {
         "email": email.to_dict(),
         "forensic_analysis": email.forensic_analysis.to_dict() if email.forensic_analysis else None,
@@ -388,9 +225,49 @@ async def get_evidence_dossier(
     }
 
 
+@router.get("/evidence/{evidence_id}/raw")
+async def get_raw_vault_evidence(
+    evidence_id: str,
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> Response:
+    """Read raw email bytes directly from the cryptographic vault with SHA-256 integrity verification."""
+    try:
+        e_uuid = uuid.UUID(evidence_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid evidence UUID format.")
+
+    stmt = select(Email).where(Email.id == e_uuid)
+    result = await db.execute(stmt)
+    email = result.scalar_one_or_none()
+
+    if not email:
+        raise HTTPException(status_code=404, detail=f"No forensic evidence found for ID: {evidence_id}")
+
+    raw_bytes = read_raw_evidence(email.sha256_hash)
+
+    # Record vault read event in chained audit log
+    await record_chained_audit_log(
+        db=db,
+        action="VAULT_RAW_READ",
+        actor=current_user.username,
+        evidence_sha256=email.sha256_hash,
+        email_id=email.id,
+        details={"file_name": email.file_name, "analyst_role": current_user.role},
+    )
+    await db.commit()
+
+    return Response(
+        content=raw_bytes,
+        media_type="message/rfc822",
+        headers={"Content-Disposition": f'attachment; filename="{email.file_name}"'},
+    )
+
+
 @router.get("/evidence/{evidence_id}/hops")
 async def get_evidence_hops_geojson(
     evidence_id: str,
+    current_user: User = Depends(require_any_authenticated),
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Return transit hops formatted as a GeoJSON FeatureCollection for frontend map rendering."""
@@ -433,7 +310,6 @@ async def get_evidence_hops_geojson(
                 },
             })
 
-    # Add LineString geometry representing transit flight path
     if len(line_coordinates) >= 2:
         features.insert(0, {
             "type": "Feature",
@@ -452,4 +328,3 @@ async def get_evidence_hops_geojson(
         "evidence_id": evidence_id,
         "features": features,
     }
-

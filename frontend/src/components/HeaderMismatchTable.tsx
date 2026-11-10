@@ -62,7 +62,7 @@ export function HeaderMismatchTable({ email, analysis }: HeaderMismatchTableProp
             <tr className="hover:bg-slate-900/40 transition">
               <td className="py-2.5 pl-2 font-mono text-slate-400 font-medium">Return-Path:</td>
               <td className="py-2.5 font-mono text-slate-200">
-                {email.return_path ? `&lt;${email.return_path}&gt;` : '(None)'}
+                {email.return_path ? `<${email.return_path}>` : '(None)'}
               </td>
               <td className="py-2.5 pr-2 text-right">
                 {isReturnPathMismatch ? (

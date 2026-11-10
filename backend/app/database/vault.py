@@ -18,9 +18,10 @@ from datetime import datetime
 from pathlib import Path
 from typing import BinaryIO, Optional, Tuple, Union
 
-# Environment-configurable vault directory and HMAC secret key
+from backend.app.core.config import settings
+
+# Environment-configurable vault directory
 DEFAULT_VAULT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "storage" / "vault"
-DEFAULT_HMAC_SECRET = "aicte-sih-26106-forensic-vault-secret-key-2026"
 
 
 def get_vault_dir() -> Path:
@@ -36,8 +37,7 @@ def get_vault_dir() -> Path:
 
 def get_hmac_secret() -> bytes:
     """Return the HMAC secret key as bytes."""
-    secret = os.getenv("VAULT_HMAC_SECRET", DEFAULT_HMAC_SECRET)
-    return secret.encode("utf-8")
+    return settings.VAULT_HMAC_SECRET.encode("utf-8")
 
 
 def calculate_hashes(data: Union[bytes, bytearray, memoryview]) -> Tuple[str, str]:
@@ -128,6 +128,7 @@ def canonicalize_audit_payload(
     evidence_sha256: str,
     recorded_at: Union[datetime, str],
     details: Optional[dict] = None,
+    prev_hash: Optional[str] = None,
 ) -> str:
     """Build a deterministic, sorted canonical string representation of an audit event.
 
@@ -140,6 +141,8 @@ def canonicalize_audit_payload(
         time_str = f"{time_clean}Z"
 
     details_str = json.dumps(details or {}, sort_keys=True, separators=(",", ":"))
+    if prev_hash is not None:
+        return f"ACTOR:{actor}|ACTION:{action}|SHA256:{evidence_sha256}|TIME:{time_str}|PREV:{prev_hash}|DETAILS:{details_str}"
     return f"ACTOR:{actor}|ACTION:{action}|SHA256:{evidence_sha256}|TIME:{time_str}|DETAILS:{details_str}"
 
 

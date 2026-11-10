@@ -1,6 +1,6 @@
 """Court-Admissible PDF Report Generation Endpoints.
 
-Streams cryptographic forensic dossiers formatted for Section 63 BSA, 2023 / Section 65B IEA.
+Streams cryptographic forensic dossiers formatted for Section 63 BSA 2023.
 """
 
 from __future__ import annotations
@@ -13,7 +13,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.database.models import Email
+from backend.app.core.security import require_any_authenticated
+from backend.app.database.audit_service import record_chained_audit_log
+from backend.app.database.models import Email, User
 from backend.app.database.session import get_db
 from backend.app.reporting.pdf_generator import generate_forensic_pdf
 
@@ -23,6 +25,7 @@ router = APIRouter()
 @router.get("/{evidence_id}/report")
 async def stream_forensic_pdf_report(
     evidence_id: str,
+    current_user: User = Depends(require_any_authenticated),
     db: AsyncSession = Depends(get_db),
 ):
     """Stream a Section 63 BSA 2023 certified forensic PDF dossier for the specified evidence UUID."""
@@ -46,6 +49,21 @@ async def stream_forensic_pdf_report(
 
     if not email:
         raise HTTPException(status_code=404, detail=f"Evidence not found for UUID: {evidence_id}")
+
+    # Record report export in chained audit log
+    await record_chained_audit_log(
+        db=db,
+        action="REPORT_EXPORTED",
+        actor=current_user.username,
+        evidence_sha256=email.sha256_hash,
+        email_id=email.id,
+        details={
+            "format": "PDF",
+            "statutory_act": "Section 63 BSA 2023",
+            "analyst_role": current_user.role,
+        },
+    )
+    await db.commit()
 
     email_dict = email.to_dict()
     analysis_dict = email.forensic_analysis.to_dict() if email.forensic_analysis else {}

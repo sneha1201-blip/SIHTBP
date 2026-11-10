@@ -2,9 +2,21 @@
 
 from fastapi import APIRouter
 
-from backend.app.api.v1 import endpoints_campaigns, endpoints_forensics, endpoints_reports
+from backend.app.api.v1 import (
+    endpoints_auth,
+    endpoints_campaigns,
+    endpoints_forensics,
+    endpoints_reports,
+)
 
 api_router = APIRouter()
+
+# Authentication & RBAC: /api/v1/auth/login, /api/v1/auth/me, etc.
+api_router.include_router(
+    endpoints_auth.router,
+    prefix="/auth",
+    tags=["Authentication & RBAC"],
+)
 
 # Forensics Endpoints: /api/v1/forensics/analyze, /api/v1/forensics/evidence/{id}, etc.
 api_router.include_router(

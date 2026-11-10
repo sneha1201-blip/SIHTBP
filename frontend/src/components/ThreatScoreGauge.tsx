@@ -92,20 +92,32 @@ export function ThreatScoreGauge({ score, verdict, subscores, analysis }: Threat
         </div>
       </div>
 
-      {/* Subscore metric bars */}
+      {/* Subscore metric bars - All 6 forensic dimensions */}
       {effectiveSubscores && (
-        <div className="mt-3 pt-3 border-t border-cyber-border/60 grid grid-cols-3 gap-2 text-center">
+        <div className="mt-3 pt-3 border-t border-cyber-border/60 grid grid-cols-3 sm:grid-cols-6 gap-2 text-center">
           <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
             <span className="text-[9px] uppercase text-slate-400 block font-medium">Auth (25%)</span>
-            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.auth}</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.auth ?? 0}</span>
           </div>
           <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
             <span className="text-[9px] uppercase text-slate-400 block font-medium">Header (20%)</span>
-            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.header}</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.header ?? 0}</span>
           </div>
           <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
             <span className="text-[9px] uppercase text-slate-400 block font-medium">NLP (20%)</span>
-            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.nlp}</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.nlp ?? 0}</span>
+          </div>
+          <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
+            <span className="text-[9px] uppercase text-slate-400 block font-medium">URL (15%)</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.url ?? 0}</span>
+          </div>
+          <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
+            <span className="text-[9px] uppercase text-slate-400 block font-medium">OSINT (10%)</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.osint ?? 0}</span>
+          </div>
+          <div className="bg-slate-900/60 p-1.5 rounded border border-slate-800">
+            <span className="text-[9px] uppercase text-slate-400 block font-medium">Attach (10%)</span>
+            <span className="text-xs font-bold text-slate-200">{effectiveSubscores.attachment ?? 0}</span>
           </div>
         </div>
       )}

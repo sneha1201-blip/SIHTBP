@@ -1,7 +1,7 @@
 """Court-Admissible Forensic PDF Dossier Generator.
 
-Complies with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (formerly Section 65B
-of the Indian Evidence Act, 1872) for the admissibility of electronic evidence.
+Complies with Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 (BSA)
+for the admissibility of electronic evidence before Indian judicial authorities.
 Generates cryptographic hash verification ledgers, MTA routing traces, protocol proofs,
 and examiner certification blocks using ReportLab.
 """
@@ -151,7 +151,7 @@ def generate_forensic_pdf(
     story.append(
         Paragraph(
             "<b>STATUTORY DECLARATION:</b> Electronic Evidence Admissibility Certificate under Section 63 "
-            "of the Bharatiya Sakshya Adhiniyam, 2023 (Formerly Section 65B of Indian Evidence Act, 1872)",
+            "of the Bharatiya Sakshya Adhiniyam (BSA), 2023",
             subtitle_style,
         )
     )

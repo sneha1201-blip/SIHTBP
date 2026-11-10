@@ -152,9 +152,14 @@ Failure to transfer within 24 hours will cancel allocation.
 """
 
     try:
-        # 1. Ingest email via API
+        from backend.app.core.security import create_access_token
+
+        analyst_token = create_access_token("analyst", role="ANALYST")
+        auth_headers = {"Authorization": f"Bearer {analyst_token}"}
+
+        # 1. Ingest email via API (synchronous mode)
         files = {"file": ("test_verification_bec.eml", io.BytesIO(sample_eml), "message/rfc822")}
-        response = client.post("/api/v1/forensics/analyze", files=files)
+        response = client.post("/api/v1/forensics/analyze?sync=true", files=files, headers=auth_headers)
         assert response.status_code in (200, 201), f"API returned {response.status_code}: {response.text}"
         data = response.json()
 
@@ -180,7 +185,7 @@ Failure to transfer within 24 hours will cancel allocation.
         )
 
         # 2. Download and Verify Section 63 BSA 2023 Forensic PDF
-        pdf_resp = client.get(f"/api/v1/forensics/evidence/{evidence_id}/report")
+        pdf_resp = client.get(f"/api/v1/forensics/evidence/{evidence_id}/report", headers=auth_headers)
         assert pdf_resp.status_code == 200, f"PDF report download failed: {pdf_resp.status_code}"
         assert pdf_resp.headers.get("content-type") == "application/pdf"
         assert pdf_resp.content.startswith(b"%PDF-"), "Generated report is not a valid PDF file."
@@ -206,9 +211,12 @@ def test_campaign_graph_api() -> bool:
     from backend.app.main import create_application
 
     try:
+        from backend.app.core.security import create_access_token
+
+        token = create_access_token("analyst", role="ANALYST")
         app = create_application()
         client = TestClient(app)
-        resp = client.get("/api/v1/campaigns/graph")
+        resp = client.get("/api/v1/campaigns/graph", headers={"Authorization": f"Bearer {token}"})
         assert resp.status_code == 200
         data = resp.json()
         graph = data.get("graph", {})

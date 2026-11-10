@@ -26,7 +26,7 @@ export function AuditLedgerTable({ logs, masterSha256 }: AuditLedgerTableProps) 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-            <Lock className="w-4 h-4 text-emerald-400" /> Section 63 BSA 2023 / Section 65B IEA Tamper-Evident Audit Ledger
+            <Lock className="w-4 h-4 text-emerald-400" /> Section 63 BSA 2023 Tamper-Evident Audit Ledger
           </h3>
           <p className="text-[11px] text-slate-400 mt-0.5">
             Cryptographic HMAC-SHA256 append-only chain of custody proving evidence immutability

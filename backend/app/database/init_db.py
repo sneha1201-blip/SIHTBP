@@ -167,6 +167,32 @@ def render_ascii_tables(counts: Dict[str, int], cases: List[Dict[str, Any]]) -> 
     print()
 
 
+async def seed_default_users(session: AsyncSession) -> None:
+    """Seed foundational RBAC accounts (ADMIN, ANALYST, AUDITOR) with Argon2 hashes."""
+    from backend.app.core.security import hash_password
+    from backend.app.database.models import User, UserRole
+
+    default_accounts = [
+        {"username": "admin", "email": "admin@aicte-india.org", "password": "AdminPassword@2026", "role": UserRole.ADMIN},
+        {"username": "analyst", "email": "analyst@aicte-india.org", "password": "AnalystPassword@2026", "role": UserRole.ANALYST},
+        {"username": "auditor", "email": "auditor@aicte-india.org", "password": "AuditorPassword@2026", "role": UserRole.AUDITOR},
+    ]
+
+    for acc in default_accounts:
+        stmt = select(User).where(User.username == acc["username"])
+        res = await session.execute(stmt)
+        if not res.scalar_one_or_none():
+            user = User(
+                username=acc["username"],
+                email=acc["email"],
+                password_hash=hash_password(acc["password"]),
+                role=acc["role"],
+                is_active=True,
+            )
+            session.add(user)
+    await session.commit()
+
+
 async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
     """Execute complete database initialization, optional seeding, and verification."""
     print_banner()
@@ -183,10 +209,13 @@ async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
 
     print("[*] Creating database schemas and tables...")
     await create_all_tables()
-    print("[+] All 6 core relational & graph ORM schemas verified and active.")
+    print("[+] All core relational & graph ORM schemas verified and active.")
     print()
 
     async with async_session_factory() as session:
+        # Seed foundational RBAC user accounts
+        await seed_default_users(session)
+
         # Check current row count
         stmt = select(func.count()).select_from(Email)
         res = await session.execute(stmt)

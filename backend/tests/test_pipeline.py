@@ -230,15 +230,20 @@ def test_forensic_pdf_generation():
 @pytest.mark.asyncio
 async def test_api_analyze_and_report_endpoints():
     """Verify POST /api/v1/forensics/analyze and GET /api/v1/forensics/evidence/{id}."""
+    from backend.app.core.security import create_access_token
+
+    analyst_token = create_access_token("analyst", role="ANALYST")
+    auth_headers = {"Authorization": f"Bearer {analyst_token}"}
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         # 1. Health Check
         health_resp = await ac.get("/api/v1/health")
         assert health_resp.status_code == 200
         assert health_resp.json()["status"] == "HEALTHY"
 
-        # 2. Ingest & Analyze multipart EML
+        # 2. Ingest & Analyze multipart EML (synchronous mode)
         files = {"file": ("bec_chairman.eml", io.BytesIO(SAMPLE_BEC_EML), "message/rfc822")}
-        post_resp = await ac.post("/api/v1/forensics/analyze", files=files)
+        post_resp = await ac.post("/api/v1/forensics/analyze?sync=true", files=files, headers=auth_headers)
         assert post_resp.status_code == 201
 
         dossier = post_resp.json()
@@ -251,19 +256,19 @@ async def test_api_analyze_and_report_endpoints():
         assert dossier["forensic_analysis"]["threat_score"] >= 90.0
 
         # 3. Retrieve GeoJSON hops
-        hops_resp = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/hops")
+        hops_resp = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/hops", headers=auth_headers)
         assert hops_resp.status_code == 200
         geojson = hops_resp.json()
         assert geojson["type"] == "FeatureCollection"
         assert len(geojson["features"]) >= 1
 
         # 4. Stream Forensic PDF Report
-        report_resp = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/report")
+        report_resp = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/report", headers=auth_headers)
         assert report_resp.status_code == 200
         assert report_resp.headers["content-type"] == "application/pdf"
         assert report_resp.content.startswith(b"%PDF-")
 
         # 5. Query Campaign Graph
-        graph_resp = await ac.get("/api/v1/campaigns/graph")
+        graph_resp = await ac.get("/api/v1/campaigns/graph", headers=auth_headers)
         assert graph_resp.status_code == 200
         assert "graph" in graph_resp.json()

@@ -38,6 +38,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     await create_all_tables()
     logger.info("Database schemas verified.")
 
+    # Seed foundational RBAC accounts
+    from backend.app.database.init_db import seed_default_users
+    from backend.app.database.session import async_session_factory
+    async with async_session_factory() as session:
+        await seed_default_users(session)
+    logger.info("Foundational RBAC user accounts verified.")
+
     yield
 
     logger.info("Disposing database connections during shutdown...")

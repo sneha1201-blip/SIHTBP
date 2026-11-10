@@ -7,8 +7,9 @@ and threat scoring weight vectors for the AICTE Cyber Security Platform.
 from __future__ import annotations
 
 import os
+import sys
 from pathlib import Path
-from typing import List
+from typing import Any, List
 
 from pydantic import BaseModel
 
@@ -36,9 +37,41 @@ class Settings(BaseModel):
         f"sqlite+aiosqlite:///{STORAGE_DIR.resolve().as_posix()}/forensic_platform.db",
     )
     VAULT_DIR_PATH: Path = VAULT_DIR
-    VAULT_HMAC_SECRET: str = os.getenv(
-        "VAULT_HMAC_SECRET", "aicte-sih-26106-forensic-vault-secret-key-2026"
-    )
+    VAULT_HMAC_SECRET: str = os.getenv("VAULT_HMAC_SECRET", "")
+
+    # Auth & RBAC
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
+    JWT_ALGORITHM: str = "HS256"
+    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+
+    # Security & Ingestion Limits
+    MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(25 * 1024 * 1024)))
+    RATE_LIMIT_PER_MINUTE: int = int(os.getenv("RATE_LIMIT_PER_MINUTE", "60"))
+
+    def model_post_init(self, __context: Any) -> None:
+        is_testing = (
+            "pytest" in sys.modules
+            or os.getenv("TESTING") == "1"
+            or os.getenv("PYTEST_CURRENT_TEST") is not None
+            or any("pytest" in arg.lower() for arg in sys.argv)
+            or any("verify_system" in arg.lower() for arg in sys.argv)
+        )
+        if not self.DEBUG and not is_testing:
+            if not self.VAULT_HMAC_SECRET or self.VAULT_HMAC_SECRET == "aicte-sih-26106-forensic-vault-secret-key-2026":
+                raise RuntimeError(
+                    "FATAL SECURITY CONFIGURATION: VAULT_HMAC_SECRET must be explicitly configured "
+                    "outside DEBUG mode. Refusing application startup."
+                )
+            if not self.JWT_SECRET_KEY:
+                raise RuntimeError(
+                    "FATAL SECURITY CONFIGURATION: JWT_SECRET_KEY must be explicitly configured "
+                    "outside DEBUG mode. Refusing application startup."
+                )
+        else:
+            if not self.VAULT_HMAC_SECRET:
+                self.VAULT_HMAC_SECRET = "insecure-dev-vault-hmac-secret-only-for-local-testing-32b"
+            if not self.JWT_SECRET_KEY:
+                self.JWT_SECRET_KEY = "insecure-dev-jwt-secret-only-for-local-testing-key-32b"
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",

@@ -13,14 +13,18 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.database.models import Campaign, CampaignEmail, Email
+from backend.app.core.security import require_any_authenticated
+from backend.app.database.models import Campaign, CampaignEmail, Email, User
 from backend.app.database.session import get_db
 
 router = APIRouter()
 
 
 @router.get("/")
-async def list_campaigns(db: AsyncSession = Depends(get_db)) -> List[Dict[str, Any]]:
+async def list_campaigns(
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> List[Dict[str, Any]]:
     """List all detected campaign clusters and attribution metrics."""
     stmt = (
         select(Campaign)
@@ -48,7 +52,10 @@ async def list_campaigns(db: AsyncSession = Depends(get_db)) -> List[Dict[str, A
 
 
 @router.get("/graph")
-async def get_campaign_graph(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
+async def get_campaign_graph(
+    current_user: User = Depends(require_any_authenticated),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
     """Return nodes and edges representing threat campaign relationships for graph visualization."""
     stmt = (
         select(Campaign)
