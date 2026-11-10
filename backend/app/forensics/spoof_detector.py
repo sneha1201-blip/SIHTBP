@@ -4,17 +4,46 @@ Detects:
 1. Header Divergence: From vs Return-Path vs Reply-To anomalies.
 2. Display Name Impersonation: VIP institutional matching against untrusted email addresses.
 3. Cousin Domain Detection: Levenshtein distance typosquatting against protected domains.
-4. Homograph & Punycode Attacks: Unicode confusable characters (e.g. Cyrillic 'а' U+0430 vs ASCII 'a').
+4. Homograph & Punycode Attacks: Unicode confusable characters (e.g. Cyrillic 'а' U+0430 vs ASCII 'a')
+   evaluated via dedicated confusable mapping tables and Punycode normalization.
 """
 
 from __future__ import annotations
 
 import unicodedata
-from typing import List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from backend.app.core.config import settings
+
+# Unicode confusable mapping table (Cyrillic & Greek homoglyphs -> ASCII canonical glyphs)
+CONFUSABLE_MAP: Dict[str, str] = {
+    # Cyrillic small letters
+    "\u0430": "a",  # Cyrillic small a
+    "\u0441": "c",  # Cyrillic small es (c)
+    "\u0435": "e",  # Cyrillic small ie (e)
+    "\u0456": "i",  # Cyrillic small i
+    "\u0458": "j",  # Cyrillic small je (j)
+    "\u043e": "o",  # Cyrillic small o
+    "\u0440": "p",  # Cyrillic small er (p)
+    "\u0455": "s",  # Cyrillic small dze (s)
+    "\u0445": "x",  # Cyrillic small ha (x)
+    "\u0443": "y",  # Cyrillic small u (y)
+    "\u0432": "v",  # Cyrillic ve
+    "\u0442": "t",  # Cyrillic te
+    "\u043c": "m",  # Cyrillic em
+    "\u043d": "h",  # Cyrillic en
+    "\u043a": "k",  # Cyrillic ka
+    # Cyrillic capital letters
+    "\u0410": "A", "\u0412": "B", "\u0421": "C", "\u0415": "E", "\u041d": "H",
+    "\u0406": "I", "\u041a": "K", "\u041c": "M", "\u041e": "O", "\u0420": "P",
+    "\u0422": "T", "\u0425": "X", "\u0423": "Y",
+    # Greek
+    "\u03b1": "a", "\u03bf": "o", "\u03c1": "p", "\u03c5": "u", "\u03bd": "v", "\u03ba": "k",
+    "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0397": "H", "\u0399": "I", "\u039a": "K",
+    "\u039c": "M", "\u039d": "N", "\u039f": "O", "\u03a1": "P", "\u03a4": "T", "\u03a7": "X",
+}
 
 
 class SpoofDetectionResult(BaseModel):
@@ -26,9 +55,15 @@ class SpoofDetectionResult(BaseModel):
     spoof_score: float = 0.0
     detected_vip: Optional[str] = None
     target_protected_domain: Optional[str] = None
-    confusable_glyphs: List[str] = []
+    confusable_glyphs: List[str] = Field(default_factory=list)
+    confusable_skeleton: Optional[str] = None
     punycode_domain: Optional[str] = None
-    reasons: List[str] = []
+    reasons: List[str] = Field(default_factory=list)
+
+
+def normalize_confusables(text: str) -> str:
+    """Translate Unicode confusable characters to canonical ASCII equivalents."""
+    return "".join(CONFUSABLE_MAP.get(char, char) for char in text)
 
 
 def levenshtein_distance(s1: str, s2: str) -> int:
@@ -51,8 +86,14 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     return previous_row[-1]
 
 
-def detect_homograph(domain: str) -> Tuple[bool, List[str], str]:
-    """Detect non-ASCII or mixed-script Unicode confusable characters in a domain."""
+def detect_homograph(
+    domain: str,
+) -> Tuple[bool, List[str], str]:
+    """Detect non-ASCII or mixed-script Unicode confusable characters in a domain.
+
+    Returns:
+        (is_homograph, glyph_descriptions, punycode)
+    """
     if not domain:
         return False, [], ""
 
@@ -62,15 +103,18 @@ def detect_homograph(domain: str) -> Tuple[bool, List[str], str]:
     except Exception:
         punycode = domain
 
-    confusable_glyphs = []
+    confusable_glyphs: List[str] = []
     has_homograph = False
 
-    # Check if domain contains Cyrillic, Greek, or non-Latin glyphs
     for char in domain:
         name = unicodedata.name(char, "")
         if "CYRILLIC" in name or "GREEK" in name or ord(char) > 127:
             has_homograph = True
             confusable_glyphs.append(f"U+{ord(char):04X} {name} ('{char}')")
+
+    skeleton = normalize_confusables(domain)
+    if skeleton != domain:
+        has_homograph = True
 
     if punycode.startswith("xn--") or has_homograph:
         return True, confusable_glyphs, punycode
@@ -89,16 +133,14 @@ def check_cousin_domain(domain: str, protected_domains: List[str]) -> Tuple[bool
         if clean_dom == prot_clean:
             continue
 
-        # Direct inclusion or typosquatting checks
-        # e.g., aicte-emergency-portal.org, portal-aicte.com, alcte-india.org
+        # Levenshtein distance check (1 to 3 edits)
         dist = levenshtein_distance(clean_dom, prot_clean)
         if 1 <= dist <= 3:
             return True, prot_clean
 
-        # Check keyword presence in suspicious composite domain
+        # Check keyword presence in suspicious composite domain (e.g. portal-aicte.com)
         prot_keyword = prot_clean.split(".")[0]
-        if prot_keyword in clean_dom and clean_dom != prot_clean:
-            # Check if it's an unauthorized variation
+        if len(prot_keyword) >= 4 and prot_keyword in clean_dom and clean_dom != prot_clean:
             if not clean_dom.endswith(f".{prot_clean}"):
                 return True, prot_clean
 
@@ -117,7 +159,7 @@ def detect_spoofing(
     prot_domains = protected_domains or settings.PROTECTED_DOMAINS
     vips = vip_names or settings.VIP_NAMES
 
-    reasons = []
+    reasons: List[str] = []
     spoof_score = 0.0
     sender_domain = sender_email.split("@")[-1].lower() if sender_email and "@" in sender_email else ""
     return_domain = return_path.split("@")[-1].lower() if return_path and "@" in return_path else ""
@@ -135,7 +177,7 @@ def detect_spoofing(
                 if not is_official:
                     display_spoof_flag = True
                     detected_vip = vip
-                    spoof_score += 40.0
+                    spoof_score += 45.0
                     reasons.append(
                         f"Display name impersonation detected: claims '{vip}', but sent from untrusted domain '{sender_domain}'"
                     )
@@ -146,7 +188,6 @@ def detect_spoofing(
     if reply_to and sender_email and reply_to.lower() != sender_email.lower():
         reply_to_divergence = True
         spoof_score += 25.0
-        # Severe penalty if reply-to diverts to public free mail providers
         free_mail = {"gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "proton.me", "protonmail.com"}
         if reply_domain in free_mail:
             spoof_score += 20.0
@@ -160,17 +201,32 @@ def detect_spoofing(
         spoof_score += 15.0
         reasons.append(f"Envelope Return-Path domain '{return_domain}' differs from From domain '{sender_domain}'")
 
-    # 3. Homograph & Punycode Detection
+    # 3. Homograph & Punycode Detection via Confusable Tables
     is_homograph, glyphs, punycode = detect_homograph(sender_domain)
+    skeleton = normalize_confusables(sender_domain)
+    targeted_domain: Optional[str] = None
+    if prot_domains:
+        for prot in prot_domains:
+            if skeleton == prot.lower() and sender_domain != prot.lower():
+                targeted_domain = prot
+                is_homograph = True
+                break
+
     if is_homograph:
-        spoof_score += 45.0
-        reasons.append(
-            f"IDN Homograph attack detected: domain '{sender_domain}' contains confusable Unicode glyphs {glyphs} (Punycode: {punycode})"
-        )
+        spoof_score += 50.0
+        if targeted_domain:
+            reasons.append(
+                f"Targeted Confusable Homograph Attack: domain '{sender_domain}' resolves to protected '{targeted_domain}' "
+                f"via Unicode confusable mapping (Punycode: {punycode}, glyphs: {glyphs})"
+            )
+        else:
+            reasons.append(
+                f"IDN Homograph attack detected: domain '{sender_domain}' contains confusable Unicode glyphs {glyphs} (Punycode: {punycode})"
+            )
 
     # 4. Cousin Domain (Typosquatting)
     is_lookalike, target_prot = check_cousin_domain(sender_domain, prot_domains)
-    if is_lookalike:
+    if is_lookalike and not is_homograph:
         spoof_score += 35.0
         reasons.append(
             f"Lookalike cousin domain detected: '{sender_domain}' mimics protected domain '{target_prot}'"
@@ -185,9 +241,9 @@ def detect_spoofing(
         reply_to_divergence=reply_to_divergence,
         spoof_score=spoof_score,
         detected_vip=detected_vip,
-        target_protected_domain=target_prot,
+        target_protected_domain=targeted_domain or target_prot,
         confusable_glyphs=glyphs,
+        confusable_skeleton=skeleton,
         punycode_domain=punycode if punycode.startswith("xn--") else None,
         reasons=reasons,
     )
-

@@ -1,0 +1,90 @@
+{
+  "model_type": "TF-IDF + LogisticRegression",
+  "trained_at": "2026-11-10T19:07:46.026332+00:00",
+  "seed": 26106,
+  "classes": [
+    "BEC_FINANCIAL",
+    "BENIGN",
+    "EXTORTION_COERCION",
+    "PHISHING"
+  ],
+  "total_samples": 45,
+  "train_samples": 36,
+  "test_samples": 9,
+  "cv_accuracy_mean": 1.0,
+  "cv_accuracy_std": 0.0,
+  "test_accuracy": 1.0,
+  "precision_macro": 1.0,
+  "recall_macro": 1.0,
+  "f1_macro": 1.0,
+  "f1_weighted": 1.0,
+  "roc_auc_ovr": 1.0,
+  "confusion_matrix": [
+    [
+      2,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      3,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      2,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "top_features": {
+    "BEC_FINANCIAL": [
+      "transfer",
+      "ifsc",
+      "000",
+      "account",
+      "rs",
+      "wire",
+      "payment",
+      "remittance"
+    ],
+    "BENIGN": [
+      "2026",
+      "annual",
+      "council",
+      "research",
+      "placement",
+      "convocation",
+      "submit",
+      "feedback"
+    ],
+    "EXTORTION_COERCION": [
+      "notice",
+      "compliance",
+      "non",
+      "hearing",
+      "immediate",
+      "regulatory",
+      "non compliance",
+      "cause"
+    ],
+    "PHISHING": [
+      "http",
+      "credentials",
+      "verify",
+      "security",
+      "login",
+      "portal",
+      "auth",
+      "access"
+    ]
+  }
+}

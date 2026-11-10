@@ -87,12 +87,12 @@ class Settings(BaseModel):
     TOR_EXIT_NODE_CACHE_TTL_HOURS: int = 6
     WHOIS_CACHE_TTL_HOURS: int = 24
 
-    # Scoring Weights (0–100 Composite Formula: Auth 25%, Header 20%, NLP 20%, URL 15%, OSINT 10%, Attach 10%)
+    # Scoring Weights (0–100 Composite Formula: Auth 25%, Hop/Geo 20%, NLP 20%, URL 20%, Brand/VIP 15%)
     WEIGHT_AUTH: float = 0.25
-    WEIGHT_HEADER: float = 0.20
+    WEIGHT_OSINT: float = 0.20
     WEIGHT_NLP: float = 0.20
-    WEIGHT_URL: float = 0.15
-    WEIGHT_OSINT: float = 0.10
+    WEIGHT_URL: float = 0.20
+    WEIGHT_HEADER: float = 0.15
     WEIGHT_ATTACHMENT: float = 0.10
 
     # Institutional VIPs for Display Name Impersonation
@@ -110,6 +110,11 @@ class Settings(BaseModel):
         "Approval Bureau AICTE",
         "Director, Academic Bureau",
         "Chief Vigilance Officer, AICTE",
+        "Ministry of Education",
+        "State Bank of India",
+        "Reserve Bank of India",
+        "Chairman SBI",
+        "RBI Fraud Monitoring",
     ]
 
     # Institutional Protected Domains
@@ -119,6 +124,10 @@ class Settings(BaseModel):
         "gov.in",
         "ugc.ac.in",
         "education.gov.in",
+        "sbi.co.in",
+        "rbi.org.in",
+        "bankofbaroda.in",
+        "icicibank.com",
     ]
 
 

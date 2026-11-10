@@ -1,156 +1,281 @@
-"""AI & NLP Forensic Content Classifier for Email Threat Detection.
+"""AI & Machine Learning Forensic Content Classifier for Email Threat Detection.
 
-Detects:
-1. Wire / Payment Diversion: Bank Account, IFSC, SWIFT codes, RTGS/NEFT wire solicitations.
-2. Artificial Urgency & Psychological Coercion: Deadlines, intake freeze, zero-admission threats.
-3. Credential Harvesting Lures: SSO expiration, password validation, biometric renewal.
+Replaces heuristic regex with a trained TF-IDF + Logistic Regression classification pipeline:
+1. Multi-class Threat Intent Classification:
+   - BEC_FINANCIAL (wire fraud, invoice redirection, payment solicitations)
+   - PHISHING (credential harvesting, credential theft lures, SSO expiry)
+   - EXTORTION_COERCION (intake reduction threats, zero-admission sanctions, regulatory intimidation)
+   - BENIGN (authentic academic notices, grant administrative communications, conferences)
+2. Explainable Token Attribution (LIME/Linear Feature Weights):
+   - Computes token-level importance scores from TF-IDF feature weights and logistic regression coefficients.
+3. High-Precision Entity Extraction:
+   - Indian banking coordinates (IFSC, 9-18 digit account numbers, SWIFT codes, Rupee amounts)
+   - Targeted regulatory institutions & executive bodies
+   - Coercive deadline constraints
 """
 
 from __future__ import annotations
 
+import logging
 import re
-from typing import Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Tuple
 
-from pydantic import BaseModel
+import joblib
+from pydantic import BaseModel, Field
+
+logger = logging.getLogger("nlp_engine")
+
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
+STORAGE_DIR = PROJECT_ROOT / "storage"
+MODEL_FILE = STORAGE_DIR / "models" / "email_threat_classifier.joblib"
+
+# Lazy-loaded model singleton
+_MODEL_PIPELINE: Any = None
+
+
+def get_or_load_model() -> Any:
+    """Load the serialized scikit-learn classifier pipeline or train on first run."""
+    global _MODEL_PIPELINE
+    if _MODEL_PIPELINE is not None:
+        return _MODEL_PIPELINE
+
+    if MODEL_FILE.exists():
+        try:
+            _MODEL_PIPELINE = joblib.load(MODEL_FILE)
+            logger.info("Loaded persisted AI threat classifier from %s", MODEL_FILE)
+            return _MODEL_PIPELINE
+        except Exception as exc:
+            logger.warning("Failed to load model from %s (%s); retraining pipeline", MODEL_FILE, exc)
+
+    from backend.app.ai.model_trainer import train_and_evaluate_model
+    train_and_evaluate_model()
+    _MODEL_PIPELINE = joblib.load(MODEL_FILE)
+    return _MODEL_PIPELINE
+
+
+class TokenAttribution(BaseModel):
+    """Explainable AI feature attribution for top contributing tokens."""
+    token: str
+    weight: float
+    intent: str
 
 
 class NLPAnalysisResult(BaseModel):
     """Forensic evaluation of email textual content and psychological triggers."""
     nlp_score: float = 0.0
-    category: str = "BENIGN"  # BEC_FINANCIAL, CREDENTIAL_LURE, EXTORTION_COERCION, BENIGN
+    category: str = "BENIGN"  # BEC_FINANCIAL, PHISHING, EXTORTION_COERCION, BENIGN
+    predicted_class: str = "BENIGN"
+    confidence: float = 0.0
+    probabilities: Dict[str, float] = Field(default_factory=dict)
+    top_contributing_tokens: List[TokenAttribution] = Field(default_factory=list)
     is_bec_financial: bool = False
     is_urgency_coercion: bool = False
     is_credential_lure: bool = False
-    extracted_entities: Dict[str, List[str]] = {}
-    matched_phrases: List[str] = []
-    reasons: List[str] = []
+    extracted_entities: Dict[str, List[str]] = Field(default_factory=dict)
+    matched_phrases: List[str] = Field(default_factory=list)
+    reasons: List[str] = Field(default_factory=list)
 
 
-# Indian Financial System Code (IFSC): 4 letters, '0', 6 alphanumeric
+# High-Precision Regex Patterns for Regulatory & Banking Entities
 IFSC_REGEX = re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b")
-# Indian Bank Account Number: 9 to 18 digits preceded by account context
-ACCOUNT_REGEX = re.compile(r"(?:account(?:\s+number)?|a\/c|beneficiary(?:\s+acct)?)\s*[:#-]?\s*([0-9]{9,18})\b", re.IGNORECASE)
-# Indian Rupee monetary values (Rs., INR, ₹)
-CURRENCY_REGEX = re.compile(r"(?:rs\.?|inr|₹)\s*([0-9,]{4,}(?:\s*(?:lakhs?|crores?))?)", re.IGNORECASE)
-# SWIFT / BIC codes
+ACCOUNT_REGEX = re.compile(
+    r"(?:account(?:\s+number)?|a\/c|beneficiary(?:\s+acct)?)\s*[:#-]?\s*([0-9]{9,18})\b",
+    re.IGNORECASE,
+)
+CURRENCY_REGEX = re.compile(
+    r"(?:rs\.?|inr|₹|usd|\$)\s*([0-9,]{3,}(?:\s*(?:lakhs?|crores?))?)",
+    re.IGNORECASE,
+)
 SWIFT_REGEX = re.compile(r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b")
+DEADLINE_REGEX = re.compile(
+    r"\b(?:within\s+[0-9]+\s*(?:hours?|days?)|before\s+[0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?|today\s+itself|close\s+of\s+business)\b",
+    re.IGNORECASE,
+)
 
-# Coercion and Urgency Lexicon
-URGENCY_KEYWORDS = [
-    "urgent", "immediately", "within 24 hours", "before close of business", "end of day",
-    "today itself", "confidential & high priority", "immediate action required",
-    "final deadline", "strictly confidential", "without delay", "time-sensitive"
-]
-
-COERCION_PENALTY_KEYWORDS = [
-    "suspension of approval", "zero-admission", "reduction in sanctioned intake",
-    "freezing of your aicte", "deficiency notice", "severe non-compliance",
-    "legal penalty", "disaffiliation", "cancellation of intake"
-]
-
-FINANCIAL_BEC_KEYWORDS = [
-    "rtgs", "neft", "wire transfer", "remittance", "escrow account",
-    "commitment fee", "grant allocation", "matching grant", "treasury reconciliation",
-    "disbursement", "beneficiary account", "advance payment"
-]
-
-CREDENTIAL_LURE_KEYWORDS = [
-    "password expired", "verify credentials", "biometric re-validation",
-    "confirm your credentials", "re-authenticate", "sso account",
-    "login immediately", "portal credentials", "session timeout"
+INSTITUTIONAL_TARGETS = [
+    "AICTE", "All India Council for Technical Education", "Ministry of Education",
+    "UGC", "University Grants Commission", "National Board of Accreditation", "NBA",
+    "State Bank of India", "SBI", "Bank of Baroda", "ICICI Bank", "Punjab National Bank",
 ]
 
 
-def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAnalysisResult:
-    """Analyze subject and body text for BEC fraud, coercion, and phishing lures."""
-    full_text = f"{subject or ''} {body or ''}"
-    lower_text = full_text.lower()
-
-    extracted_entities: Dict[str, List[str]] = {
+def extract_entities_and_cues(text: str) -> Tuple[Dict[str, List[str]], List[str]]:
+    """Extract banking coordinates, monetary sums, deadlines, and institutions."""
+    entities: Dict[str, List[str]] = {
         "ifsc_codes": [],
         "bank_accounts": [],
         "amounts": [],
         "swift_codes": [],
+        "deadlines": [],
+        "targeted_institutions": [],
     }
-    matched_phrases = []
-    reasons = []
 
-    # 1. Financial Entity Extraction
-    for match in IFSC_REGEX.finditer(full_text):
-        code = match.group(0)
-        # Avoid common English false-positive words that might match
-        if code not in ("POST000000", "TEXT000000"):
-            extracted_entities["ifsc_codes"].append(code)
+    # IFSC
+    for m in IFSC_REGEX.finditer(text):
+        val = m.group(0)
+        if val not in ("POST000000", "TEXT000000"):
+            entities["ifsc_codes"].append(val)
 
-    for match in ACCOUNT_REGEX.finditer(full_text):
-        extracted_entities["bank_accounts"].append(match.group(1))
+    # Bank Accounts
+    for m in ACCOUNT_REGEX.finditer(text):
+        entities["bank_accounts"].append(m.group(1))
 
-    for match in CURRENCY_REGEX.finditer(full_text):
-        extracted_entities["amounts"].append(match.group(0).strip())
+    # Amounts
+    for m in CURRENCY_REGEX.finditer(text):
+        entities["amounts"].append(m.group(0).strip())
 
-    # 2. Wire & Payment Diversion Classification
-    is_bec = False
-    financial_hits = [kw for kw in FINANCIAL_BEC_KEYWORDS if kw in lower_text]
-    if (extracted_entities["ifsc_codes"] or extracted_entities["bank_accounts"] or extracted_entities["amounts"]) and financial_hits:
-        is_bec = True
-        matched_phrases.extend(financial_hits)
-        reasons.append(
-            f"BEC Financial Diversion Detected: Requests wire transfer/remittance with bank coordinates {extracted_entities}"
+    # SWIFT
+    for m in SWIFT_REGEX.finditer(text):
+        val = m.group(0)
+        if any(b in text.upper() for b in ["BANK", "WIRE", "REMIT", "SWIFT"]):
+            entities["swift_codes"].append(val)
+
+    # Deadlines
+    for m in DEADLINE_REGEX.finditer(text):
+        entities["deadlines"].append(m.group(0))
+
+    # Targeted Institutions
+    text_upper = text.upper()
+    for inst in INSTITUTIONAL_TARGETS:
+        if inst.upper() in text_upper:
+            entities["targeted_institutions"].append(inst)
+
+    cues: List[str] = []
+    if entities["ifsc_codes"] or entities["bank_accounts"]:
+        cues.append("Banking coordinates present")
+    if entities["amounts"]:
+        cues.append(f"Monetary solicitation: {', '.join(entities['amounts'][:2])}")
+    if entities["deadlines"]:
+        cues.append(f"High-pressure deadline: {', '.join(entities['deadlines'][:2])}")
+
+    return entities, cues
+
+
+def compute_token_attributions(
+    pipeline: Any,
+    text: str,
+    target_class: str,
+    top_k: int = 6,
+) -> List[TokenAttribution]:
+    """Calculate token-level feature attribution using model coefficients and TF-IDF weights."""
+    try:
+        vectorizer = pipeline.named_steps["tfidf"]
+        classifier = pipeline.named_steps["clf"]
+
+        tfidf_vec = vectorizer.transform([text])
+        feature_names = vectorizer.get_feature_names_out()
+
+        class_idx = list(classifier.classes_).index(target_class)
+        coefs = classifier.coef_[class_idx]
+
+        # Element-wise product of TF-IDF weight and model coefficient
+        nz_indices = tfidf_vec.nonzero()[1]
+        scores = []
+        for idx in nz_indices:
+            weight = float(tfidf_vec[0, idx] * coefs[idx])
+            scores.append((str(feature_names[idx]), weight))
+
+        # Sort by positive contribution to the predicted class
+        scores.sort(key=lambda x: x[1], reverse=True)
+
+        attributions = [
+            TokenAttribution(token=token, weight=round(weight, 4), intent=target_class)
+            for token, weight in scores[:top_k]
+            if weight > 0.01
+        ]
+        return attributions
+    except Exception as exc:
+        logger.debug("Failed computing token attribution: %s", exc)
+        return []
+
+
+def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAnalysisResult:
+    """Perform multi-class intent classification and entity extraction on email text."""
+    full_text = f"{subject or ''} {body or ''}".strip()
+    if not full_text:
+        return NLPAnalysisResult(
+            nlp_score=0.0,
+            category="BENIGN",
+            predicted_class="BENIGN",
+            confidence=1.0,
+            probabilities={"BENIGN": 1.0},
         )
 
-    # 3. Urgency & Coercion Classification
-    is_urgency = False
-    urgency_hits = [kw for kw in URGENCY_KEYWORDS if kw in lower_text]
-    coercion_hits = [kw for kw in COERCION_PENALTY_KEYWORDS if kw in lower_text]
-    if urgency_hits or coercion_hits:
-        is_urgency = True
-        matched_phrases.extend(urgency_hits + coercion_hits)
-        if coercion_hits:
-            reasons.append(f"Institutional Coercion Tactics: Threatens administrative penalties {coercion_hits}")
-        if urgency_hits:
-            reasons.append(f"Artificial Urgency Phrasing: High-pressure time constraints {urgency_hits}")
+    pipeline = get_or_load_model()
+    classes = list(pipeline.classes_)
 
-    # 4. Credential Theft Lures
-    is_cred = False
-    cred_hits = [kw for kw in CREDENTIAL_LURE_KEYWORDS if kw in lower_text]
-    if cred_hits:
-        is_cred = True
-        matched_phrases.extend(cred_hits)
-        reasons.append(f"Credential Harvesting Lures Detected: Requests authentication renewal {cred_hits}")
+    # 1. Model Prediction & Probabilities
+    probs_raw = pipeline.predict_proba([full_text])[0]
+    probabilities = {cls: round(float(prob), 4) for cls, prob in zip(classes, probs_raw)}
 
-    # 5. Calculate NLP Threat Score
+    pred_class = str(pipeline.predict([full_text])[0])
+    confidence = float(probabilities[pred_class])
+
+    # 2. Entity Extraction
+    extracted_entities, cues = extract_entities_and_cues(full_text)
+
+    # 3. Explainability Token Attributions
+    attributions = compute_token_attributions(pipeline, full_text, pred_class)
+
+    # 4. Intent Classification Flags
+    is_bec = pred_class == "BEC_FINANCIAL" or (
+        bool(extracted_entities["ifsc_codes"] or extracted_entities["bank_accounts"])
+        and bool(extracted_entities["amounts"])
+    )
+    is_cred = pred_class == "PHISHING"
+    is_urgency = pred_class == "EXTORTION_COERCION" or len(extracted_entities["deadlines"]) > 0
+
+    reasons: List[str] = []
+    if pred_class == "BEC_FINANCIAL":
+        reasons.append(
+            f"AI Intent: Business Email Compromise / Wire Diversion ({confidence*100:.1f}% confidence). "
+            f"Banking coordinates extracted: IFSC {extracted_entities['ifsc_codes']}, Accounts {extracted_entities['bank_accounts']}"
+        )
+    elif pred_class == "PHISHING":
+        reasons.append(
+            f"AI Intent: Credential Harvesting / Impersonation Lure ({confidence*100:.1f}% confidence)."
+        )
+    elif pred_class == "EXTORTION_COERCION":
+        reasons.append(
+            f"AI Intent: Regulatory Coercion / Administrative Penalty Threat ({confidence*100:.1f}% confidence). "
+            f"High-pressure deadline cues: {extracted_entities['deadlines']}"
+        )
+    elif pred_class == "BENIGN":
+        reasons.append(f"AI Intent: Authentic Routine Institutional Correspondence ({confidence*100:.1f}% confidence).")
+
+    # 5. Calibrated NLP Threat Score (0.0 to 100.0)
     score = 0.0
-    if is_bec:
-        score += 55.0
-    if is_cred:
-        score += 50.0
-    if is_urgency:
-        score += 25.0
-    if coercion_hits:
-        score += 20.0
+    if pred_class == "BEC_FINANCIAL":
+        score = 65.0 + (confidence * 30.0)
+    elif pred_class == "PHISHING":
+        score = 55.0 + (confidence * 35.0)
+    elif pred_class == "EXTORTION_COERCION":
+        score = 50.0 + (confidence * 35.0)
+    else:  # BENIGN
+        score = (1.0 - confidence) * 20.0
 
-    score = min(100.0, score)
+    # Entity severity adjustments
+    if extracted_entities["ifsc_codes"] and extracted_entities["bank_accounts"]:
+        score = max(score, 75.0)
+    if is_bec and extracted_entities["amounts"]:
+        score = max(score, 80.0)
 
-    # Primary Category Determination
-    if is_bec:
-        category = "BEC_FINANCIAL"
-    elif is_cred:
-        category = "CREDENTIAL_LURE"
-    elif is_urgency and coercion_hits:
-        category = "EXTORTION_COERCION"
-    elif score > 20.0:
-        category = "SUSPICIOUS_CONTENT"
-    else:
-        category = "BENIGN"
+    score = min(100.0, round(score, 1))
+
+    matched_phrases = [attr.token for attr in attributions] + cues
 
     return NLPAnalysisResult(
         nlp_score=score,
-        category=category,
+        category=pred_class,
+        predicted_class=pred_class,
+        confidence=confidence,
+        probabilities=probabilities,
+        top_contributing_tokens=attributions,
         is_bec_financial=is_bec,
         is_urgency_coercion=is_urgency,
         is_credential_lure=is_cred,
         extracted_entities=extracted_entities,
-        matched_phrases=list(set(matched_phrases)),
+        matched_phrases=matched_phrases,
         reasons=reasons,
     )
-

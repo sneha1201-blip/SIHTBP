@@ -103,11 +103,19 @@ def compute_threat_score(
         override_score = max(override_score, 92.0)
         override_reason = "CRITICAL OVERRIDE: Bulletproof Infrastructure Campaign Targeting Institutions"
 
+    # DKIM FAIL + high-risk URL (> 50.0) override -> automatic PHISHING
+    if auth_res.dkim_status in ("FAIL", "INVALID", "BODY_HASH_MISMATCH") and url_subscore >= 50.0:
+        critical_override = True
+        override_score = max(override_score, 86.0)
+        override_reason = "CRITICAL OVERRIDE: Cryptographic DKIM Failure paired with High-Risk URL Lure"
+
     final_score = round(min(100.0, override_score if critical_override else weighted_score), 1)
 
     # 4. Categorical Verdict
     if spoof_res.display_spoof_flag and nlp_res.is_bec_financial:
         verdict = "BEC"
+    elif auth_res.dkim_status in ("FAIL", "INVALID", "BODY_HASH_MISMATCH") and url_subscore >= 50.0:
+        verdict = "PHISHING"
     elif is_bulletproof_origin and final_score >= 90.0:
         verdict = "MALICIOUS"
     elif has_dangerous_attachment and final_score >= 80.0:
@@ -147,6 +155,7 @@ def compute_threat_score(
             "attachment": round(attach_subscore, 1),
         },
         "critical_override_applied": critical_override,
+        "override_reason": override_reason,
         "authentication": {
             "spf_status": auth_res.spf_status,
             "dkim_status": auth_res.dkim_status,

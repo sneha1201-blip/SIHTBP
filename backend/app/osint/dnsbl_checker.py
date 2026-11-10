@@ -83,7 +83,7 @@ def query_dnsbl(
     if custom_dnsbl_fixtures and clean_ip in custom_dnsbl_fixtures:
         fixture_listings = [
             DNSBLListing(
-                provider=item.get("provider", "MockDNSBL"),
+                provider=item.get("provider", "TestDNSBL"),
                 return_code=item.get("return_code", "127.0.0.2"),
                 description=item.get("description", "Confirmed threat actor IP"),
             )
