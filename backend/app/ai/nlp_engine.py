@@ -37,7 +37,7 @@ SWIFT_REGEX = re.compile(r"\b[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b")
 
 # Coercion and Urgency Lexicon
 URGENCY_KEYWORDS = [
-    "urgent", "immediately", "within 24 hours", "before 4:00 pm", "before 5:00 pm",
+    "urgent", "immediately", "within 24 hours", "before close of business", "end of day",
     "today itself", "confidential & high priority", "immediate action required",
     "final deadline", "strictly confidential", "without delay", "time-sensitive"
 ]

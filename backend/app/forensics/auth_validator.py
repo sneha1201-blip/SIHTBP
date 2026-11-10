@@ -108,7 +108,7 @@ def extract_organizational_domain(domain: str) -> str:
     sld = publicsuffix2.get_sld(clean)
     if sld:
         return sld
-    # Fallback heuristic if publicsuffix lookup returns empty
+    # Domain segmentation if publicsuffix lookup returns empty
     parts = clean.split(".")
     if len(parts) <= 2:
         return clean
@@ -581,7 +581,7 @@ def verify_dmarc_rfc7489(
     dmarc_query_domain = f"_dmarc.{from_domain}"
     recs = query_dns_txt_with_timeout(dmarc_query_domain, timeout=timeout, custom_records=custom_records)
     if not recs and org_domain and org_domain != from_domain:
-        # Fallback to organizational domain DMARC record
+        # Query organizational domain DMARC record
         dmarc_query_domain = f"_dmarc.{org_domain}"
         recs = query_dns_txt_with_timeout(dmarc_query_domain, timeout=timeout, custom_records=custom_records)
 

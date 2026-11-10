@@ -20,9 +20,9 @@ export function NlpIntentViewer({ bodyPlain, bodyHtml, bodyText, subject, analys
   // Highlight rules for AI cues
   const highlightAiEntities = (content: string) => {
     // Regex for financial triggers (Account, IFSC, RTGS, Amounts)
-    const financialRegex = /(HDFC[0-9]{7}|Account\s*:\s*[0-9]+|RTGS|remit(?:tance)?|escrow\s*account|Rs\.?\s*[0-9,]+)/gi;
+    const financialRegex = /([A-Z]{4}0[A-Z0-9]{6}|Account\s*:\s*[0-9]+|RTGS|NEFT|remit(?:tance)?|escrow\s*account|Rs\.?\s*[0-9,]+|INR\s*[0-9,]+)/gi;
     // Regex for urgency triggers
-    const urgencyRegex = /(immediately|within 24 hours|before 4:00 PM today|URGENT & CONFIDENTIAL|mandatory|reduction in sanctioned intake|zero-admission)/gi;
+    const urgencyRegex = /(immediately|within\s+[0-9]+\s*hours?|before\s+[0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?|URGENT & CONFIDENTIAL|mandatory|reduction in sanctioned intake|zero-admission)/gi;
     // Regex for credential lure triggers
     const credRegex = /(login immediately|verify credentials|biometric re-validation|confirm your credentials|password expired)/gi;
 
@@ -30,10 +30,9 @@ export function NlpIntentViewer({ bodyPlain, bodyHtml, bodyText, subject, analys
 
     return parts.map((line, lineIdx) => {
       // Split line by detected keywords
-      const words = line.split(/(\s+)/);
       return (
         <div key={lineIdx} className="leading-relaxed min-h-[1.25rem]">
-          {line.split(/(HDFC[0-9]{7}|Account\s*:\s*[0-9]+|RTGS|remit(?:tance)?|escrow\s*account|Rs\.?\s*[0-9,]+|immediately|within 24 hours|before 4:00 PM today|URGENT & CONFIDENTIAL|mandatory|reduction in sanctioned intake|zero-admission|login immediately|verify credentials|biometric re-validation|confirm your credentials|password expired)/gi).map((token, idx) => {
+          {line.split(/([A-Z]{4}0[A-Z0-9]{6}|Account\s*:\s*[0-9]+|RTGS|NEFT|remit(?:tance)?|escrow\s*account|Rs\.?\s*[0-9,]+|INR\s*[0-9,]+|immediately|within\s+[0-9]+\s*hours?|before\s+[0-9]{1,2}(?::[0-9]{2})?\s*(?:am|pm)?|URGENT & CONFIDENTIAL|mandatory|reduction in sanctioned intake|zero-admission|login immediately|verify credentials|biometric re-validation|confirm your credentials|password expired)/gi).map((token, idx) => {
             if (financialRegex.test(token)) {
               return (
                 <span

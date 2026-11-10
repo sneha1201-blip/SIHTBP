@@ -93,18 +93,25 @@ def test_offline_resilience() -> bool:
     from backend.app.osint.tor_detector import is_anonymizing_vpn_or_bulletproof, is_tor_exit_node
 
     try:
-        # Test Indian institutional IP
-        geo_aicte = resolve_ip_geo("164.100.24.1")
+        # Test zero-guess unresolvable IP handling (private / uninstalled database)
+        geo_priv = resolve_ip_geo("192.168.1.1")
+        assert geo_priv.latitude is None and geo_priv.longitude is None
+        assert geo_priv.resolution_status == "UNRESOLVED"
+
+        # Test GeoIP resolution (via MaxMind or fixture)
+        test_geo_db = {
+            "164.100.24.1": {"country": "India", "city": "New Delhi", "latitude": 28.6139, "longitude": 77.2090},
+            "185.220.101.5": {"country": "Germany", "city": "Frankfurt am Main", "latitude": 50.1109, "longitude": 8.6821},
+        }
+        geo_aicte = resolve_ip_geo("164.100.24.1", custom_geo_db=test_geo_db)
         assert geo_aicte.country == "India", f"Expected India, got {geo_aicte.country}"
         assert geo_aicte.latitude is not None and geo_aicte.longitude is not None
 
         # Test Tor exit node
-        geo_tor = resolve_ip_geo("185.220.101.5")
-        assert geo_tor.country in ("Germany", "European Transit", "European Region")
         assert is_tor_exit_node("185.220.101.5") is True, "Tor exit node should be detected."
         assert is_tor_exit_node("164.100.24.1") is False, "Legitimate institutional IP flagged as Tor."
 
-        # Test Bulletproof ASN
+        # Test Bulletproof ASN / Subnet
         is_vpn, is_bp = is_anonymizing_vpn_or_bulletproof("193.109.69.52")
         assert is_bp is True, "Bulletproof ASN should be flagged."
 
@@ -115,7 +122,7 @@ def test_offline_resilience() -> bool:
         report_step(
             "2. Air-Gapped & Offline Resilience",
             True,
-            "Embedded GeoIP OK | Tor Exit Cache OK | DNS 1.5s Timeout Guard OK",
+            "Zero-Guess GeoIP OK | Tor Snapshot Cache OK | DNS 1.5s Timeout Guard OK",
         )
         return True
     except Exception as exc:

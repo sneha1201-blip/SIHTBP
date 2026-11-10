@@ -120,9 +120,11 @@ export function GeoTraceMap({ hops }: GeoTraceMapProps) {
                 </div>
 
                 <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 flex items-center gap-1 truncate max-w-[130px]">
+                  <span className="text-slate-400 flex items-center gap-1 truncate max-w-[140px]">
                     <MapPin className="w-3 h-3 text-cyan-400 shrink-0" />
-                    {hop.geo_country ? `${hop.geo_city ? hop.geo_city + ', ' : ''}${hop.geo_country}` : 'Internal / Private'}
+                    {hop.geo_country
+                      ? `${hop.geo_city ? hop.geo_city + ', ' : ''}${hop.geo_country}`
+                      : (hop.is_private_ip ? 'Unresolved (Private)' : 'Unresolved')}
                   </span>
                   {hop.delay_seconds !== null && hop.delay_seconds !== undefined && (
                     <span className="text-amber-400 font-mono text-[10px] flex items-center gap-0.5">

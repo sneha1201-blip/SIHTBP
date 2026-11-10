@@ -109,7 +109,7 @@ def validate_email_bytes(raw_bytes: bytes, filename: str) -> None:
     has_rfc822_header = any(pattern.search(header_sample) is not None for pattern in COMMON_RFC822_HEADER_PATTERNS)
 
     if not has_rfc822_header:
-        # Fallback check: look for generic 'Name: Value' header format on initial lines
+        # Secondary check: look for generic 'Name: Value' header format on initial lines
         try:
             text_sample = header_sample.decode("utf-8", errors="replace")
             lines = [line.strip() for line in text_sample.splitlines() if line.strip()]

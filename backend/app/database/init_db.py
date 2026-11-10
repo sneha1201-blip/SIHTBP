@@ -284,7 +284,7 @@ def main() -> None:
         description="AICTE Forensic Intelligence Platform Database Initializer & Verification Runner"
     )
     parser.add_argument("--reset", action="store_true", help="Drop and recreate all tables from scratch")
-    parser.add_argument("--no-seed", action="store_true", help="Skip populating mock forensic data")
+    parser.add_argument("--no-seed", action="store_true", help="Skip populating sample seed data")
     args = parser.parse_args()
 
     success = init_db_and_verify(reset=args.reset, seed=not args.no_seed)

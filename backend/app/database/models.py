@@ -439,7 +439,7 @@ class Campaign(Base):
         String(64), index=True, nullable=False, doc="Clustering pivot: ASN, IP_SUBNET, SENDER_DOMAIN, SIMHASH, COMPOSITE"
     )
     cluster_key: Mapped[str] = mapped_column(
-        String(255), index=True, nullable=False, doc="Unique clustering key (e.g. AS49870, 194.36.191.0/24, SimHash hash)"
+        String(255), index=True, nullable=False, doc="Unique clustering key (e.g. ASN number, IP subnet CIDR, or SimHash value)"
     )
     severity: Mapped[str] = mapped_column(
         String(32), default="MEDIUM", nullable=False, doc="LOW, MEDIUM, HIGH, CRITICAL"

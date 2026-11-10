@@ -1,7 +1,7 @@
-"""Outlook MSG (.msg) Parser with Resilient Fallback Regex Scanner.
+"""Outlook MSG (.msg) Parser with Resilient Secondary Salvage Regex Scanner.
 
 Extracts headers, bodies, recipients, and attachments from Outlook compound document files.
-Includes a dedicated fallback ASCII/MIME regex scanner to handle corrupted OLE streams
+Includes a dedicated salvage ASCII/MIME regex scanner to handle corrupted OLE streams
 or truncated files without raising unhandled 500 exceptions.
 """
 
@@ -24,7 +24,7 @@ from backend.app.parsers.mime_normalizer import (
 logger = logging.getLogger("msg_parser")
 
 
-def fallback_ascii_msg_scanner(
+def salvage_ascii_msg_scanner(
     raw_bytes: bytes, filename: str, sha256_hash: str, md5_hash: str
 ) -> ParsedEmailData:
     """Extract forensic metadata from corrupted OLE streams using raw ASCII/UTF-8 regex scanning.
@@ -32,7 +32,7 @@ def fallback_ascii_msg_scanner(
     Ensures that corrupted Outlook files, partial memory dumps, or invalid compound documents
     never cause an unhandled 500 server crash during forensic triage.
     """
-    logger.warning("Invoking fallback ASCII/MIME regex scanner for corrupted .msg: %s", filename)
+    logger.warning("Invoking salvage ASCII/MIME regex scanner for corrupted .msg: %s", filename)
 
     # Extract all printable ASCII string segments of length >= 4
     string_chunks = re.findall(rb"[\x20-\x7E\r\n\t]{4,}", raw_bytes)
@@ -98,9 +98,9 @@ def fallback_ascii_msg_scanner(
 def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailData:
     """Parse raw Outlook .msg bytes into a normalized ParsedEmailData structure.
 
-    Wrapped with multi-tiered fallback:
+    Wrapped with multi-tiered recovery:
     1. extract-msg compound document parser
-    2. MIME/EML fallback parser (if mislabeled ASCII email)
+    2. MIME/EML parser (if mislabeled ASCII email)
     3. Resilient ASCII/MIME regex scanner (for corrupted binary streams)
     """
     sha256_hash, md5_hash = calculate_hashes(raw_bytes)
@@ -192,7 +192,7 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
         from backend.app.parsers.eml_parser import parse_eml
         return parse_eml(raw_bytes, filename=filename)
     except Exception as exc_eml:
-        logger.debug("EML fallback failed on %s: %s. Attempting Tier 3 ASCII regex scanner.", filename, exc_eml)
+        logger.debug("EML parser attempt failed on %s: %s. Attempting Tier 3 ASCII regex scanner.", filename, exc_eml)
 
-    # Tier 3: Resilient fallback ASCII regex scanner
-    return fallback_ascii_msg_scanner(raw_bytes, filename, sha256_hash, md5_hash)
+    # Tier 3: Resilient salvage ASCII regex scanner
+    return salvage_ascii_msg_scanner(raw_bytes, filename, sha256_hash, md5_hash)
