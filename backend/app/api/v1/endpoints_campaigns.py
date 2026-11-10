@@ -7,12 +7,13 @@ infrastructure linkages, shared bulletproof ASNs, and SimHash body campaign clus
 from __future__ import annotations
 
 from typing import Any, Dict, List
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.database.models import Campaign, CampaignEmail, Email, HeaderHop, ThreatIndicator
+from backend.app.database.models import Campaign, CampaignEmail, Email
 from backend.app.database.session import get_db
 
 router = APIRouter()

@@ -8,8 +8,9 @@ from __future__ import annotations
 
 import re
 import socket
+from typing import List, Optional
 from urllib.parse import unquote, urlparse
-from typing import Dict, List, Optional
+
 from pydantic import BaseModel
 
 

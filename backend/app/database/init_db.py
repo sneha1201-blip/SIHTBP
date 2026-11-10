@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import os
 import sys
 from pathlib import Path
 
@@ -17,7 +16,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List
 
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,13 +39,10 @@ from backend.app.database.session import (
     close_database,
     create_all_tables,
     drop_all_tables,
-    engine,
-    reset_database,
 )
 from backend.app.database.vault import (
     canonicalize_audit_payload,
     get_vault_dir,
-    read_raw_evidence,
     verify_evidence_integrity,
     verify_hmac_signature,
 )
@@ -82,7 +78,7 @@ async def get_table_counts(session: AsyncSession) -> Dict[str, int]:
     return counts
 
 
-async def verify_forensic_cases(session: AsyncSession) -> List[Dict[str, any]]:
+async def verify_forensic_cases(session: AsyncSession) -> List[Dict[str, Any]]:
     """Retrieve and verify all seeded forensic test cases."""
     stmt = (
         select(Email)
@@ -147,7 +143,7 @@ async def verify_forensic_cases(session: AsyncSession) -> List[Dict[str, any]]:
     return cases_summary
 
 
-def render_ascii_tables(counts: Dict[str, int], cases: List[Dict[str, any]]) -> None:
+def render_ascii_tables(counts: Dict[str, int], cases: List[Dict[str, Any]]) -> None:
     """Format and print ASCII summary verification tables."""
     # Table Inventory
     print("+" + "-" * 42 + "+" + "-" * 16 + "+" + "-" * 18 + "+")
@@ -221,7 +217,7 @@ async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
         print("----------------------------------------------------------------------------------------")
         print(f"[*] Cryptographic Vault Status:     {'ALL EVIDENCE FILES INTACT (SHA-256 MATCH)' if all_vault_intact else 'INTEGRITY MISMATCH DETECTED'}")
         print(f"[*] Audit Ledger Chain of Custody:  {'ALL HMAC-SHA256 SIGNATURES VERIFIED' if all_hmac_valid else 'SIGNATURE VERIFICATION FAILED'}")
-        print(f"[*] Zero-Setup Hackathon Execution: READY FOR DEMO DAY")
+        print("[*] Zero-Setup Hackathon Execution: READY FOR DEMO DAY")
         print("----------------------------------------------------------------------------------------")
         print()
 

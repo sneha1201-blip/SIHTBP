@@ -29,6 +29,11 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Type checks & linters
+.ruff_cache/
+.mypy_cache/
+*.tsbuildinfo
+
 # IDEs
 .vscode/
 .idea/

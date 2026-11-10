@@ -10,7 +10,7 @@ import os
 from pathlib import Path
 from typing import List
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 # Absolute directory paths
 BACKEND_DIR = Path(__file__).resolve().parent.parent.parent

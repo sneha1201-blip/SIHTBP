@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import io
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -97,7 +97,7 @@ def generate_forensic_pdf(
     )
 
     styles = getSampleStyleSheet()
-    
+
     # Custom forensic typography styles
     title_style = ParagraphStyle(
         "DocTitle",

@@ -7,11 +7,11 @@ for air-gapped hackathon execution.
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import logging
 from pathlib import Path
-import ipaddress
-from typing import Set, List, Tuple
+from typing import List, Set, Tuple
 
 logger = logging.getLogger("tor_detector")
 

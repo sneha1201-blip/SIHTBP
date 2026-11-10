@@ -91,7 +91,7 @@ export function TopBar({
               Case 3: Tor Exit Node Harvester (98/100)
             </option>
             <option value="homograph-attack" className="bg-slate-900 text-white">
-              Case 4: Cyrillic Homograph 'а' (88/100)
+              Case 4: Cyrillic Homograph &apos;а&apos; (88/100)
             </option>
             <option value="falconshield-cluster" className="bg-slate-900 text-white">
               Case 5: Operation FalconShield Cluster (92/100)

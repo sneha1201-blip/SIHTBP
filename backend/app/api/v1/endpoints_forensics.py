@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
 from sqlalchemy import select
@@ -155,7 +155,7 @@ async def analyze_email_evidence(
     )
 
     # 7. Extract IOCs
-    hop_ips = [h["hop_ip"] for h in enriched_hops if h["hop_ip"]]
+    hop_ips: list[str] = [str(h["hop_ip"]) for h in enriched_hops if h.get("hop_ip")]
     raw_iocs = extract_iocs(
         body_plain=parsed.body_plain,
         body_html=parsed.body_html,
@@ -293,7 +293,7 @@ async def analyze_email_evidence(
     # Check / Link Campaign Clusters
     if is_bulletproof_origin or composite.verdict in ("MALICIOUS", "PHISHING"):
         # Check if existing campaign matches ASN or SimHash prefix
-        camp_stmt = select(Campaign).where(Campaign.cluster_key.like(f"%AS49870%")).limit(1)
+        camp_stmt = select(Campaign).where(Campaign.cluster_key.like("%AS49870%")).limit(1)
         camp_res = await db.execute(camp_stmt)
         campaign = camp_res.scalar_one_or_none()
         if campaign:

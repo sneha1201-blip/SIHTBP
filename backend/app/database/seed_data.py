@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import asyncio
 import logging
-import os
 import sys
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -23,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -146,7 +145,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
     logger.info("Generating Case 1: Legitimate Academic Email (AICTE Circular)...")
     c1_date = now - timedelta(days=4, hours=2)
     c1_date_str = c1_date.strftime("%a, %d %b %Y %H:%M:%S +0000")
-    c1_msg_id = f"20261028091522.7841.aicte-cell@mta01.delhi.nic.in"
+    c1_msg_id = "20261028091522.7841.aicte-cell@mta01.delhi.nic.in"
     c1_subject = "[AICTE-OFFICIAL] Circular: Mandatory Faculty Development Programme on Cyber Security & Incident Response 2026-27"
     c1_sender_raw = '"AICTE Cyber Security Cell" <no-reply@aicte-india.org>'
     c1_sender_email = "no-reply@aicte-india.org"
@@ -370,7 +369,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         reputation_score=1.0,
         ioc_metadata={"category": "GOVERNMENT_EDUCATION", "trust_rank": "HIGH"},
     )
-    session.add_all([ioc_c1_url, inoc_c1_domain := ioc_c1_domain])
+    session.add_all([ioc_c1_url, ioc_c1_domain])
     counts["iocs"] += 2
 
     # Audit Log for Case 1
@@ -1182,10 +1181,20 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
     ]
 
     for item in cluster_targets:
-        c5_date = now - timedelta(hours=item["time_offset_hours"])
+        tag: str = str(item["tag"])
+        inst_name: str = str(item["inst_name"])
+        recipient: str = str(item["recipient"])
+        ip: str = str(item["ip"])
+        simhash: str = str(item["simhash"])
+        sim_score: float = float(str(item["sim_score"]))
+        inst_code: str = str(item["inst_code"])
+        time_offset_hours: float = float(str(item["time_offset_hours"]))
+        threat_score: float = float(str(item["threat_score"]))
+
+        c5_date = now - timedelta(hours=time_offset_hours)
         c5_date_str = c5_date.strftime("%a, %d %b %Y %H:%M:%S +0000")
-        c5_msg_id = f"20261031-{item['inst_code']}@aicte-compliance-gov.com"
-        c5_subject = f"Urgent: Mandatory Compliance Audit of AICTE Approved Intake 2026-27 - {item['inst_name']}"
+        c5_msg_id = f"20261031-{inst_code}@aicte-compliance-gov.com"
+        c5_subject = f"Urgent: Mandatory Compliance Audit of AICTE Approved Intake 2026-27 - {inst_name}"
         c5_sender_raw = '"AICTE Compliance Directorate" <audit-desk@aicte-compliance-gov.com>'
         c5_sender_email = "audit-desk@aicte-compliance-gov.com"
         c5_sender_display = "AICTE Compliance Directorate"
@@ -1194,13 +1203,13 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
 
         c5_body_plain = (
             f"AICTE AUDIT & COMPLIANCE DIRECTORATE\n"
-            f"TARGET INSTITUTION: {item['inst_name']} [{item['inst_code']}]\n\n"
+            f"TARGET INSTITUTION: {inst_name} [{inst_code}]\n\n"
             f"Notice of Immediate Sanctioned Intake Discrepancy:\n"
             f"During the automated cross-verification of faculty biometric attendance records and\n"
             f"student roll strength, anomalous discrepancy patterns were flagged for the 2026-27 academic cycle.\n\n"
             f"To prevent immediate freezing of your AICTE approval portal, your institution must submit\n"
             f"the audit compliance dossier through our high-speed secured submission server:\n\n"
-            f"https://aicte-compliance-gov.com/portal/audit-response.php?inst={item['inst_code']}\n\n"
+            f"https://aicte-compliance-gov.com/portal/audit-response.php?inst={inst_code}\n\n"
             f"Compliance deadline: 24 hours from receipt.\n"
             f"Director of Institutional Compliance, AICTE"
         )
@@ -1208,19 +1217,20 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
         c5_body_html = (
             f"<html><body>"
             f"<h3>AICTE Compliance Directorate - Immediate Audit Notice</h3>"
-            f"<p><strong>Target: {item['inst_name']}</strong></p>"
+            f"<p><strong>Target: {inst_name}</strong></p>"
             f"<p>Intake discrepancies detected. Submit your verified faculty roster at:</p>"
-            f"<p><a href='https://aicte-compliance-gov.com/portal/audit-response.php?inst={item['inst_code']}'>"
-            f"Upload Audit Compliance Dossier ({item['inst_code']})</a></p>"
+            f"<p><a href='https://aicte-compliance-gov.com/portal/audit-response.php?inst={inst_code}'>"
+            f"Upload Audit Compliance Dossier ({inst_code})</a></p>"
             f"</body></html>"
         )
 
+        recipient_domain = recipient.split("@")[1]
         c5_received = [
-            f"from mail.{item['recipient'].split('@')[1]} (10.0.0.1) by mx.{item['recipient'].split('@')[1]} with ESMTP id clus-881; {c5_date_str}",
-            f"from vps-node.alservice.ru ({item['ip']}) by edge.inbound.net with ESMTPS id vps-901; {c5_date_str}",
+            f"from mail.{recipient_domain} (10.0.0.1) by mx.{recipient_domain} with ESMTP id clus-881; {c5_date_str}",
+            f"from vps-node.alservice.ru ({ip}) by edge.inbound.net with ESMTPS id vps-901; {c5_date_str}",
         ]
         c5_auth_results = (
-            f"edge.inbound.net; spf=softfail (aicte-compliance-gov.com: {item['ip']} is neither permitted nor denied) "
+            f"edge.inbound.net; spf=softfail (aicte-compliance-gov.com: {ip} is neither permitted nor denied) "
             f"smtp.mailfrom=bounce@aicte-compliance-gov.com; dkim=none; "
             f"dmarc=fail (p=none) header.from=aicte-compliance-gov.com"
         )
@@ -1229,7 +1239,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             msg_id=c5_msg_id,
             date_str=c5_date_str,
             from_header=c5_sender_raw,
-            to_header=item["recipient"],
+            to_header=recipient,
             subject=c5_subject,
             reply_to=c5_reply_to,
             return_path=c5_return_path,
@@ -1239,14 +1249,14 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             body_html=c5_body_html,
         )
         c5_sha256, c5_md5, c5_vault_path, c5_size = store_raw_evidence(
-            c5_raw, f"falconshield_{item['tag'].lower()}_{item['inst_code']}.eml"
+            c5_raw, f"falconshield_{tag.lower()}_{inst_code}.eml"
         )
 
         email_c5 = Email(
             id=uuid.uuid4(),
             sha256_hash=c5_sha256,
             md5_hash=c5_md5,
-            file_name=f"falconshield_{item['tag'].lower()}_{item['inst_code']}.eml",
+            file_name=f"falconshield_{tag.lower()}_{inst_code}.eml",
             file_size_bytes=c5_size,
             raw_storage_path=c5_vault_path,
             rfc822_msg_id=c5_msg_id,
@@ -1256,12 +1266,12 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             sender_display=c5_sender_display,
             return_path=c5_return_path,
             reply_to=c5_reply_to,
-            recipient_list=[item["recipient"]],
+            recipient_list=[recipient],
             date_header=c5_date,
             body_plain=c5_body_plain,
             body_html=c5_body_html,
-            simhash_body=item["simhash"],
-            ingested_at=now - timedelta(hours=item["time_offset_hours"]),
+            simhash_body=simhash,
+            ingested_at=now - timedelta(hours=time_offset_hours),
         )
         session.add(email_c5)
         counts["emails"] += 1
@@ -1271,9 +1281,9 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             id=uuid.uuid4(),
             email_id=email_c5.id,
             hop_order=1,
-            by_mta=f"mx.{item['recipient'].split('@')[1]}",
+            by_mta=f"mx.{recipient_domain}",
             from_mta="vps-node.alservice.ru",
-            hop_ip=item["ip"],
+            hop_ip=ip,
             is_private_ip=False,
             is_reliable=True,
             protocol="ESMTPS",
@@ -1309,7 +1319,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             display_spoof_flag=True,
             lookalike_flag=True,
             homograph_flag=False,
-            threat_score=item["threat_score"],
+            threat_score=threat_score,
             verdict="MALICIOUS",
             score_breakdown={
                 "bulletproof_asn_penalty": 35.0,
@@ -1331,7 +1341,7 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             id=uuid.uuid4(),
             email_id=email_c5.id,
             ioc_type="IP",
-            ioc_value=item["ip"],
+            ioc_value=ip,
             context="HEADER_RECEIVED",
             is_defanged=False,
             domain_age_days=None,
@@ -1343,13 +1353,13 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             id=uuid.uuid4(),
             email_id=email_c5.id,
             ioc_type="URL",
-            ioc_value=f"hxxps://aicte-compliance-gov[.]com/portal/audit-response[.]php?inst={item['inst_code']}",
+            ioc_value=f"hxxps://aicte-compliance-gov[.]com/portal/audit-response[.]php?inst={inst_code}",
             context="EMAIL_BODY",
             is_defanged=True,
             domain_age_days=2,
             registrar="Reg.ru LLC",
             reputation_score=96.0,
-            ioc_metadata={"campaign": "Operation FalconShield", "targeted_inst": item["inst_name"]},
+            ioc_metadata={"campaign": "Operation FalconShield", "targeted_inst": inst_name},
         )
         ioc_domain = ThreatIndicator(
             id=uuid.uuid4(),
@@ -1371,14 +1381,14 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
             id=uuid.uuid4(),
             campaign_id=campaign_5.id,
             email_id=email_c5.id,
-            similarity_score=item["sim_score"],
+            similarity_score=sim_score,
             matched_criteria={
                 "shared_asn": 49870,
                 "shared_domain": "aicte-compliance-gov.com",
                 "simhash_prefix": "0x8f3c7a",
                 "template_match": "aicte_compliance_audit_v2",
             },
-            associated_at=now - timedelta(hours=item["time_offset_hours"]),
+            associated_at=now - timedelta(hours=time_offset_hours),
         )
         session.add(campaign_assoc)
         counts["campaign_emails"] += 1
@@ -1389,12 +1399,12 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
                 email_id=email_c5.id,
                 action="CHAIN_OF_CUSTODY_CHECK",
                 actor="CAMPAIGN_CORRELATION_ENGINE",
-                recorded_at=now - timedelta(hours=item["time_offset_hours"]),
+                recorded_at=now - timedelta(hours=time_offset_hours),
                 evidence_sha256=c5_sha256,
                 details={
                     "campaign": campaign_5.name,
-                    "target": item["inst_name"],
-                    "similarity": item["sim_score"],
+                    "target": inst_name,
+                    "similarity": sim_score,
                 },
             )
         )

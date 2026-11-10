@@ -8,7 +8,6 @@ Validates:
 
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import os
 import tempfile
@@ -27,7 +26,6 @@ from backend.app.database.models import (
     Campaign,
     CampaignEmail,
     Email,
-    EvidenceAuditLog,
     ForensicAnalysis,
     HeaderHop,
     ThreatIndicator,
@@ -43,14 +41,6 @@ from backend.app.database.vault import (
     verify_evidence_integrity,
     verify_hmac_signature,
 )
-
-
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the event loop for the test session."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest_asyncio.fixture(scope="function")

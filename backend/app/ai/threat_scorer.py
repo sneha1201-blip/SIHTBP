@@ -7,6 +7,7 @@ Score = min(100, 0.25*Auth + 0.20*Header + 0.20*NLP + 0.15*URL + 0.10*OSINT + 0.
 from __future__ import annotations
 
 from typing import Any, Dict, List
+
 from pydantic import BaseModel
 
 from backend.app.ai.nlp_engine import NLPAnalysisResult

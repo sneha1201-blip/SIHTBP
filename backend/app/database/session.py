@@ -10,10 +10,9 @@ from __future__ import annotations
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator
 
-from sqlalchemy import event, text
-from sqlalchemy.engine import Engine
+from sqlalchemy import event
 from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
     AsyncEngine,
@@ -66,7 +65,9 @@ DATABASE_URL = resolve_database_url()
 IS_SQLITE = DATABASE_URL.startswith("sqlite")
 
 # Configure engine arguments based on dialect
-engine_kwargs = {
+from typing import Any, Dict
+
+engine_kwargs: Dict[str, Any] = {
     "echo": os.getenv("SQL_ECHO", "false").lower() in ("true", "1", "yes"),
     "future": True,
 }

@@ -6,9 +6,9 @@ and extracts registrar telemetry with an integrated offline threat intelligence 
 
 from __future__ import annotations
 
-import asyncio
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Dict, Optional
+
 from pydantic import BaseModel
 
 

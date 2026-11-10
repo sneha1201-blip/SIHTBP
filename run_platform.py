@@ -84,21 +84,29 @@ def get_node_and_npm() -> tuple[str, str]:
 
 
 def initialize_database():
-    """Initialize database and seed the 5 forensic test cases."""
-    print(f"{YELLOW}[*] Initializing SQLite database & seeding 5 forensic test cases...{RESET}")
+    """Initialize database schemas via migrations/verification without wiping data unless --reset is passed."""
+    should_reset = "--reset" in sys.argv
+    if should_reset:
+        print(f"{YELLOW}[*] --reset flag detected: Wiping database schemas...{RESET}")
+    else:
+        print(f"{YELLOW}[*] Verifying database schemas & persistence layer...{RESET}")
+
     sys.path.insert(0, str(PROJECT_ROOT))
     try:
         from backend.app.database.init_db import init_db_and_verify
     except ImportError:
         import asyncio
-        from backend.app.database.init_db import initialize_and_verify
-        init_db_and_verify = lambda **kw: asyncio.run(initialize_and_verify(**kw))
 
-    success = init_db_and_verify(reset=True)
+        from backend.app.database.init_db import initialize_and_verify
+
+        def init_db_and_verify(**kw):
+            return asyncio.run(initialize_and_verify(**kw))
+
+    success = init_db_and_verify(reset=should_reset)
     if not success:
         print(f"{RED}[!] Database initialization failed. Exiting.{RESET}")
         sys.exit(1)
-    print(f"{GREEN}[+] Database schemas created & 5 forensic seed cases loaded.{RESET}\n")
+    print(f"{GREEN}[+] Database schemas verified and active.{RESET}\n")
 
 
 def wait_for_service(url: str, name: str, timeout_sec: int = 25) -> bool:
@@ -176,7 +184,7 @@ def main():
     backend_ready = wait_for_service("http://127.0.0.1:8000/", "FastAPI Backend", timeout_sec=20)
     if backend_ready:
         print(f"{GREEN}[+] FastAPI Backend is healthy and listening on http://127.0.0.1:8000{RESET}")
-        print(f"    - Interactive Docs: http://127.0.0.1:8000/docs")
+        print("    - Interactive Docs: http://127.0.0.1:8000/docs")
     else:
         print(f"{RED}[!] Warning: Backend took longer than expected to report ready.{RESET}")
 

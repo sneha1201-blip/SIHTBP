@@ -10,6 +10,7 @@ from __future__ import annotations
 import ipaddress
 import logging
 from typing import Optional
+
 from pydantic import BaseModel
 
 from backend.app.core.config import settings
@@ -123,13 +124,13 @@ def resolve_ip_geo(ip_str: Optional[str]) -> GeoLocation:
 
     # 2. Intelligent Offline Forensic Prefix Database
     for entry in OFFLINE_GEO_DATABASE:
-        if ip_str.startswith(entry["prefix"]):
+        if ip_str.startswith(str(entry["prefix"])):
             return GeoLocation(
                 ip=ip_str,
-                country=entry["country"],
-                city=entry["city"],
-                latitude=entry["lat"],
-                longitude=entry["lon"],
+                country=str(entry["country"]),
+                city=str(entry["city"]),
+                latitude=float(str(entry["lat"])),
+                longitude=float(str(entry["lon"])),
                 is_private=False,
                 source="OFFLINE_INTELLIGENCE",
             )

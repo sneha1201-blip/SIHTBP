@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import unicodedata
 from typing import List, Optional, Tuple
+
 from pydantic import BaseModel
 
 from backend.app.core.config import settings
@@ -37,7 +38,7 @@ def levenshtein_distance(s1: str, s2: str) -> int:
     if len(s2) == 0:
         return len(s1)
 
-    previous_row = range(len(s2) + 1)
+    previous_row: list[int] = list(range(len(s2) + 1))
     for i, c1 in enumerate(s1):
         current_row = [i + 1]
         for j, c2 in enumerate(s2):
@@ -66,7 +67,6 @@ def detect_homograph(domain: str) -> Tuple[bool, List[str], str]:
 
     # Check if domain contains Cyrillic, Greek, or non-Latin glyphs
     for char in domain:
-        cat = unicodedata.category(char)
         name = unicodedata.name(char, "")
         if "CYRILLIC" in name or "GREEK" in name or ord(char) > 127:
             has_homograph = True
@@ -155,6 +155,10 @@ def detect_spoofing(
             )
         else:
             reasons.append(f"Reply-To divergence: '{reply_to}' differs from Sender '{sender_email}'")
+
+    if return_path and sender_email and return_domain != sender_domain:
+        spoof_score += 15.0
+        reasons.append(f"Envelope Return-Path domain '{return_domain}' differs from From domain '{sender_domain}'")
 
     # 3. Homograph & Punycode Detection
     is_homograph, glyphs, punycode = detect_homograph(sender_domain)

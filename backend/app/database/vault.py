@@ -14,6 +14,7 @@ import json
 import os
 import stat
 import tempfile
+from datetime import datetime
 from pathlib import Path
 from typing import BinaryIO, Optional, Tuple, Union
 
@@ -47,14 +48,14 @@ def calculate_hashes(data: Union[bytes, bytearray, memoryview]) -> Tuple[str, st
     """
     sha256_hasher = hashlib.sha256()
     md5_hasher = hashlib.md5()
-    
+
     view = memoryview(data)
     chunk_size = 65536
     for i in range(0, len(view), chunk_size):
         chunk = view[i:i + chunk_size]
         sha256_hasher.update(chunk)
         md5_hasher.update(chunk)
-        
+
     return sha256_hasher.hexdigest(), md5_hasher.hexdigest()
 
 

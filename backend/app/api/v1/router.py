@@ -1,6 +1,7 @@
 """Master API Router for v1 Endpoints."""
 
 from fastapi import APIRouter
+
 from backend.app.api.v1 import endpoints_campaigns, endpoints_forensics, endpoints_reports
 
 api_router = APIRouter()

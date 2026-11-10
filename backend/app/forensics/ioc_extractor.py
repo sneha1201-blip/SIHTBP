@@ -9,6 +9,7 @@ from __future__ import annotations
 import re
 from typing import List, Set
 from urllib.parse import urlparse
+
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
 
@@ -76,7 +77,7 @@ def extract_iocs(
         try:
             soup = BeautifulSoup(body_html, "html.parser")
             for a_tag in soup.find_all("a", href=True):
-                href = a_tag["href"].strip()
+                href = str(a_tag["href"]).strip()
                 if href.startswith(("http://", "https://", "hxxp://", "hxxps://")) and href not in seen_values:
                     seen_values.add(href)
                     iocs.append(

@@ -1,0 +1,69 @@
+name: CI / Verification Suite
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  backend-qa:
+    name: Backend Lint, Typing & Forensic Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Ruff Linter Check
+        run: |
+          ruff check .
+
+      - name: Mypy Static Type Verification
+        run: |
+          mypy backend/app
+
+      - name: Execute Pytest Suite (Async & Cryptographic Vault)
+        run: |
+          pytest -v backend/tests/
+
+      - name: End-to-End System Verification
+        run: |
+          python verify_system.py
+
+  frontend-qa:
+    name: Frontend Lint, Type-Check & Production Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+
+      - name: ESLint Check
+        run: npm run lint
+
+      - name: TypeScript Type-Check
+        run: npx tsc --noEmit
+
+      - name: Next.js Production Build
+        run: npm run build

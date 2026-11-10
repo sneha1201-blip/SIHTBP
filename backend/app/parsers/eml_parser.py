@@ -10,7 +10,6 @@ import email
 import email.policy
 import hashlib
 from email.utils import parseaddr, parsedate_to_datetime
-from typing import Optional
 
 from backend.app.database.vault import calculate_hashes
 from backend.app.parsers.mime_normalizer import (
@@ -47,26 +46,26 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
 
     # Sender parsing
     sender_raw = msg.get("From", "")
-    sender_display, sender_email = parseaddr(sender_raw)
-    sender_email = sender_email.strip().lower() if sender_email else None
-    sender_display = sender_display.strip() if sender_display else None
+    raw_display, raw_email = parseaddr(sender_raw)
+    sender_email: str | None = raw_email.strip().lower() if raw_email else None
+    sender_display: str | None = raw_display.strip() if raw_display else None
 
     # Return-Path & Reply-To
     raw_return_path = msg.get("Return-Path", "")
-    _, return_path = parseaddr(raw_return_path)
-    return_path = return_path.strip().lower() if return_path else None
+    _, raw_rp = parseaddr(raw_return_path)
+    return_path: str | None = raw_rp.strip().lower() if raw_rp else None
 
     raw_reply_to = msg.get("Reply-To", "")
-    _, reply_to = parseaddr(raw_reply_to)
-    reply_to = reply_to.strip().lower() if reply_to else None
+    _, raw_rt = parseaddr(raw_reply_to)
+    reply_to: str | None = raw_rt.strip().lower() if raw_rt else None
 
     # Recipients (To, Cc, Bcc)
-    recipient_list = []
+    recipient_list: list[str] = []
     for header in ["To", "Cc", "Bcc", "Delivered-To"]:
         val = msg.get(header)
         if val:
-            for part in str(val).split(","):
-                _, addr = parseaddr(part)
+            for item in str(val).split(","):
+                _, addr = parseaddr(item)
                 if addr and addr.strip().lower() not in recipient_list:
                     recipient_list.append(addr.strip().lower())
 
@@ -75,14 +74,14 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
     authentication_results = msg.get("Authentication-Results", None)
 
     # General headers dictionary
-    headers_dict = {}
+    headers_dict: dict[str, list[str]] = {}
     for k, v in msg.items():
         headers_dict.setdefault(k, []).append(str(v))
 
     # Bodies and Attachments extraction
-    body_plain_parts = []
-    body_html_parts = []
-    attachments = []
+    body_plain_parts: list[str] = []
+    body_html_parts: list[str] = []
+    attachments: list[AttachmentMeta] = []
 
     if msg.is_multipart():
         for part in msg.walk():
@@ -91,7 +90,8 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
 
             part_filename = part.get_filename()
             if part_filename or "attachment" in content_disposition:
-                payload = part.get_payload(decode=True) or b""
+                payload_raw = part.get_payload(decode=True)
+                payload = payload_raw if isinstance(payload_raw, bytes) else b""
                 p_sha256 = hashlib.sha256(payload).hexdigest()
                 p_md5 = hashlib.md5(payload).hexdigest()
                 safe_name = part_filename or f"attachment_{len(attachments) + 1}"
@@ -113,7 +113,8 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
                     if isinstance(text, str):
                         body_plain_parts.append(text)
                 except Exception:
-                    payload = part.get_payload(decode=True) or b""
+                    payload_raw = part.get_payload(decode=True)
+                    payload = payload_raw if isinstance(payload_raw, bytes) else b""
                     body_plain_parts.append(payload.decode("utf-8", errors="replace"))
             elif content_type == "text/html" and "attachment" not in content_disposition:
                 try:
@@ -121,14 +122,20 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
                     if isinstance(html, str):
                         body_html_parts.append(html)
                 except Exception:
-                    payload = part.get_payload(decode=True) or b""
+                    payload_raw = part.get_payload(decode=True)
+                    payload = payload_raw if isinstance(payload_raw, bytes) else b""
                     body_html_parts.append(payload.decode("utf-8", errors="replace"))
     else:
         content_type = msg.get_content_type()
         try:
-            content = msg.get_content()
+            content_obj = msg.get_content()
+            if isinstance(content_obj, bytes):
+                content = content_obj.decode("utf-8", errors="replace")
+            else:
+                content = str(content_obj)
         except Exception:
-            payload = msg.get_payload(decode=True) or b""
+            payload_raw = msg.get_payload(decode=True)
+            payload = payload_raw if isinstance(payload_raw, bytes) else b""
             content = payload.decode("utf-8", errors="replace")
 
         if content_type == "text/html":

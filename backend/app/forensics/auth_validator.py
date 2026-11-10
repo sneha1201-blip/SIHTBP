@@ -11,7 +11,8 @@ from __future__ import annotations
 
 import logging
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
+
 from pydantic import BaseModel
 
 logger = logging.getLogger("auth_validator")
@@ -76,8 +77,8 @@ def query_dns_txt_with_timeout(domain: str, timeout: float = DNS_QUERY_TIMEOUT_S
         return []
 
     try:
-        import dns.resolver
         import dns.exception
+        import dns.resolver
 
         resolver = dns.resolver.Resolver()
         resolver.timeout = timeout
@@ -96,7 +97,7 @@ def query_dns_txt_with_timeout(domain: str, timeout: float = DNS_QUERY_TIMEOUT_S
 
 def parse_received_spf_header(received_spf_str: str) -> Dict[str, str]:
     """Parse key authentication tokens from a Received-SPF header."""
-    results = {}
+    results: Dict[str, str] = {}
     if not received_spf_str:
         return results
 
@@ -120,7 +121,7 @@ def parse_received_spf_header(received_spf_str: str) -> Dict[str, str]:
 
 def parse_authentication_results(auth_results_str: str) -> Dict[str, str]:
     """Parse key authentication tokens from Authentication-Results or ARC headers."""
-    results = {}
+    results: Dict[str, str] = {}
     if not auth_results_str:
         return results
 

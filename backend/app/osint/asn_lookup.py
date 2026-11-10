@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import logging
 from typing import Optional
+
 from pydantic import BaseModel
 
 from backend.app.core.config import settings
@@ -61,12 +62,12 @@ def resolve_ip_asn(ip_str: Optional[str]) -> ASNInfo:
 
     # 2. Intelligent Offline Fallback
     for entry in OFFLINE_ASN_DATABASE:
-        if ip_str.startswith(entry["prefix"]):
+        if ip_str.startswith(str(entry["prefix"])):
             return ASNInfo(
-                asn_number=entry["asn"],
-                asn_org=entry["org"],
-                is_datacenter=entry["datacenter"],
-                is_bulletproof=entry["bulletproof"],
+                asn_number=int(str(entry["asn"])),
+                asn_org=str(entry["org"]),
+                is_datacenter=bool(entry["datacenter"]),
+                is_bulletproof=bool(entry["bulletproof"]),
             )
 
     return ASNInfo(

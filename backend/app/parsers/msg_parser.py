@@ -7,19 +7,19 @@ or truncated files without raising unhandled 500 exceptions.
 
 from __future__ import annotations
 
-import io
-import re
 import hashlib
+import io
 import logging
+import re
 from typing import Optional
 
 from backend.app.database.vault import calculate_hashes
+from backend.app.parsers.eml_parser import DANGEROUS_EXTENSIONS
 from backend.app.parsers.mime_normalizer import (
     AttachmentMeta,
     ParsedEmailData,
     compute_simhash,
 )
-from backend.app.parsers.eml_parser import DANGEROUS_EXTENSIONS
 
 logger = logging.getLogger("msg_parser")
 
@@ -128,14 +128,14 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
             recipient_list.extend([r.strip().lower() for r in msg.cc.split(";") if r.strip()])
 
         date_header = msg.date
-        body_plain = msg.body
-        body_html = msg.htmlBody
-        if isinstance(body_html, bytes):
-            body_html = body_html.decode("utf-8", errors="replace")
+        raw_body = msg.body
+        body_plain: Optional[str] = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else (str(raw_body) if raw_body is not None else None)
+        raw_html = msg.htmlBody
+        body_html: Optional[str] = raw_html.decode("utf-8", errors="replace") if isinstance(raw_html, bytes) else (str(raw_html) if raw_html is not None else None)
 
         # Received headers
-        received_headers = []
-        headers_dict = {}
+        received_headers: list[str] = []
+        headers_dict: dict[str, list[str]] = {}
         if msg.header:
             header_text = str(msg.header)
             for line in header_text.splitlines():

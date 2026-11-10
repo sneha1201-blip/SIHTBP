@@ -18,9 +18,9 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import io
-import os
 import sys
 from pathlib import Path
+from typing import Optional, Tuple
 
 # Bootstrap project root
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -53,10 +53,11 @@ def report_step(step_name: str, passed: bool, detail: str = ""):
 
 async def test_database_and_vault() -> bool:
     """Verify SQLite 3 database connectivity and cryptographic vault hashing."""
+    from sqlalchemy import func, select
+
+    from backend.app.database.models import Email, ForensicAnalysis, HeaderHop, ThreatIndicator
     from backend.app.database.session import async_session_factory, create_all_tables
-    from backend.app.database.models import Email, HeaderHop, ForensicAnalysis, ThreatIndicator
     from backend.app.database.vault import calculate_hashes, generate_hmac_signature
-    from sqlalchemy import select, func
 
     try:
         await create_all_tables()
@@ -87,9 +88,9 @@ async def test_database_and_vault() -> bool:
 
 def test_offline_resilience() -> bool:
     """Verify offline GeoIP database, Tor exit node detection, and DNS timeout."""
-    from backend.app.osint.geo_resolver import resolve_ip_geo
-    from backend.app.osint.tor_detector import is_tor_exit_node, is_anonymizing_vpn_or_bulletproof
     from backend.app.forensics.auth_validator import query_dns_txt_with_timeout
+    from backend.app.osint.geo_resolver import resolve_ip_geo
+    from backend.app.osint.tor_detector import is_anonymizing_vpn_or_bulletproof, is_tor_exit_node
 
     try:
         # Test Indian institutional IP
@@ -125,6 +126,7 @@ def test_offline_resilience() -> bool:
 def test_api_pipeline_and_coordinates() -> Tuple[bool, Optional[str]]:
     """Test full email intake, reverse hop traversal, coordinate extraction, and PDF generation."""
     from fastapi.testclient import TestClient
+
     from backend.app.main import create_application
 
     app = create_application()
@@ -157,7 +159,7 @@ Failure to transfer within 24 hours will cancel allocation.
         data = response.json()
 
         evidence_id = data["email"]["id"]
-        sha256_hash = data["email"]["sha256_hash"]
+        assert data["email"]["sha256_hash"] is not None
         verdict = data["forensic_analysis"]["verdict"]
         threat_score = data["forensic_analysis"]["threat_score"]
         hops = data["header_hops"]
@@ -200,6 +202,7 @@ Failure to transfer within 24 hours will cancel allocation.
 def test_campaign_graph_api() -> bool:
     """Verify Campaign & Cross-Incident Intelligence Graph API."""
     from fastapi.testclient import TestClient
+
     from backend.app.main import create_application
 
     try:

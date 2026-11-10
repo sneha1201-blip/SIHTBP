@@ -12,30 +12,20 @@ Validates:
 from __future__ import annotations
 
 import io
-import tempfile
 import uuid
-from datetime import datetime, timezone
-from pathlib import Path
 
 import pytest
-import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from backend.app.ai.nlp_engine import analyze_email_content
-from backend.app.ai.threat_scorer import compute_threat_score
 from backend.app.ai.url_analyzer import analyze_url, deobfuscate_ip_literal
-from backend.app.database.models import Email
-from backend.app.database.session import Base, get_db
-from backend.app.forensics.auth_validator import check_alignment, validate_protocol_authentication
+from backend.app.forensics.auth_validator import validate_protocol_authentication
 from backend.app.forensics.hop_traversal import is_ip_private, reverse_hop_traversal
-from backend.app.forensics.ioc_extractor import extract_iocs
 from backend.app.forensics.spoof_detector import detect_homograph, detect_spoofing
 from backend.app.main import app
 from backend.app.parsers.eml_parser import parse_eml
 from backend.app.reporting.pdf_generator import generate_forensic_pdf
-
 
 # Sample RFC 822 EML for testing BEC Wire Fraud
 SAMPLE_BEC_EML = b"""Received: from relay.nic.in (164.100.24.12) by mail.vjti.ac.in with ESMTPS; Sun, 01 Nov 2026 10:00:00 +0000
