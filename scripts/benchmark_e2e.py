@@ -33,18 +33,15 @@ os.environ.setdefault("VAULT_HMAC_SECRET", "aicte_sec63_bsa_production_hmac_secr
 os.environ.setdefault("JWT_SECRET_KEY", "aicte_jwt_secret_key_production_2026_argon2_super_secure")
 os.environ.setdefault("SECRET_KEY", "aicte_jwt_secret_key_production_2026_argon2_super_secure")
 
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import selectinload
 
 from backend.app.ai.nlp_engine import analyze_email_content
 from backend.app.ai.threat_scorer import compute_threat_score
 from backend.app.ai.url_analyzer import analyze_url
-from backend.app.database.models import Email, User, UserRole
+from backend.app.database.models import User, UserRole
 from backend.app.database.session import Base
-from backend.app.database.vault import calculate_hashes, store_raw_evidence
+from backend.app.database.vault import store_raw_evidence
 from backend.app.forensics.auth_validator import validate_protocol_authentication
-from backend.app.forensics.campaign_clusterer import cluster_email_dynamically
 from backend.app.forensics.hop_traversal import reverse_hop_traversal
 from backend.app.forensics.ioc_extractor import extract_iocs
 from backend.app.forensics.job_queue import execute_forensic_pipeline
@@ -194,7 +191,7 @@ async def run_benchmark(iterations: int = 3) -> Dict[str, Any]:
 
                 # 8. Threat Scoring Formula
                 t_s8 = time.perf_counter()
-                score_calc = compute_threat_score(
+                _ = compute_threat_score(
                     auth_res=auth_res,
                     spoof_res=spoof_res,
                     nlp_res=nlp_res,
@@ -220,7 +217,7 @@ async def run_benchmark(iterations: int = 3) -> Dict[str, Any]:
                 # SECTION 63 BSA 2023 PDF GENERATION BENCHMARK
                 # -----------------------------------------------------------------
                 t_pdf = time.perf_counter()
-                pdf_buffer = generate_forensic_pdf(
+                _ = generate_forensic_pdf(
                     email_data=dossier["email"],
                     hops=dossier.get("header_hops", []),
                     analysis=dossier.get("forensic_analysis") or {},

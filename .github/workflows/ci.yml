@@ -68,3 +68,29 @@ jobs:
       - name: Next.js Production Build
         run: npm run build
 
+  docker-smoke-test:
+    name: Docker Compose Build & Health Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare Environment File
+        run: |
+          cp .env.example .env
+          sed -i 's/replace_with_64_char_hex_hmac_secret_key/0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef/' .env
+          sed -i 's/replace_with_cryptographically_secure_jwt_secret/jwt_ci_super_secret_key_32_characters_long_min/' .env
+
+      - name: Build and Start Containers
+        run: |
+          docker compose up -d --build
+
+      - name: Wait and Verify Backend Health
+        run: |
+          timeout 60 bash -c 'until docker compose ps | grep -q "healthy"; do sleep 3; done' || (docker compose logs && exit 1)
+          docker compose ps
+          curl -f http://localhost:8000/health
+
+      - name: Teardown Containers
+        if: always()
+        run: docker compose down -v
+

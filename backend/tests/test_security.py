@@ -297,3 +297,56 @@ async def test_rate_limiter_denies_flood():
     with pytest.raises(Exception) as exc_info:
         await limiter.check(req)
     assert "Rate limit exceeded" in str(exc_info.value)
+
+
+# =============================================================================
+# 5. DOCKER & STARTUP MANDATORY SECRET ENFORCEMENT
+# =============================================================================
+
+def test_startup_refusal_when_secrets_missing():
+    """Verify application startup is strictly aborted when mandatory secrets are missing outside DEBUG."""
+    import os
+    import subprocess
+    import sys
+
+    # Case 1: DEBUG unset, VAULT_HMAC_SECRET missing
+    env_missing_vault = os.environ.copy()
+    env_missing_vault.pop("DEBUG", None)
+    env_missing_vault.pop("VAULT_HMAC_SECRET", None)
+    env_missing_vault.pop("JWT_SECRET_KEY", None)
+    env_missing_vault.pop("PYTEST_CURRENT_TEST", None)
+    env_missing_vault.pop("TESTING", None)
+
+    cmd_check = [
+        sys.executable,
+        "-c",
+        "from backend.app.core.config import Settings; Settings()",
+    ]
+    res1 = subprocess.run(cmd_check, env=env_missing_vault, capture_output=True, text=True)
+    assert res1.returncode != 0
+    assert "FATAL SECURITY CONFIGURATION: VAULT_HMAC_SECRET" in (res1.stderr + res1.stdout)
+
+    # Case 2: DEBUG=false, VAULT_HMAC_SECRET present, but JWT_SECRET_KEY missing
+    env_missing_jwt = os.environ.copy()
+    env_missing_jwt["DEBUG"] = "false"
+    env_missing_jwt["VAULT_HMAC_SECRET"] = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    env_missing_jwt.pop("JWT_SECRET_KEY", None)
+    env_missing_jwt.pop("SECRET_KEY", None)
+    env_missing_jwt.pop("PYTEST_CURRENT_TEST", None)
+    env_missing_jwt.pop("TESTING", None)
+
+    res2 = subprocess.run(cmd_check, env=env_missing_jwt, capture_output=True, text=True)
+    assert res2.returncode != 0
+    assert "FATAL SECURITY CONFIGURATION: JWT_SECRET_KEY" in (res2.stderr + res2.stdout)
+
+    # Case 3: Both secrets validly configured outside DEBUG -> succeeds
+    env_valid = os.environ.copy()
+    env_valid["DEBUG"] = "false"
+    env_valid["VAULT_HMAC_SECRET"] = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    env_valid["JWT_SECRET_KEY"] = "jwt_valid_production_secret_key_32_chars_minimum"
+    env_valid.pop("PYTEST_CURRENT_TEST", None)
+    env_valid.pop("TESTING", None)
+
+    res3 = subprocess.run(cmd_check, env=env_valid, capture_output=True, text=True)
+    assert res3.returncode == 0
+
