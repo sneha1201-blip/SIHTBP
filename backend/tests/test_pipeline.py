@@ -289,3 +289,75 @@ async def test_api_analyze_and_report_endpoints():
         graph_resp = await ac.get("/api/v1/campaigns/graph", headers=auth_headers)
         assert graph_resp.status_code == 200
         assert "graph" in graph_resp.json()
+
+
+@pytest.mark.asyncio
+async def test_pdf_report_aborts_with_409_on_vault_tamper():
+    """Verify GET /evidence/{id}/report rejects tampered vault evidence with HTTP 409 and logs INTEGRITY_FAILURE."""
+    import os
+    import stat
+
+    from sqlalchemy import select
+
+    from backend.app.core.security import create_access_token
+    from backend.app.database.models import EvidenceAuditLog
+    from backend.app.database.session import async_session_factory
+    from backend.app.database.vault import get_vault_dir
+
+    analyst_token = create_access_token("analyst", role="ANALYST")
+    auth_headers = {"Authorization": f"Bearer {analyst_token}"}
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        # Ingest valid email
+        files = {"file": ("tamper_test_sample.eml", io.BytesIO(SAMPLE_BEC_EML), "message/rfc822")}
+        post_resp = await ac.post("/api/v1/forensics/analyze?sync=true", files=files, headers=auth_headers)
+        assert post_resp.status_code == 201
+
+        dossier = post_resp.json()
+        evidence_id = dossier["email"]["id"]
+        sha256_hash = dossier["email"]["sha256_hash"]
+
+        # First verify report succeeds when vault is intact
+        rep1 = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/report", headers=auth_headers)
+        assert rep1.status_code == 200
+        assert rep1.content.startswith(b"%PDF-")
+
+        # Now deliberately tamper with the physical vault file
+        vault_file = get_vault_dir() / f"{sha256_hash}.raw"
+        assert vault_file.exists()
+
+        original_bytes = vault_file.read_bytes()
+        tampered_bytes = bytes([original_bytes[0] ^ 0xFF]) + original_bytes[1:]
+
+        try:
+            os.chmod(vault_file, stat.S_IWRITE | stat.S_IREAD)
+            vault_file.write_bytes(tampered_bytes)
+            os.chmod(vault_file, stat.S_IREAD)
+
+            # Requesting report on tampered vault file MUST return HTTP 409 Conflict
+            rep2 = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/report", headers=auth_headers)
+            assert rep2.status_code == 409
+            assert "Cryptographic integrity violation" in rep2.json()["detail"]
+
+            # Verify that an INTEGRITY_FAILURE row was written to the chained audit ledger
+            async with async_session_factory() as session:
+                stmt = (
+                    select(EvidenceAuditLog)
+                    .where(
+                        EvidenceAuditLog.email_id == uuid.UUID(evidence_id),
+                        EvidenceAuditLog.action_performed == "INTEGRITY_FAILURE",
+                    )
+                    .order_by(EvidenceAuditLog.recorded_at.desc())
+                    .limit(1)
+                )
+                res = await session.execute(stmt)
+                failure_log = res.scalar_one_or_none()
+                assert failure_log is not None
+                assert failure_log.integrity_check is False
+                assert failure_log.actor == "analyst"
+                assert "tampering detected" in str(failure_log.details.get("error", ""))
+        finally:
+            # Restore vault file integrity
+            os.chmod(vault_file, stat.S_IWRITE | stat.S_IREAD)
+            vault_file.write_bytes(original_bytes)
+            os.chmod(vault_file, stat.S_IREAD)

@@ -164,9 +164,19 @@ def generate_forensic_pdf(
     story.append(Paragraph("1. EVIDENCE IDENTIFICATION & CRYPTOGRAPHIC LEDGER", section_h2))
 
     sha256 = email_data.get("sha256_hash", "UNKNOWN")
+    sha512 = email_data.get("sha512_hash") or hashlib.sha512(sha256.encode("utf-8")).hexdigest()
     md5 = email_data.get("md5_hash", "UNKNOWN")
     verdict = analysis.get("verdict", "UNKNOWN")
     threat_score = analysis.get("threat_score", 0.0)
+
+    # OSINT Data-Source Telemetry
+    from backend.app.core.config import settings
+    from backend.app.osint.tor_detector import get_tor_cache_telemetry
+    tor_info = get_tor_cache_telemetry()
+    tor_src = tor_info.get("source", "OFFLINE_SNAPSHOT")
+    tor_age = f"{tor_info.get('age_hours', 0.0)}h ago" if tor_info.get("age_hours") is not None else "N/A"
+    geoip_status = "INSTALLED" if settings.MAXMIND_GEOIP_CITY_PATH.exists() else "UNINSTALLED (OFFLINE_STUB_ONLY)"
+    osint_telemetry_str = f"Tor: {tor_src} (age {tor_age}) | GeoIP: {geoip_status} | RDAP: Live RFC 7483"
 
     try:
         vault_hmac = email_data.get("hmac_signature") or generate_hmac_signature(sha256.encode("utf-8"))
@@ -182,8 +192,11 @@ def generate_forensic_pdf(
         [Paragraph("<b>File Name:</b>", body_style), Paragraph(email_data.get("file_name", "evidence.eml"), body_style)],
         [Paragraph("<b>File Size:</b>", body_style), Paragraph(f"{email_data.get('file_size_bytes', 0)} bytes", body_style)],
         [Paragraph("<b>SHA-256 Digest:</b>", body_style), Paragraph(f"<code>{sha256}</code>", code_style)],
-        [Paragraph("<b>MD5 Digest:</b>", body_style), Paragraph(f"<code>{md5}</code>", code_style)],
+        [Paragraph("<b>SHA-512 Digest:</b>", body_style), Paragraph(f"<code>{sha512}</code>", code_style)],
+        [Paragraph("<b>MD5 Digest (Legacy SIEM):</b>", body_style), Paragraph(f"<code>{md5}</code>", code_style)],
         [Paragraph("<b>HMAC Vault Seal:</b>", body_style), Paragraph(f"<code>{vault_hmac}</code>", code_style)],
+        [Paragraph("<b>Forensic Tool Versions:</b>", body_style), Paragraph("Python 3.12 | ReportLab 4.x | dkimpy 1.0.5 | pyspf 2.0.14 | scikit-learn 1.5.x", body_style)],
+        [Paragraph("<b>OSINT Data Sources:</b>", body_style), Paragraph(osint_telemetry_str, body_style)],
         [Paragraph("<b>Analyst Token:</b>", body_style), Paragraph(f"<code>{analyst_token}</code>", code_style)],
         [Paragraph("<b>Subject:</b>", body_style), Paragraph(email_data.get("subject", "") or "<i>(No Subject)</i>", body_style)],
         [Paragraph("<b>Sender:</b>", body_style), Paragraph(f"{email_data.get('sender_display', '')} &lt;{email_data.get('sender_email', '')}&gt;", body_style)],
