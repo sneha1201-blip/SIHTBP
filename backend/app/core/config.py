@@ -87,6 +87,56 @@ class Settings(BaseModel):
     TOR_EXIT_NODE_CACHE_TTL_HOURS: int = 6
     WHOIS_CACHE_TTL_HOURS: int = 24
 
+    # High-Fanout ASNs (Major hyperscalers, CDNs, and transit providers where shared ASN != threat campaign)
+    HIGH_FANOUT_ASNS: set[int] = {
+        15169,  # Google LLC
+        16509,  # Amazon.com, Inc. / AWS
+        14618,  # Amazon.com, Inc. / AWS
+        8075,   # Microsoft Corporation
+        13335,  # Cloudflare, Inc.
+        32934,  # Meta Platforms, Inc. / Facebook
+        20940,  # Akamai International B.V.
+        54113,  # Fastly, Inc.
+        2635,   # Yahoo / Oath
+        46484,  # Mimecast
+        36351,  # SoftLayer / IBM Cloud
+        16276,  # OVH SAS
+        24940,  # Hetzner Online GmbH
+        63949,  # Linode, LLC / Akamai
+    }
+
+    HIGH_FANOUT_ASN_PATTERNS: tuple[str, ...] = (
+        "google",
+        "amazon",
+        "aws",
+        "microsoft",
+        "cloudflare",
+        "facebook",
+        "meta",
+        "akamai",
+        "fastly",
+        "yahoo",
+        "apple",
+        "mimecast",
+    )
+
+    PUBLIC_MAIL_DOMAINS: set[str] = {
+        "gmail.com",
+        "googlemail.com",
+        "yahoo.com",
+        "yahoo.co.in",
+        "outlook.com",
+        "hotmail.com",
+        "live.com",
+        "icloud.com",
+        "protonmail.com",
+        "proton.me",
+        "zoho.com",
+        "rediffmail.com",
+        "mail.com",
+        "aol.com",
+    }
+
     # Scoring Weights (0–100 Composite Formula: Auth 25%, Hop/Geo 20%, NLP 20%, URL 20%, Brand/VIP 15%)
     WEIGHT_AUTH: float = 0.25
     WEIGHT_OSINT: float = 0.20

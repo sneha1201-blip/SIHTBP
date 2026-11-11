@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "evaluation_timestamp": "2026-11-11T01:00:51.612105+00:00",
+    "git_commit": "1e41d602f3f7fd125436f240ed2aa7dddb20bca3",
+    "corpus_size": 72,
+    "campaign_classes_count": 6,
+    "noise_samples_count": 12
+  },
+  "metrics": {
+    "adjusted_rand_index_ari": 0.8766,
+    "normalized_mutual_info_nmi": 0.9037,
+    "clustering_purity": 1.0,
+    "pairwise_precision": 1.0,
+    "pairwise_recall": 1.0,
+    "pairwise_f1": 1.0,
+    "noise_false_positive_rate": 0.0
+  },
+  "hyperscaler_isolation_verification": {
+    "google_as15169_samples_tested": 4,
+    "google_as15169_incorrectly_clustered": 0,
+    "google_clustered_ids": [],
+    "aws_as16509_samples_tested": 4,
+    "aws_as16509_incorrectly_clustered": 0,
+    "aws_clustered_ids": [],
+    "hyperscaler_clustering_status": "PASS"
+  },
+  "pairwise_confusion": {
+    "true_positives": 270,
+    "false_positives": 0,
+    "false_negatives": 0,
+    "true_negatives": 2286,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1": 1.0
+  }
+}

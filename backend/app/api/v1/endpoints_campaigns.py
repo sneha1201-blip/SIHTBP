@@ -147,12 +147,30 @@ async def get_campaign_graph(
                 },
             )
 
-            # Edge: Email -> Campaign
+            # Edge: Email -> Campaign (with explicit why-linked evidence)
+            criteria_raw = assoc.matched_criteria
+            if isinstance(criteria_raw, str):
+                signals_list = [s.strip() for s in criteria_raw.split(";") if s.strip()]
+                criteria_str = criteria_raw
+            elif isinstance(criteria_raw, dict):
+                if "signals" in criteria_raw and isinstance(criteria_raw["signals"], list):
+                    signals_list = [str(s) for s in criteria_raw["signals"]]
+                else:
+                    signals_list = [f"{k}: {v}" for k, v in criteria_raw.items()]
+                criteria_str = "; ".join(signals_list)
+            else:
+                signals_list = []
+                criteria_str = ""
+
             add_edge(
                 source=email_node_id,
                 target=camp_node_id,
                 relationship="CLUSTERED_INTO",
-                metadata={"similarity": assoc.similarity_score, "criteria": assoc.matched_criteria},
+                metadata={
+                    "similarity": assoc.similarity_score,
+                    "criteria": criteria_str,
+                    "signals": signals_list,
+                },
             )
 
             # Node & Edge: Originating IP / ASN

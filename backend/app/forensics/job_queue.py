@@ -377,6 +377,7 @@ async def execute_forensic_pipeline(
 
     # Dynamic Campaign Clustering
     first_hop_asn = enriched_hops[0]["asn_number"] if enriched_hops else None
+    pipeline_iocs = {ioc.defanged_value.strip().lower() for ioc in raw_iocs if ioc.defanged_value}
     await cluster_email_dynamically(
         db=db,
         email=email_record,
@@ -384,6 +385,7 @@ async def execute_forensic_pipeline(
         origin_asn=first_hop_asn,
         detected_vip=spoof_res.detected_vip,
         threat_score=composite.threat_score,
+        candidate_iocs=pipeline_iocs,
     )
 
     # Record sealed, hash-chained audit log with authenticated analyst identity
