@@ -37,6 +37,7 @@ class HopAnalysis(BaseModel):
     delay_seconds: float = 0.0
     clock_skew_detected: bool = False
     node_type: str = "RELAY"  # ORIGINATING, RELAY, EDGE_GATEWAY, INTERNAL, TOR_EXIT, FORGED_OR_UNVERIFIED
+    confidence_score: float = 1.0
     anomaly_reasons: List[str] = Field(default_factory=list)
 
 
@@ -271,6 +272,18 @@ def reverse_hop_traversal(received_headers: List[str]) -> Tuple[List[HopAnalysis
         for h in hops:
             if h.is_private_ip and h.node_type == "RELAY":
                 h.node_type = "INTERNAL"
+
+        for h in hops:
+            if h.node_type == "EDGE_GATEWAY":
+                h.confidence_score = 1.0
+            elif not h.is_reliable or h.node_type == "FORGED_OR_UNVERIFIED":
+                h.confidence_score = 0.1
+            elif h.clock_skew_detected:
+                h.confidence_score = 0.65
+            elif h.is_private_ip:
+                h.confidence_score = 0.75 if h.is_reliable else 0.3
+            else:
+                h.confidence_score = 0.95 if (h.hop_ip and h.by_mta) else 0.85
 
     # Identify the Earliest Reliable Public Originating IP
     # Search in chronological order for the earliest reliable public IP

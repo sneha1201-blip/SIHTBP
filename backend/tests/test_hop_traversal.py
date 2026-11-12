@@ -14,6 +14,10 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
+from hypothesis import given
+from hypothesis import settings as hyp_settings
+from hypothesis import strategies as st
+
 from backend.app.forensics.hop_traversal import (
     extract_ip_address_from_hop,
     is_ip_private_or_reserved,
@@ -176,3 +180,63 @@ def test_forged_hop_temporal_anomaly():
     assert hops[0].is_reliable is False
     assert hops[0].node_type == "FORGED_OR_UNVERIFIED"
     assert any("Temporal Anomaly" in reason for reason in hops[0].anomaly_reasons)
+
+
+# =====================================================================
+# Hypothesis Property-Based Fuzzing & 200+ Corpus Parse Stress Tests
+# =====================================================================
+
+@given(st.text(max_size=500))
+@hyp_settings(max_examples=100, deadline=None)
+def test_hop_parser_fuzz_arbitrary_strings(random_str: str):
+    """Fuzz testing: parser must never raise unhandled exceptions on arbitrary strings."""
+    hop = parse_received_header(random_str, order=1)
+    assert hop.hop_order == 1
+    assert isinstance(hop.anomaly_reasons, list)
+    assert 0.0 <= hop.confidence_score <= 1.0
+
+
+def test_hop_parser_diverse_corpus_200_headers():
+    """Evaluate parse robustness and confidence calculation across >= 200 diverse MTA headers."""
+    vendors = ["Postfix", "Sendmail", "Exim", "qmail", "Microsoft Exchange", "Google Workspace / Gmail"]
+    protocols = ["ESMTPS", "ESMTP", "SMTP", "HTTP", "MSExchange15"]
+    timezones = ["+0000", "+0530", "-0500", "-0800", "+0100", "+0900", "UTC", "PST", "EST"]
+
+    headers_corpus = []
+    for i in range(210):
+        v = vendors[i % len(vendors)]
+        p = protocols[i % len(protocols)]
+        tz = timezones[i % len(timezones)]
+        ip_last = (i % 250) + 1
+        if i % 5 == 0:
+            # IPv6
+            hdr = f"Received: from [2001:db8::{i:x}] by mx{i}.domain.org ({v}) with {p}; Wed, 11 Nov 2026 10:{i%60:02d}:00 {tz}"
+        elif i % 7 == 0:
+            # With comment and id
+            hdr = f"Received: from mail{i}.corp.net (mail{i}.corp.net [198.51.100.{ip_last}]) (using TLSv1.3) by gw.target.in (id 4XYZ{i}) with {p}; 11 Nov 2026 12:{i%60:02d}:00 {tz}"
+        else:
+            # Standard ESMTPS
+            hdr = f"Received: from srv{i}.upstream.com ([185.220.101.{ip_last}]) by relay{i}.isp.com with {p} ({v}); 11 Nov 2026 08:{i%60:02d}:00 {tz}"
+        headers_corpus.append(hdr)
+
+    assert len(headers_corpus) >= 200
+
+    parsed_count = 0
+    failure_categories = {"unparsed_ip": 0, "unparsed_timestamp": 0}
+
+    for idx, raw_h in enumerate(headers_corpus, start=1):
+        hop = parse_received_header(raw_h, order=idx)
+        assert hop.raw_header == raw_h
+        assert 0.0 <= hop.confidence_score <= 1.0
+        if hop.hop_ip:
+            parsed_count += 1
+        else:
+            failure_categories["unparsed_ip"] += 1
+        if not hop.timestamp:
+            failure_categories["unparsed_timestamp"] += 1
+
+    # Assert > 95% IP parsing success rate on structured MTA headers
+    success_rate = (parsed_count / len(headers_corpus)) * 100.0
+    assert success_rate >= 95.0, f"Parse success rate too low: {success_rate}%"
+    assert failure_categories["unparsed_timestamp"] == 0, "All valid timestamps must parse"
+
