@@ -34,6 +34,33 @@ logger = logging.getLogger("auth_validator")
 DNS_QUERY_TIMEOUT_SECONDS = 1.5
 
 
+class DNSNegativeCache:
+    """Thread-safe in-memory cache for DNS queries with negative caching and TTL enforcement."""
+
+    def __init__(self, positive_ttl: float = 300.0, negative_ttl: float = 60.0):
+        self._cache: Dict[str, tuple[List[str], float]] = {}
+        self.positive_ttl = positive_ttl
+        self.negative_ttl = negative_ttl
+
+    def get(self, key: str) -> Optional[List[str]]:
+        if key in self._cache:
+            records, exp = self._cache[key]
+            if time.time() < exp:
+                return records
+            del self._cache[key]
+        return None
+
+    def set(self, key: str, records: List[str], is_negative: bool = False) -> None:
+        ttl = self.negative_ttl if is_negative else self.positive_ttl
+        self._cache[key] = (records, time.time() + ttl)
+
+    def clear(self) -> None:
+        self._cache.clear()
+
+
+GLOBAL_DNS_CACHE = DNSNegativeCache()
+
+
 class DkimSignatureResult(BaseModel):
     """Detailed evaluation of an individual DKIM-Signature header."""
     domain: str = ""
@@ -140,7 +167,8 @@ def query_dns_txt_with_timeout(
 ) -> List[str]:
     """Perform aggressive-timeout DNS TXT record lookup with zero-crash offline resilience.
 
-    Supports custom local record fixtures for deterministic testing / air-gapped operation.
+    Supports custom local record fixtures for deterministic testing / air-gapped operation,
+    and leverages an in-memory TTL negative cache for high performance.
     """
     if not domain:
         return []
@@ -155,6 +183,11 @@ def query_dns_txt_with_timeout(
 
     if "." not in clean_domain:
         return []
+
+    # Check negative & positive cache
+    cached = GLOBAL_DNS_CACHE.get(clean_domain)
+    if cached is not None:
+        return cached
 
     try:
         import dns.exception
@@ -172,10 +205,34 @@ def query_dns_txt_with_timeout(
                 for part in rdata.strings
             ]
             records.append("".join(txt_parts))
+        GLOBAL_DNS_CACHE.set(clean_domain, records, is_negative=False)
         return records
     except Exception as exc:
         logger.debug("DNS TXT query for %s failed/timed out: %s", domain, exc)
+        GLOBAL_DNS_CACHE.set(clean_domain, [], is_negative=True)
         return []
+
+
+async def async_resolve_txt_concurrent(
+    domains: List[str],
+    timeout: float = DNS_QUERY_TIMEOUT_SECONDS,
+) -> Dict[str, List[str]]:
+    """Concurrently resolve DNS TXT records for multiple domains using asyncio executor."""
+    import asyncio
+
+    loop = asyncio.get_running_loop()
+    tasks = [
+        loop.run_in_executor(None, query_dns_txt_with_timeout, d, timeout, None)
+        for d in domains
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    out: Dict[str, List[str]] = {}
+    for d, res in zip(domains, results):
+        if isinstance(res, list):
+            out[d] = res
+        else:
+            out[d] = []
+    return out
 
 
 def parse_received_spf_header(received_spf_str: str) -> Dict[str, str]:

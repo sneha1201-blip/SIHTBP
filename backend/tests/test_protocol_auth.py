@@ -14,6 +14,9 @@ from __future__ import annotations
 import pytest
 
 from backend.app.forensics.auth_validator import (
+    GLOBAL_DNS_CACHE,
+    async_resolve_txt_concurrent,
+    query_dns_txt_with_timeout,
     validate_protocol_authentication,
     verify_arc_chain,
 )
@@ -292,6 +295,68 @@ def test_arc_chain_validation():
     )
     broken_res = verify_arc_chain(broken_arc_msg)
     assert broken_res.status in ("FAIL", "NONE")
+
+
+def test_multi_signature_key_rotation(corpus):
+    """Case 13: Multi-signature email containing both an expired legacy key and a valid rotated key.
+
+    Forensic verification must evaluate both signatures independently, correctly flag the expired key,
+    accept the valid key, and award consolidated PASS with DMARC aligned.
+    """
+    raw_bytes, meta = corpus["multi_sig_rotation.eml"]
+    parsed = parse_eml(raw_bytes, filename="multi_sig_rotation.eml")
+
+    res = validate_protocol_authentication(
+        from_email=meta["from_email"],
+        return_path=meta["from_email"],
+        headers_dict=parsed.headers_dict,
+        auth_results_header=parsed.authentication_results,
+        raw_bytes=raw_bytes,
+        connecting_ip=meta["connecting_ip"],
+        custom_dns_records=DNS_FIXTURES,
+    )
+
+    assert len(res.dkim_signatures) == 2
+    # Verify individual signatures
+    statuses = [s.signature_status for s in res.dkim_signatures]
+    assert "PASS" in statuses
+    assert "EXPIRED" in statuses
+    # Consolidated status must be PASS because valid key authenticated the content
+    assert res.dkim_status == "PASS"
+    assert res.dmarc_alignment_dkim is True
+    assert res.dmarc_status == "PASS"
+
+
+@pytest.mark.asyncio
+async def test_dns_negative_cache_and_concurrent_resolver():
+    """Verify DNS TTL caching, negative caching of missing domains, and concurrent async resolution."""
+    GLOBAL_DNS_CACHE.clear()
+
+    # 1. Negative caching of nonexistent domain
+    bogus_domain = "nonexistent-domain-xyz-26106.invalid"
+    res1 = query_dns_txt_with_timeout(bogus_domain, timeout=0.2)
+    assert res1 == []
+    # Verify cached negatively
+    cached_val = GLOBAL_DNS_CACHE.get(bogus_domain)
+    assert cached_val == []
+
+    # 2. Positive caching manual injection
+    test_dom = "test-cached-domain.org"
+    GLOBAL_DNS_CACHE.set(test_dom, ["v=spf1 -all"], is_negative=False)
+    res2 = query_dns_txt_with_timeout(test_dom, timeout=0.2)
+    assert res2 == ["v=spf1 -all"]
+
+    # 3. Concurrent resolution helper
+    domains = [
+        "domain1.test.invalid",
+        "domain2.test.invalid",
+        "domain3.test.invalid",
+    ]
+    concurrent_res = await async_resolve_txt_concurrent(domains, timeout=0.3)
+    assert len(concurrent_res) == 3
+    for d in domains:
+        assert d in concurrent_res
+        assert isinstance(concurrent_res[d], list)
 
 
 def test_confusion_matrix_verification(corpus):

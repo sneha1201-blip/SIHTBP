@@ -1,14 +1,14 @@
 {
   "type": "bundle",
-  "id": "bundle--8951160b-9d99-4955-84d9-c87cafc70240",
+  "id": "bundle--811ca21c-2700-46a8-b0d5-5a4769d08223",
   "spec_version": "2.1",
   "objects": [
     {
       "type": "threat-actor",
       "spec_version": "2.1",
-      "id": "threat-actor--ef63f48a-ed6b-436c-ad71-c458e1ddcf57",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "threat-actor--412b3a0a-3a53-47c6-9d18-bf021b847415",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "name": "Actor Group (Operation Template-Cluster-0x48298a)",
       "threat_actor_types": [
         "cybercriminal"
@@ -20,9 +20,9 @@
     {
       "type": "campaign",
       "spec_version": "2.1",
-      "id": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "name": "Operation Template-Cluster-0x48298a",
       "description": "Automated threat cluster correlated dynamically via SimHash near-duplicate template (distance: 0 bits); Shared non-fanout infrastructure ASN: AS208294; Shared network subnet: 185.220.101.0/24; Shared threat actor sender domain: aicte-compliance-review.top",
       "objective": "Targeted Spear Phishing & BEC Remittance Fraud"
@@ -30,12 +30,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--d2e566df-eeeb-4256-9073-2860a596a16b",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--240a78a1-3088-41ca-955b-93a6fefea1b9",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20",
-      "target_ref": "threat-actor--ef63f48a-ed6b-436c-ad71-c458e1ddcf57"
+      "source_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33",
+      "target_ref": "threat-actor--412b3a0a-3a53-47c6-9d18-bf021b847415"
     },
     {
       "type": "email-addr",
@@ -46,37 +46,37 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--f2dbd6fe-f9bd-419e-81ac-1ce4cf0b7f2c",
+      "id": "email-message--e54fd49c-2bb5-40e9-9fae-618877204a83",
       "is_multipart": true,
-      "subject": "Deficiency Audit Notice #3",
+      "subject": "Deficiency Audit Notice #2",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
-      "body": "Directive from Technical Education Bureau: Institutional deficiency audit notice. Intake quota reduction of 50% will be executed unless compliance affidavit is remitted. Case reference #1002."
+      "body": "Directive from Technical Education Bureau: Institutional deficiency audit notice. Intake quota reduction of 50% will be executed unless compliance affidavit is remitted. Case reference #1001."
     },
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--5566536f-6f81-49ad-a43f-9429cfbc7bc8",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--6fdb3e26-ea5d-4535-a58d-01d179a60efe",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--f2dbd6fe-f9bd-419e-81ac-1ce4cf0b7f2c",
-      "target_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20"
+      "source_ref": "email-message--e54fd49c-2bb5-40e9-9fae-618877204a83",
+      "target_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33"
     },
     {
       "type": "ipv4-addr",
       "spec_version": "2.1",
-      "id": "ipv4-addr--1d9d5f8d-f97d-5b88-8564-c4c11c2bfe30",
-      "value": "185.220.101.12"
+      "id": "ipv4-addr--8e45b123-2dba-5463-93f5-5f4047a5fb0d",
+      "value": "185.220.101.11"
     },
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--6c10ee9d-374c-4727-8ac3-0042db1e52e9",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--c1e40148-cebc-4a4a-a24b-f476ec375c85",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20",
-      "target_ref": "ipv4-addr--1d9d5f8d-f97d-5b88-8564-c4c11c2bfe30"
+      "source_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33",
+      "target_ref": "ipv4-addr--8e45b123-2dba-5463-93f5-5f4047a5fb0d"
     },
     {
       "type": "email-addr",
@@ -87,7 +87,7 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--df726646-9718-4d6f-b04a-4bc6716cf7b9",
+      "id": "email-message--ae1ed3b4-8bbc-491f-89df-8a4053a8b54b",
       "is_multipart": true,
       "subject": "Deficiency Audit Notice #1",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
@@ -96,12 +96,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--b09fe169-4a02-43f4-ab3e-17487babe33a",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--e888ae9f-26d4-4295-b775-feebedebd8b7",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--df726646-9718-4d6f-b04a-4bc6716cf7b9",
-      "target_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20"
+      "source_ref": "email-message--ae1ed3b4-8bbc-491f-89df-8a4053a8b54b",
+      "target_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33"
     },
     {
       "type": "ipv4-addr",
@@ -112,11 +112,11 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--cb44b001-3711-48f2-b9c4-8e76cf4f6c0e",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--6e71c804-8a4d-42a3-b3ff-80cf989e302b",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20",
+      "source_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33",
       "target_ref": "ipv4-addr--c4be9a47-94f0-516a-b5dc-df7fb71d43fe"
     },
     {
@@ -128,37 +128,37 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--2ebee446-dee1-4b3d-b711-e877bede9a5c",
+      "id": "email-message--7263b170-9c2e-4a7f-a8d4-3f385783bccf",
       "is_multipart": true,
-      "subject": "Deficiency Audit Notice #2",
+      "subject": "Deficiency Audit Notice #3",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
-      "body": "Directive from Technical Education Bureau: Institutional deficiency audit notice. Intake quota reduction of 50% will be executed unless compliance affidavit is remitted. Case reference #1001."
+      "body": "Directive from Technical Education Bureau: Institutional deficiency audit notice. Intake quota reduction of 50% will be executed unless compliance affidavit is remitted. Case reference #1002."
     },
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--3c8eb571-b333-4e6e-9195-17eeb7138372",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--87fff955-9df9-4db9-93a8-ee65055f0f05",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--2ebee446-dee1-4b3d-b711-e877bede9a5c",
-      "target_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20"
+      "source_ref": "email-message--7263b170-9c2e-4a7f-a8d4-3f385783bccf",
+      "target_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33"
     },
     {
       "type": "ipv4-addr",
       "spec_version": "2.1",
-      "id": "ipv4-addr--8e45b123-2dba-5463-93f5-5f4047a5fb0d",
-      "value": "185.220.101.11"
+      "id": "ipv4-addr--1d9d5f8d-f97d-5b88-8564-c4c11c2bfe30",
+      "value": "185.220.101.12"
     },
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--50001d9f-5b91-4680-9bf3-3c43c9fd2fcd",
-      "created": "2026-11-12T15:22:06.000Z",
-      "modified": "2026-11-12T15:22:06.000Z",
+      "id": "relationship--2a33ffc2-b0da-4bfe-92d4-51476a2afb06",
+      "created": "2026-11-12T15:26:12.000Z",
+      "modified": "2026-11-12T15:26:12.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--b4ff4f74-0afb-48ec-bd26-6a6444564b20",
-      "target_ref": "ipv4-addr--8e45b123-2dba-5463-93f5-5f4047a5fb0d"
+      "source_ref": "campaign--bf74042e-459f-422b-a8f4-d2a215be9d33",
+      "target_ref": "ipv4-addr--1d9d5f8d-f97d-5b88-8564-c4c11c2bfe30"
     }
   ]
 }

@@ -328,6 +328,35 @@ def build_corpus() -> Dict[str, Tuple[bytes, Dict[str, Any]]]:
         },
     )
 
+    # 12. Multi-Signature Key Rotation (Primary active sih2026 key passes + Old expired key old2024)
+    DNS_FIXTURES[f"old2024._domainkey.{PRIMARY_DOMAIN}"] = [f"v=DKIM1; k=rsa; p={_pub_b64}"]
+    expired_timestamp = int(time.time()) - 7200
+    sig_old = dkim.sign(
+        raw_authentic,
+        b"old2024",
+        PRIMARY_DOMAIN.encode("ascii"),
+        _priv_pem,
+        include_headers=[b"From", b"To", b"Subject", b"Date"],
+    )
+    sig_old_expired = sig_old.replace(
+        b"d=aicte-india.org;",
+        f"d=aicte-india.org; x={expired_timestamp};".encode("ascii"),
+    )
+    eml_multi_sig = sig_authentic + sig_old_expired + raw_authentic
+    corpus["multi_sig_rotation.eml"] = (
+        eml_multi_sig,
+        {
+            "expected_spf": "PASS",
+            "expected_dkim": "PASS",
+            "expected_dmarc": "PASS",
+            "expected_align_spf": True,
+            "expected_align_dkim": True,
+            "expected_discrepancy": False,
+            "connecting_ip": CONNECTING_IP,
+            "from_email": "no-reply@aicte-india.org",
+        },
+    )
+
     return corpus
 
 
