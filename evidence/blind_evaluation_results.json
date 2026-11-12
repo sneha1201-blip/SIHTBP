@@ -1,0 +1,16 @@
+{
+  "status": "COMPLETED",
+  "total_samples": 1,
+  "labeled_samples": 1,
+  "correct_predictions": 1,
+  "accuracy": 1.0,
+  "predictions": [
+    {
+      "filename": "sample1.eml",
+      "predicted": "PHISHING",
+      "confidence": 0.5396,
+      "expected": "PHISHING",
+      "is_correct": true
+    }
+  ]
+}

@@ -423,3 +423,43 @@ def test_calibration_uncertain_verdict():
         assert score_res.is_uncertain is True
         assert score_res.verdict == "UNCERTAIN"
 
+
+def test_blind_evaluation_runner(tmp_path):
+    """Verify scripts/evaluate_blind_corpus.py on mock blind test batch."""
+    from scripts.evaluate_blind_corpus import evaluate_blind_corpus
+
+    # 1. Nonexistent directory
+    res_missing = evaluate_blind_corpus(tmp_path / "nonexistent")
+    assert res_missing["status"] == "BLOCKED"
+
+    # 2. Empty directory
+    empty_dir = tmp_path / "empty"
+    empty_dir.mkdir()
+    res_empty = evaluate_blind_corpus(empty_dir)
+    assert res_empty["status"] == "BLOCKED"
+
+    # 3. Directory with sample .eml files and CSV labels
+    eval_dir = tmp_path / "blind_batch"
+    eval_dir.mkdir()
+
+    eml_phish = (
+        "From: security@fake-bank.com\r\n"
+        "To: victim@example.org\r\n"
+        "Subject: Urgent: Verify Account Credentials Immediately\r\n"
+        "Date: Thu, 12 Nov 2026 12:00:00 +0000\r\n"
+        "Content-Type: text/plain\r\n\r\n"
+        "Your account is suspended. Click http://fake-bank-login.com to verify credentials.\r\n"
+    )
+    (eval_dir / "sample1.eml").write_text(eml_phish, encoding="utf-8")
+
+    csv_path = tmp_path / "labels.csv"
+    csv_path.write_text("filename,label\nsample1.eml,PHISHING\n", encoding="utf-8")
+
+    res = evaluate_blind_corpus(eval_dir, csv_path)
+    assert res["status"] == "COMPLETED"
+    assert res["total_samples"] == 1
+    assert res["labeled_samples"] == 1
+    assert res["correct_predictions"] == 1
+    assert res["accuracy"] == 1.0
+
+
