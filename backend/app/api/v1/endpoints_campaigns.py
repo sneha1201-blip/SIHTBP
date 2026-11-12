@@ -255,7 +255,6 @@ async def export_all_campaigns_stix(
     return {
         "type": "bundle",
         "id": bundle_id,
-        "spec_version": "2.1",
         "objects": all_objects,
     }
 

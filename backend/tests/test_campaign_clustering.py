@@ -251,8 +251,8 @@ async def test_dynamic_campaign_clustering_and_stix_bundle(campaign_test_session
     stix_bundle = generate_stix21_bundle(c1_camp, c1_emails_db)
 
     assert stix_bundle["type"] == "bundle"
-    assert stix_bundle["spec_version"] == "2.1"
     assert "objects" in stix_bundle
+    assert all(obj["spec_version"] == "2.1" for obj in stix_bundle["objects"])
     assert len(stix_bundle["objects"]) >= 4
 
     types_in_bundle = [obj["type"] for obj in stix_bundle["objects"]]
@@ -303,7 +303,7 @@ async def test_campaign_graph_api_endpoint(campaign_test_session: AsyncSession):
         assert res_stix.status_code == 200
         stix_data = res_stix.json()
         assert stix_data["type"] == "bundle"
-        assert stix_data["spec_version"] == "2.1"
+        assert all(obj["spec_version"] == "2.1" for obj in stix_data["objects"])
 
     app.dependency_overrides.clear()
 

@@ -158,10 +158,10 @@ async def drop_all_tables() -> None:
     async with engine.begin() as conn:
         if IS_SQLITE:
             await conn.execute(text("PRAGMA foreign_keys = OFF;"))
-            for table in reversed(Base.metadata.sorted_tables):
-                await conn.execute(table.delete())
+            await conn.run_sync(Base.metadata.drop_all)
             await conn.execute(text("PRAGMA foreign_keys = ON;"))
-        await conn.run_sync(Base.metadata.drop_all)
+        else:
+            await conn.run_sync(Base.metadata.drop_all)
 
 
 async def reset_database() -> None:

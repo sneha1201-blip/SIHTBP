@@ -147,6 +147,21 @@ $$\text{Threat Score} = \min\left(100.0, 0.25 \times \text{Auth} + 0.20 \times \
 
 ---
 
+## 🤖 AI Model & Classification Benchmark
+
+Empirical metrics evaluated on stratified holdout test set (provenance in `evidence/model_card.md` and `evidence/datasets.md`):
+
+| Evaluation Metric | Score | Verification Status |
+|---|---|---|
+| **Holdout Test Accuracy** | **91.67%** | **VERIFIED** |
+| **ROC-AUC (One-vs-Rest Macro)** | **0.9980** | **VERIFIED** |
+| **PR-AUC (Average Precision Macro)** | **0.9965** | **VERIFIED** |
+| **F1-Score (Macro / Weighted)** | **0.9167** | **VERIFIED** |
+| **Expected Calibration Error (ECE)** | **0.0640** | **VERIFIED** |
+| **False Positive Rate @ 95% Recall** | **12.50%** | **VERIFIED** |
+
+---
+
 ## ⚖️ Statutory Legal Admissibility (Section 63 BSA, 2023)
 
 Every generated forensic dossier contains a statutory certificate compliant with **Section 63 of the Bharatiya Sakshya Adhiniyam (BSA), 2023** (which supersedes Section 65B of the repealed Indian Evidence Act, 1872):

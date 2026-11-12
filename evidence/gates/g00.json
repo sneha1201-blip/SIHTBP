@@ -1,8 +1,8 @@
 {
   "gate_id": "G00",
   "status": "PASS",
-  "commit": "25ac19a85192892f959151095a841a8ff8557dbe",
-  "timestamp": "2026-11-12T16:45:40.997410+00:00",
+  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
+  "timestamp": "2026-11-12T17:05:23.636367+00:00",
   "command": "g00_hygiene_check",
   "details": {
     "violations_count": 0

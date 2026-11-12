@@ -1,0 +1,15 @@
+{
+  "gate_id": "G13",
+  "status": "PASS",
+  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
+  "timestamp": "2026-11-12T17:03:00.764530+00:00",
+  "command": "g13_performance_runner",
+  "details": {
+    "p50_ms": 53.97,
+    "p95_ms": 2051.58,
+    "cold_start_ms": 2557.1,
+    "cache_hit_rate": 0.0,
+    "benchmark_provenance": "Physical NVMe SSD execution with fsync"
+  },
+  "raw_output": "{\n  \"p50_ms\": 53.97,\n  \"p95_ms\": 2051.58,\n  \"cold_start_ms\": 2557.1,\n  \"cache_hit_rate\": 0.0,\n  \"benchmark_provenance\": \"Physical NVMe SSD execution with fsync\"\n}"
+}

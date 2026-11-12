@@ -471,7 +471,7 @@ def generate_stix21_bundle(
             "type": "email-message",
             "spec_version": "2.1",
             "id": em_msg_id,
-            "is_multipart": True,
+            "is_multipart": False,
             "subject": em.subject or "Threat Email",
             "from_ref": sender_addr_id,
             "body": em.body_plain[:500] if em.body_plain else "",
@@ -552,6 +552,5 @@ def generate_stix21_bundle(
     return {
         "type": "bundle",
         "id": bundle_id,
-        "spec_version": "2.1",
         "objects": objects,
     }

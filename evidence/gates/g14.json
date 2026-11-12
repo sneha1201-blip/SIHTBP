@@ -1,0 +1,13 @@
+{
+  "gate_id": "G14",
+  "status": "BLOCKED",
+  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
+  "timestamp": "2026-11-12T17:03:13.443382+00:00",
+  "command": "git remote -v",
+  "details": {
+    "status": "BLOCKED",
+    "reason": "Local evaluation environment: awaiting GitHub remote push credentials",
+    "ci_workflow_present": true
+  },
+  "raw_output": "Local evaluation environment: awaiting GitHub remote push credentials"
+}

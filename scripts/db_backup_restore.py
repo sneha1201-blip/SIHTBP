@@ -49,8 +49,8 @@ def backup_database(
 
     dest_dir.mkdir(parents=True, exist_ok=True)
     timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    backup_file = dest_dir / f"backup_{timestamp}.db"
-    manifest_file = dest_dir / f"backup_{timestamp}.manifest.json"
+    backup_file = dest_dir / f"forensic_platform_backup_{timestamp}.db"
+    manifest_file = dest_dir / f"forensic_platform_backup_{timestamp}.manifest.json"
 
     logger.info("Initiating online backup from %s -> %s", source_db, backup_file)
 
@@ -91,6 +91,9 @@ def restore_database(
     target_db: Path = DEFAULT_DB_FILE,
 ) -> bool:
     """Verify cryptographic manifest and restore database safely."""
+    if manifest_file.suffix == ".db":
+        manifest_file = manifest_file.with_suffix(".manifest.json")
+
     if not manifest_file.exists():
         raise FileNotFoundError(f"Manifest file not found: {manifest_file}")
 
@@ -135,11 +138,11 @@ def main():
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     backup_parser = subparsers.add_parser("backup", help="Create a verified database backup snapshot.")
-    backup_parser.add_argument("--source", default=str(DEFAULT_DB_FILE), help="Source database file path.")
-    backup_parser.add_argument("--dest", default=str(BACKUP_DIR), help="Destination backup directory.")
+    backup_parser.add_argument("--source", "--db", dest="source", default=str(DEFAULT_DB_FILE), help="Source database file path.")
+    backup_parser.add_argument("--dest", "--out", dest="dest", default=str(BACKUP_DIR), help="Destination backup directory.")
 
     restore_parser = subparsers.add_parser("restore", help="Restore database from a verified manifest.")
-    restore_parser.add_argument("--manifest", required=True, help="Path to backup manifest JSON.")
+    restore_parser.add_argument("--manifest", "--backup", dest="manifest", required=True, help="Path to backup manifest JSON or DB.")
     restore_parser.add_argument("--target", default=str(DEFAULT_DB_FILE), help="Target database file path.")
 
     args = parser.parse_args()

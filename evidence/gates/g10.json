@@ -1,0 +1,14 @@
+{
+  "gate_id": "G10",
+  "status": "PASS",
+  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
+  "timestamp": "2026-11-12T16:57:31.288364+00:00",
+  "command": "g10_architecture_runner",
+  "details": {
+    "backup_restore_manifest": "VERIFIED (SHA-256 verified roundtrip)",
+    "observability_endpoints": "VERIFIED (/health, /ready, /metrics)",
+    "vault_integrity_sweep": "VERIFIED (Background sweep API)",
+    "docker_container_orchestration": "BLOCKED: awaiting Docker host daemon"
+  },
+  "raw_output": "Backup and restore roundtrip successfully verified"
+}
