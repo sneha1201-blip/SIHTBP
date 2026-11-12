@@ -1,81 +1,162 @@
 {
   "benchmark_metadata": {
-    "sih_problem_id": "26106",
-    "statutory_mandate": "Section 63 Bharatiya Sakshya Adhiniyam, 2023",
-    "git_commit": "81011e04da8907444be4ef4b644a0be8f83f16ae",
-    "execution_timestamp": "2026-11-10T19:46:47.228801+00:00",
-    "total_samples_evaluated": 33,
-    "unique_test_corpus_files": 11,
-    "iterations": 3,
-    "total_wall_time_seconds": 126.005,
-    "throughput_emails_per_second": 0.26
+    "sih_problem_statement_id": "26106",
+    "statutory_mandate": "Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA)",
+    "git_commit": "52a11a1f4d4e3efeb0c4f410b78b8e889a75b6a9",
+    "execution_timestamp": "2026-11-12T03:20:50.191983+00:00",
+    "environment": {
+      "operating_system": "Windows 11 (10.0.26200)",
+      "processor_architecture": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel",
+      "python_version": "3.12.14",
+      "sqlite_version": "3.53.1",
+      "storage_backend": "Physical On-Disk NVMe/SSD (SQLite WAL Mode + O_SYNC fsync)",
+      "disk_db_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\benchmark_0cc67b4d755e.db",
+      "vault_storage_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\vault_0cc67b4d755e",
+      "db_size_bytes": 409600,
+      "vault_size_bytes": 40017
+    },
+    "evaluations_summary": {
+      "total_unique_samples_evaluated": 50,
+      "steady_state_samples": 49,
+      "cold_start_latency_ms": 3412.21,
+      "steady_state_wall_time_sec": 243.399,
+      "steady_state_throughput_eps": 0.2,
+      "duplicate_hashes_prevented": true,
+      "cache_bypass_verified": true
+    }
   },
   "stage_latency_breakdown_ms": {
     "dual_hashing_vault_store": {
-      "mean_ms": 1.9,
-      "p95_ms": 5.51,
-      "min_ms": 0.79,
-      "max_ms": 5.62
+      "count": 49,
+      "mean_ms": 5.42,
+      "p50_ms": 5.41,
+      "p90_ms": 6.5,
+      "p95_ms": 7.3,
+      "p99_ms": 7.8,
+      "min_ms": 4.02,
+      "max_ms": 7.8,
+      "stddev_ms": 0.82
     },
     "mime_rfc822_parsing": {
-      "mean_ms": 2.56,
-      "p95_ms": 4.17,
-      "min_ms": 0.91,
-      "max_ms": 4.21
+      "count": 49,
+      "mean_ms": 5.26,
+      "p50_ms": 5.12,
+      "p90_ms": 6.68,
+      "p95_ms": 7.62,
+      "p99_ms": 10.02,
+      "min_ms": 2.15,
+      "max_ms": 10.02,
+      "stddev_ms": 1.27
     },
     "hop_traversal_geoip_asn": {
-      "mean_ms": 0.0,
-      "p95_ms": 0.0,
+      "count": 49,
+      "mean_ms": 0.15,
+      "p50_ms": 0.14,
+      "p90_ms": 0.24,
+      "p95_ms": 0.25,
+      "p99_ms": 0.72,
       "min_ms": 0.0,
-      "max_ms": 0.0
+      "max_ms": 0.72,
+      "stddev_ms": 0.13
     },
     "protocol_auth_dkim_spf_dmarc": {
-      "mean_ms": 2744.69,
-      "p95_ms": 3030.51,
-      "min_ms": 1503.91,
-      "max_ms": 3058.84
+      "count": 49,
+      "mean_ms": 2402.83,
+      "p50_ms": 3015.76,
+      "p90_ms": 3026.15,
+      "p95_ms": 3027.3,
+      "p99_ms": 3028.86,
+      "min_ms": 0.21,
+      "max_ms": 3028.86,
+      "stddev_ms": 1215.8
     },
     "spoof_homoglyph_detection": {
-      "mean_ms": 0.72,
-      "p95_ms": 0.98,
-      "min_ms": 0.42,
-      "max_ms": 1.08
+      "count": 49,
+      "mean_ms": 1.32,
+      "p50_ms": 1.29,
+      "p90_ms": 2.03,
+      "p95_ms": 2.28,
+      "p99_ms": 2.47,
+      "min_ms": 0.5,
+      "max_ms": 2.47,
+      "stddev_ms": 0.52
     },
     "ioc_extraction_url_deobfuscation": {
-      "mean_ms": 0.08,
-      "p95_ms": 0.18,
-      "min_ms": 0.04,
-      "max_ms": 0.45
+      "count": 49,
+      "mean_ms": 0.09,
+      "p50_ms": 0.07,
+      "p90_ms": 0.12,
+      "p95_ms": 0.15,
+      "p99_ms": 0.46,
+      "min_ms": 0.03,
+      "max_ms": 0.46,
+      "stddev_ms": 0.06
     },
     "nlp_intent_and_entity_extraction": {
-      "mean_ms": 51.55,
-      "p95_ms": 6.64,
-      "min_ms": 2.97,
-      "max_ms": 1587.62
+      "count": 49,
+      "mean_ms": 5.65,
+      "p50_ms": 5.15,
+      "p90_ms": 8.68,
+      "p95_ms": 8.89,
+      "p99_ms": 10.43,
+      "min_ms": 3.92,
+      "max_ms": 10.43,
+      "stddev_ms": 1.6
     },
     "threat_scoring_formula": {
-      "mean_ms": 0.02,
-      "p95_ms": 0.04,
+      "count": 49,
+      "mean_ms": 0.04,
+      "p50_ms": 0.03,
+      "p90_ms": 0.06,
+      "p95_ms": 0.06,
+      "p99_ms": 0.31,
       "min_ms": 0.02,
-      "max_ms": 0.05
+      "max_ms": 0.31,
+      "stddev_ms": 0.04
     },
-    "dynamic_campaign_clustering": {
-      "mean_ms": 0.0,
-      "p95_ms": 0.0,
-      "min_ms": 0.0,
-      "max_ms": 0.0
+    "database_orm_persistence": {
+      "count": 49,
+      "mean_ms": 0.12,
+      "p50_ms": 0.11,
+      "p90_ms": 0.17,
+      "p95_ms": 0.17,
+      "p99_ms": 0.2,
+      "min_ms": 0.08,
+      "max_ms": 0.2,
+      "stddev_ms": 0.03
     },
     "pdf_generation_section63_bsa": {
-      "mean_ms": 29.62,
-      "p95_ms": 51.04,
-      "min_ms": 24.63,
-      "max_ms": 55.27
+      "count": 49,
+      "mean_ms": 55.33,
+      "p50_ms": 45.94,
+      "p90_ms": 85.2,
+      "p95_ms": 112.62,
+      "p99_ms": 214.19,
+      "min_ms": 42.58,
+      "max_ms": 214.19,
+      "stddev_ms": 29.04
     },
     "full_pipeline_ingest_e2e": {
-      "mean_ms": 983.96,
-      "p95_ms": 3619.98,
-      "min_ms": 9.92,
-      "max_ms": 4103.51
+      "count": 49,
+      "mean_ms": 2491.08,
+      "p50_ms": 3084.79,
+      "p90_ms": 3110.67,
+      "p95_ms": 3121.67,
+      "p99_ms": 3132.76,
+      "min_ms": 51.25,
+      "max_ms": 3132.76,
+      "stddev_ms": 1193.27
+    },
+    "concurrent_dns_resolution_latency": {
+      "count": 20,
+      "mean_ms": 4018.91,
+      "p50_ms": 4017.65,
+      "p90_ms": 4019.91,
+      "p95_ms": 4044.63,
+      "p99_ms": 4044.63,
+      "min_ms": 4015.08,
+      "max_ms": 4044.63,
+      "stddev_ms": 6.05
     }
   }
 }

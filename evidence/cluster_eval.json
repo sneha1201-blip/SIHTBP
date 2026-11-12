@@ -1,7 +1,7 @@
 {
   "metadata": {
-    "evaluation_timestamp": "2026-11-11T01:00:51.612105+00:00",
-    "git_commit": "1e41d602f3f7fd125436f240ed2aa7dddb20bca3",
+    "evaluation_timestamp": "2026-11-12T03:21:45.448825+00:00",
+    "git_commit": "52a11a1f4d4e3efeb0c4f410b78b8e889a75b6a9",
     "corpus_size": 72,
     "campaign_classes_count": 6,
     "noise_samples_count": 12

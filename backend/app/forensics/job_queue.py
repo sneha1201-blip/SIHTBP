@@ -120,6 +120,8 @@ async def execute_forensic_pipeline(
     actor: str,
     db: AsyncSession,
     job: Optional[IngestionJob] = None,
+    custom_dns_records: Optional[Dict[str, List[str]]] = None,
+    custom_rdap_db: Optional[Dict[str, Dict[str, Any]]] = None,
 ) -> Dict[str, Any]:
     """Execute the end-to-end forensic analysis pipeline with per-stage timeouts."""
     if job:
@@ -226,6 +228,7 @@ async def execute_forensic_pipeline(
         raw_bytes=raw_bytes,
         connecting_ip=connecting_ip_candidate,
         helo_name=helo_candidate,
+        custom_dns_records=custom_dns_records,
     )
 
     # 6. Spoofing & Impersonation Engine
@@ -257,7 +260,10 @@ async def execute_forensic_pipeline(
             ioc.metadata.update({"risk_score": u_res.risk_score, "flags": u_res.matched_flags})
         elif ioc.ioc_type == "DOMAIN":
             try:
-                dom_intel = await asyncio.wait_for(lookup_domain_whois(ioc.raw_value), timeout=2.0)
+                dom_intel = await asyncio.wait_for(
+                    lookup_domain_whois(ioc.raw_value, custom_rdap_db=custom_rdap_db),
+                    timeout=2.0,
+                )
                 if dom_intel.is_newly_registered:
                     is_nrd = True
                 ioc.metadata.update({"domain_age_days": dom_intel.domain_age_days, "registrar": dom_intel.registrar})

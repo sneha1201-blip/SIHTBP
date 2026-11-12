@@ -1,14 +1,14 @@
 {
   "type": "bundle",
-  "id": "bundle--8b64b7cb-c999-4375-9a7a-a847e308b2fd",
+  "id": "bundle--a1660b0f-0bc9-471c-be3f-7554b8eb9b34",
   "spec_version": "2.1",
   "objects": [
     {
       "type": "threat-actor",
       "spec_version": "2.1",
-      "id": "threat-actor--d3a88e33-cb39-401c-9150-1a45f42c707c",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "threat-actor--0d29c01a-c1ff-4d4f-8ca0-169313a0a0f3",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "name": "Actor Group (Operation Template-Cluster-0x48298a)",
       "threat_actor_types": [
         "cybercriminal"
@@ -20,9 +20,9 @@
     {
       "type": "campaign",
       "spec_version": "2.1",
-      "id": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "name": "Operation Template-Cluster-0x48298a",
       "description": "Automated threat cluster correlated dynamically via SimHash near-duplicate template (distance: 0 bits); Shared non-fanout infrastructure ASN: AS208294; Shared network subnet: 185.220.101.0/24; Shared threat actor sender domain: aicte-compliance-review.top",
       "objective": "Targeted Spear Phishing & BEC Remittance Fraud"
@@ -30,12 +30,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--fcb61e27-0282-4e4b-aae5-c59d8017455d",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--34d63bc2-fd39-4116-8380-997cfbc6becf",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1",
-      "target_ref": "threat-actor--d3a88e33-cb39-401c-9150-1a45f42c707c"
+      "source_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394",
+      "target_ref": "threat-actor--0d29c01a-c1ff-4d4f-8ca0-169313a0a0f3"
     },
     {
       "type": "email-addr",
@@ -46,7 +46,7 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--34c31cec-3a74-49db-a54a-8a9a066d73c3",
+      "id": "email-message--5ad2d15d-d6ab-4e49-ad25-df6ba3d2887f",
       "is_multipart": true,
       "subject": "Deficiency Audit Notice #2",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
@@ -55,12 +55,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--8e0d9be7-3406-46d9-9bb0-97fb3269b1cd",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--2c625ece-704d-451d-8eeb-76b7dc4f91b8",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--34c31cec-3a74-49db-a54a-8a9a066d73c3",
-      "target_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1"
+      "source_ref": "email-message--5ad2d15d-d6ab-4e49-ad25-df6ba3d2887f",
+      "target_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394"
     },
     {
       "type": "ipv4-addr",
@@ -71,11 +71,11 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--6b0059e4-b9a3-45ed-b57c-4241ff1be7d0",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--45fec832-9670-4dd3-be92-26da4f7ddd91",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1",
+      "source_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394",
       "target_ref": "ipv4-addr--8e45b123-2dba-5463-93f5-5f4047a5fb0d"
     },
     {
@@ -87,7 +87,7 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--8bf2b824-ea9c-44c0-9deb-3392bc6d4713",
+      "id": "email-message--8c65f1b9-18ac-40ea-9d23-507c8cfe8d0c",
       "is_multipart": true,
       "subject": "Deficiency Audit Notice #1",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
@@ -96,12 +96,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--32aeb49c-b601-4445-85ae-2b10bcc131e6",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--6b956ab7-897e-4cd3-b444-1411d0d6b135",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--8bf2b824-ea9c-44c0-9deb-3392bc6d4713",
-      "target_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1"
+      "source_ref": "email-message--8c65f1b9-18ac-40ea-9d23-507c8cfe8d0c",
+      "target_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394"
     },
     {
       "type": "ipv4-addr",
@@ -112,11 +112,11 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--bd252dbd-5b18-4ff8-b832-5377eabec282",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--3ca5630c-b547-4b09-9d7c-9c4ebceb6f7d",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1",
+      "source_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394",
       "target_ref": "ipv4-addr--c4be9a47-94f0-516a-b5dc-df7fb71d43fe"
     },
     {
@@ -128,7 +128,7 @@
     {
       "type": "email-message",
       "spec_version": "2.1",
-      "id": "email-message--7d4f3975-7a19-42e5-ac93-5d0ca79e0799",
+      "id": "email-message--d244ade4-c6dc-48c4-84b4-2ef2e4cdd124",
       "is_multipart": true,
       "subject": "Deficiency Audit Notice #3",
       "from_ref": "email-addr--a45ba8b8-4339-5bea-98b7-276de99355a5",
@@ -137,12 +137,12 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--37ef9008-7eec-4356-9914-bbee8826cc83",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--7c8d5a51-4b3c-4315-a4a0-e99fccb55e4d",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "attributed-to",
-      "source_ref": "email-message--7d4f3975-7a19-42e5-ac93-5d0ca79e0799",
-      "target_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1"
+      "source_ref": "email-message--d244ade4-c6dc-48c4-84b4-2ef2e4cdd124",
+      "target_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394"
     },
     {
       "type": "ipv4-addr",
@@ -153,11 +153,11 @@
     {
       "type": "relationship",
       "spec_version": "2.1",
-      "id": "relationship--b12c3903-dee7-4a0c-8a25-c91783731280",
-      "created": "2026-11-11T01:00:50.000Z",
-      "modified": "2026-11-11T01:00:50.000Z",
+      "id": "relationship--1d75e58f-ff81-4b65-99a8-e315fe1f4598",
+      "created": "2026-11-12T03:21:42.000Z",
+      "modified": "2026-11-12T03:21:42.000Z",
       "relationship_type": "uses",
-      "source_ref": "campaign--06a9c55c-af45-4a52-ac77-0f10a79368e1",
+      "source_ref": "campaign--67711e5c-97e6-410c-a75d-bd93a37e5394",
       "target_ref": "ipv4-addr--1d9d5f8d-f97d-5b88-8564-c4c11c2bfe30"
     }
   ]

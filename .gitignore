@@ -10,6 +10,7 @@ __pycache__/
 storage/*.db
 storage/*.db-wal
 storage/*.db-shm
+storage/benchmarks/
 storage/vault/*.raw
 !storage/vault/.gitkeep
 storage/tor/
