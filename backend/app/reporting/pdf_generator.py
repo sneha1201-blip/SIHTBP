@@ -74,7 +74,7 @@ class NumberedCanvas(canvas.Canvas):
 
         # Running Footer
         self.line(54, 46, 8.5 * inch - 54, 46)
-        footer_confidential = "CONFIDENTIAL - PREPARED FOR JUDICIAL / LAW ENFORCEMENT PROCEEDINGS UNDER SEC 63 BSA, 2023"
+        footer_confidential = "CONFIDENTIAL - SEC 63 BSA 2023 CERTIFICATE | UNKNOWN FIELDS MARKED NEEDS LEGAL REVIEW"
         self.drawString(54, 34, footer_confidential)
         page_str = f"Page {self._pageNumber} of {page_count}"
         self.drawRightString(8.5 * inch - 54, 34, page_str)
@@ -429,13 +429,14 @@ def generate_forensic_pdf(
 
     # Statutory Certification & Sign-off Block (Section 63 BSA 2023)
     cert_text = (
-        "<b>CERTIFICATE OF AUTHENTICITY UNDER SECTION 63, BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023:</b><br/>"
-        "I, the undersigned forensic examiner, hereby certify under Section 63 of the Bharatiya Sakshya Adhiniyam, 2023 "
-        "that the electronic record described in this dossier was ingested, processed, and cryptographically verified "
-        "by the automated cyber forensic platform operating in the ordinary course of official duty. "
-        "Cryptographic dual-hashes (SHA-256 and MD5) were recorded at the moment of intake into an immutable, WORM-compliant "
-        "vault. The hash-chained audit ledger confirms zero data degradation, unauthorized access, or tampering. "
-        "This electronic dossier satisfies all conditions of admissibility for primary and secondary electronic evidence."
+        "<b>CERTIFICATE UNDER SECTION 63 OF THE BHARATIYA SAKSHYA ADHINIYAM (BSA), 2023 (PART A & B):</b><br/>"
+        "<b>PART A (Automated Technical Certification):</b> I certify that the electronic record described herein was ingested, "
+        "processed, and cryptographically hashed (SHA-256, SHA-512, and MD5) by the automated forensic intelligence system "
+        "operating continuously in the ordinary course of lawful activities without unauthorized modification or data corruption.<br/>"
+        "<b>PART B (Custody Attestation - To be completed by Officer in Lawful Custody):</b> "
+        "I, ___________________________, hereby attest that I am in lawful charge and control of the computer system during the material period. "
+        "I declare that the facts stated in this certificate are true to the best of my knowledge and belief. "
+        "<i>[Mandatory statutory attestation pursuant to Section 63(4) BSA; unknown fields marked NEEDS LEGAL REVIEW].</i>"
     )
     cert_p = Paragraph(cert_text, ParagraphStyle("CertStyle", parent=body_style, fontSize=7.5, leading=10, textColor=colors.HexColor("#1e293b")))
 

@@ -484,3 +484,54 @@ def test_offline_verify_report_cli(tmp_path):
         expected_sha512=expected_sha512,
     ) is False
 
+
+def test_tamper_detection_vault_pdf_audit_chain(tmp_path):
+    """Verify Section 63 BSA tamper detection across physical vault, generated PDF, and audit chain."""
+    import hashlib
+
+    from backend.app.database.vault import canonicalize_audit_payload, generate_hmac_signature, verify_hmac_signature
+    from scripts.verify_report import verify_evidence
+
+    # 1. Physical Vault Tamper Detection
+    vault_raw = tmp_path / "case_001.raw"
+    original_bytes = b"Authentic Raw RFC 822 Email Stream for Judicial Evidence"
+    vault_raw.write_bytes(original_bytes)
+
+    orig_sha256 = hashlib.sha256(original_bytes).hexdigest()
+    orig_sha512 = hashlib.sha512(original_bytes).hexdigest()
+
+    # Authentic file passes
+    assert verify_evidence(vault_raw, orig_sha256, orig_sha512) is True
+
+    # Tamper the bytes on disk (single byte modification)
+    tampered_bytes = b"Authentic Raw RFC 822 Email Stream for Judicial Tampered"
+    vault_raw.write_bytes(tampered_bytes)
+
+    # Verification must catch the discrepancy
+    assert verify_evidence(vault_raw, orig_sha256, orig_sha512) is False
+
+    # 2. Audit Ledger HMAC Signature Tamper Detection
+    canonical_payload = canonicalize_audit_payload(
+        actor="forensic_system",
+        action="VAULT_SEALED",
+        evidence_sha256=orig_sha256,
+        recorded_at="2026-11-12T20:00:00Z",
+    )
+    valid_hmac = generate_hmac_signature(canonical_payload.encode("utf-8"))
+
+    # Valid signature passes
+    assert verify_hmac_signature(canonical_payload.encode("utf-8"), valid_hmac) is True
+
+    # Tampered signature fails
+    fake_hmac = "a" * 64
+    assert verify_hmac_signature(canonical_payload.encode("utf-8"), fake_hmac) is False
+
+    # Tampered payload fails
+    tampered_payload = canonicalize_audit_payload(
+        actor="forensic_system",
+        action="DELETED",
+        evidence_sha256=orig_sha256,
+        recorded_at="2026-11-12T20:00:00Z",
+    )
+    assert verify_hmac_signature(tampered_payload.encode("utf-8"), valid_hmac) is False
+
