@@ -132,3 +132,4 @@ Route (app)                              Size     First Load JS
 | **Frontend** | Remove `SAMPLE_` presets and buttons from HeaderPasteModal | **PASS** |
 | **Handlers** | Replace 17 silent `except: pass` handlers with narrowed exceptions + logging | **PASS** (0 remaining) |
 | **Ingest CLI** | Implement `scripts/ingest_corpus.py` with auth, table display & JSON output | **PASS** |
+

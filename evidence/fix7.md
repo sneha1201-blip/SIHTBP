@@ -84,3 +84,4 @@ Generated artifacts:
 - Serialized Model: `storage/models/email_threat_classifier.joblib`
 - Telemetry Metadata: `storage/models/model_metadata.json`
 - Model Card: `evidence/model_card.md`
+
