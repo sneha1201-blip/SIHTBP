@@ -453,3 +453,33 @@ def test_corpus_ingestion_cli_helper(tmp_path):
             assert res["threat_score"] is not None
             assert res["verdict"] in ("BEC", "BENIGN", "SUSPICIOUS", "PHISHING", "EXTORTION")
 
+
+def test_offline_verify_report_cli(tmp_path):
+    """Verify scripts/verify_report.py validates evidence files and catches tampered bytes."""
+    import hashlib
+    from scripts.verify_report import calculate_hashes, verify_evidence
+
+    # Create authentic raw evidence file
+    evidence_file = tmp_path / "evidence_sample.raw"
+    sample_content = b"Content-Type: text/plain\r\nSubject: Critical Audit\r\n\r\nVerified evidence content."
+    evidence_file.write_bytes(sample_content)
+
+    expected_sha256 = hashlib.sha256(sample_content).hexdigest()
+    expected_sha512 = hashlib.sha512(sample_content).hexdigest()
+
+    # 1. Verification of authentic file must PASS
+    assert verify_evidence(
+        raw_path=evidence_file,
+        expected_sha256=expected_sha256,
+        expected_sha512=expected_sha512,
+        hmac_secret="test-hmac-secret-2026",
+    ) is True
+
+    # 2. Tampered hash must FAIL
+    tampered_sha256 = "0" * 64
+    assert verify_evidence(
+        raw_path=evidence_file,
+        expected_sha256=tampered_sha256,
+        expected_sha512=expected_sha512,
+    ) is False
+
