@@ -38,7 +38,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import label_binarize
 
-from backend.app.ai.training_data import BENCHMARK_SAMPLES
+from backend.tests.fixtures.training_data import BENCHMARK_SAMPLES
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 STORAGE_DIR = PROJECT_ROOT / "storage"
@@ -116,8 +116,8 @@ def train_and_evaluate_model(
     """Train, cross-validate, and evaluate the email threat classifier pipeline."""
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
-    texts = [sample[0] for sample in BENCHMARK_SAMPLES]
-    labels = [sample[1] for sample in BENCHMARK_SAMPLES]
+    texts = [entry[0] for entry in BENCHMARK_SAMPLES]
+    labels = [entry[1] for entry in BENCHMARK_SAMPLES]
 
     classes = sorted(list(set(labels)))
 

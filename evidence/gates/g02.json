@@ -1,0 +1,13 @@
+{
+  "gate_id": "G02",
+  "status": "PASS",
+  "commit": "5bfb00a1491c3110de082aba3fd8cb46bc02153b",
+  "timestamp": "2026-11-12T16:38:26.757344+00:00",
+  "command": "mutation_canary_run (10 mutants)",
+  "details": {
+    "total": 10,
+    "killed": 10,
+    "survived": 0
+  },
+  "raw_output": "Mutant 1: DKIM verification always True: KILLED by backend/tests/test_protocol_auth.py::test_dkim_tampered_body_fails\nMutant 2: Vault hash check removed: KILLED by backend/tests/test_database.py::test_vault_tamper_detection\nMutant 3: Auth dependency removed from reports endpoint: KILLED by backend/tests/test_security.py::test_unauthenticated_requests_rejected_with_401\nMutant 4: Multi-signal clustering weakened to single family: KILLED by backend/tests/test_campaign_clustering.py::test_multi_signal_clustering_requires_two_signals\nMutant 5: GeoIP returns dummy default coordinates for private IP: KILLED by backend/tests/test_osint_geoip.py::test_private_ip_zero_guess\nMutant 6: Vault HMAC signature generation corrupted: KILLED by backend/tests/test_database.py::test_hmac_signatures\nMutant 7: Audit ledger parent hash chaining ignored: KILLED by backend/tests/test_security.py::test_tampered_audit_chain_detected\nMutant 8: Composite threat score forced to constant 0.0: KILLED by backend/tests/test_ai_detection.py::test_composite_threat_scoring_formula\nMutant 9: Upload size limit disabled: KILLED by backend/tests/test_security.py::test_oversize_upload_rejected\nMutant 10: PDF export ignores physical vault tamper: KILLED by backend/tests/test_pipeline.py::test_pdf_report_aborts_with_409_on_vault_tamper"
+}

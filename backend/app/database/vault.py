@@ -50,7 +50,7 @@ def calculate_hashes(data: Union[bytes, bytearray, memoryview]) -> Tuple[str, st
         Tuple[str, str]: (sha256_hex, md5_hex)
     """
     sha256_hasher = hashlib.sha256()
-    md5_hasher = hashlib.md5()
+    md5_hasher = hashlib.md5(usedforsecurity=False)
 
     view = memoryview(data)
     chunk_size = 65536
@@ -69,7 +69,7 @@ def calculate_stream_hashes(stream: BinaryIO, chunk_size: int = 65536) -> Tuple[
         Tuple[str, str, int]: (sha256_hex, md5_hex, total_bytes)
     """
     sha256_hasher = hashlib.sha256()
-    md5_hasher = hashlib.md5()
+    md5_hasher = hashlib.md5(usedforsecurity=False)
     total_bytes = 0
 
     while True:

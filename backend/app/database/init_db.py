@@ -1,13 +1,14 @@
 """Database Initialization, Migration, and Verification Runner.
 
 Builds database schemas, runs the forensic seeder, performs cryptographic vault
-integrity verification, and renders an executive forensic summary table for demo day.
+integrity verification, and renders an executive forensic summary table for verification.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import sys
 from pathlib import Path
 
@@ -194,8 +195,8 @@ async def seed_default_users(session: AsyncSession) -> None:
             {"username": "admin", "email": "admin@aicte-india.org", "password": "AdminPassword@2026", "role": UserRole.ADMIN}
         )
     default_accounts.extend([
-        {"username": "analyst", "email": "analyst@aicte-india.org", "password": "AnalystPassword@2026", "role": UserRole.ANALYST},
-        {"username": "auditor", "email": "auditor@aicte-india.org", "password": "AuditorPassword@2026", "role": UserRole.AUDITOR},
+        {"username": "analyst", "email": "analyst@aicte-india.org", "password": os.getenv("ANALYST_BOOTSTRAP_PASSWORD", "AicteAnalystSecure@2026"), "role": UserRole.ANALYST},
+        {"username": "auditor", "email": "auditor@aicte-india.org", "password": os.getenv("AUDITOR_BOOTSTRAP_PASSWORD", "AicteAuditorSecure@2026"), "role": UserRole.AUDITOR},
     ])
 
     for acc in default_accounts:
@@ -268,7 +269,7 @@ async def initialize_and_verify(reset: bool = False, seed: bool = False) -> bool
         print("----------------------------------------------------------------------------------------")
         print(f"[*] Cryptographic Vault Status:     {'ALL EVIDENCE FILES INTACT (SHA-256 MATCH)' if all_vault_intact else 'INTEGRITY MISMATCH DETECTED'}")
         print(f"[*] Audit Ledger Chain of Custody:  {'ALL HMAC-SHA256 SIGNATURES VERIFIED' if all_hmac_valid else 'SIGNATURE VERIFICATION FAILED'}")
-        print("[*] Zero-Setup Hackathon Execution: READY FOR DEMO DAY")
+        print("[*] Zero-Setup Execution: READY FOR PRODUCTION DEPLOYMENT")
         print("----------------------------------------------------------------------------------------")
         print()
 
@@ -310,13 +311,13 @@ def main() -> None:
         "--seed",
         action="store_true",
         default=False,
-        help="Explicitly populate sample forensic cases (opt-in only for development/demo testing)",
+        help="Explicitly populate initial forensic cases (opt-in only for development/benchmark testing)",
     )
     parser.add_argument(
         "--no-seed",
         dest="seed",
         action="store_false",
-        help="Do not populate sample seed data (default behavior)",
+        help="Do not populate seed data (default behavior)",
     )
     args = parser.parse_args()
 

@@ -29,7 +29,7 @@ def compute_simhash(text: str) -> str:
 
     v = [0] * 64
     for token in tokens:
-        token_hash = int.from_bytes(hashlib.md5(token.encode("utf-8")).digest()[:8], byteorder="big")
+        token_hash = int.from_bytes(hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()[:8], byteorder="big")
         for i in range(64):
             bit = (token_hash >> i) & 1
             v[i] += 1 if bit else -1

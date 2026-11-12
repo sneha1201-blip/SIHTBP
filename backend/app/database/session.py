@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
 
-from sqlalchemy import event
+from sqlalchemy import event, text
 from sqlalchemy.ext.asyncio import (
     AsyncAttrs,
     AsyncEngine,
@@ -156,6 +156,11 @@ async def create_all_tables() -> None:
 async def drop_all_tables() -> None:
     """Drop all tables defined in Base.metadata (useful for clean test environments)."""
     async with engine.begin() as conn:
+        if IS_SQLITE:
+            await conn.execute(text("PRAGMA foreign_keys = OFF;"))
+            for table in reversed(Base.metadata.sorted_tables):
+                await conn.execute(table.delete())
+            await conn.execute(text("PRAGMA foreign_keys = ON;"))
         await conn.run_sync(Base.metadata.drop_all)
 
 

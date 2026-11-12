@@ -59,11 +59,12 @@ async def test_session():
         yield session
 
     await test_engine.dispose()
-    try:
-        if db_path.exists():
+    if db_path.exists():
+        try:
             db_path.unlink()
-    except Exception:
-        pass
+        except OSError as exc:
+            import logging
+            logging.getLogger("test_cleanup").debug("Temp DB unlink error: %s", exc)
 
 
 # =============================================================================

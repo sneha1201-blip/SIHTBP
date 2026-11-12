@@ -220,7 +220,7 @@ def analyze_attachment(
     size = len(raw_bytes)
     sha256 = hashlib.sha256(raw_bytes).hexdigest()
     sha512 = hashlib.sha512(raw_bytes).hexdigest()
-    md5 = hashlib.md5(raw_bytes).hexdigest()
+    md5 = hashlib.md5(raw_bytes, usedforsecurity=False).hexdigest()
 
     threats: List[str] = []
     threat_score = 0.0

@@ -31,7 +31,7 @@ def carve_partial_msg_stream(
     """Best-effort ASCII carving from corrupted OLE streams.
 
     Flags the forensic parsing status as 'PARTIAL_PARSE_CORRUPT_OLE_STREAM' and records
-    only verifiable ASCII/UTF-8 segments without inventing synthetic or placeholder values.
+    only verifiable ASCII/UTF-8 segments without inventing unverified or fabricated values.
     """
     logger.warning(
         "Corrupted or invalid OLE compound file '%s': executing partial ASCII carving. Forensic status: PARTIAL_PARSE.",
@@ -155,7 +155,7 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
             for att in msg.attachments:
                 att_data = getattr(att, "data", b"") or b""
                 a_sha256 = hashlib.sha256(att_data).hexdigest()
-                a_md5 = hashlib.md5(att_data).hexdigest()
+                a_md5 = hashlib.md5(att_data, usedforsecurity=False).hexdigest()
                 name = getattr(att, "longFilename", None) or getattr(att, "shortFilename", None) or "attachment"
                 is_dangerous = any(name.lower().endswith(ext) for ext in DANGEROUS_EXTENSIONS)
                 attachments.append(

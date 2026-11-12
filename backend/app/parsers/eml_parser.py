@@ -97,7 +97,7 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
                 payload_raw = part.get_payload(decode=True)
                 payload = payload_raw if isinstance(payload_raw, bytes) else b""
                 p_sha256 = hashlib.sha256(payload).hexdigest()
-                p_md5 = hashlib.md5(payload).hexdigest()
+                p_md5 = hashlib.md5(payload, usedforsecurity=False).hexdigest()
                 safe_name = part_filename or f"attachment_{len(attachments) + 1}"
                 is_dangerous = any(safe_name.lower().endswith(ext) for ext in DANGEROUS_EXTENSIONS)
 
