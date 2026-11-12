@@ -38,6 +38,65 @@ ph = PasswordHasher(
 
 security_bearer = HTTPBearer(auto_error=False)
 
+# In-memory login failure tracking for account lockout protection
+_FAILED_LOGINS: Dict[str, list[float]] = {}
+LOCKOUT_WINDOW_SECONDS = 900  # 15 minutes
+MAX_FAILED_ATTEMPTS = 5
+
+
+def record_login_attempt(username: str, success: bool) -> None:
+    """Record login attempt timestamp; reset on success."""
+    now = datetime.now(timezone.utc).timestamp()
+    if username not in _FAILED_LOGINS:
+        _FAILED_LOGINS[username] = []
+    _FAILED_LOGINS[username] = [t for t in _FAILED_LOGINS[username] if now - t < LOCKOUT_WINDOW_SECONDS]
+    if success:
+        _FAILED_LOGINS[username] = []
+    else:
+        _FAILED_LOGINS[username].append(now)
+
+
+def check_login_lockout(username: str) -> None:
+    """Raise HTTP 429 if username has exceeded max consecutive login failures."""
+    now = datetime.now(timezone.utc).timestamp()
+    recent = [t for t in _FAILED_LOGINS.get(username, []) if now - t < LOCKOUT_WINDOW_SECONDS]
+    if len(recent) >= MAX_FAILED_ATTEMPTS:
+        remaining = int(LOCKOUT_WINDOW_SECONDS - (now - recent[0]))
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Account temporarily locked out due to {len(recent)} failed login attempts. Try again in {max(1, remaining // 60)} minutes.",
+        )
+
+
+def validate_password_strength(password: str) -> None:
+    """Enforce institutional password complexity: minimum 10 chars, uppercase, lowercase, digit, special."""
+    if len(password) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 10 characters long.",
+        )
+    if not any(c.isupper() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one uppercase letter.",
+        )
+    if not any(c.islower() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one lowercase letter.",
+        )
+    if not any(c.isdigit() for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one numerical digit.",
+        )
+    special_chars = "!@#$%^&*()_+-=[]{}|;:,.<>?/~`"
+    if not any(c in special_chars for c in password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain at least one special character.",
+        )
+
 
 def hash_token(token: str) -> str:
     """Generate SHA-256 hash of a session token or API key."""

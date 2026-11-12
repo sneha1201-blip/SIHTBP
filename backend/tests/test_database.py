@@ -346,3 +346,90 @@ async def test_forensic_seeder_execution(test_session: AsyncSession):
         assert assoc.similarity_score >= 0.95
         assert assoc.matched_criteria["shared_asn"] == 49870
 
+
+# =============================================================================
+# 4. DISASTER RECOVERY & VAULT SWEEP INTEGRATION TESTS
+# =============================================================================
+
+def test_database_backup_and_restore_manifest(tmp_path):
+    """Verify scripts/db_backup_restore.py creates valid backup and restores safely."""
+    import sqlite3
+
+    from scripts.db_backup_restore import backup_database, restore_database
+
+    source_db = tmp_path / "test_orig.db"
+    dest_dir = tmp_path / "backups"
+    restore_target = tmp_path / "restored.db"
+
+    # Populate a source DB with a dummy table and row
+    conn = sqlite3.connect(str(source_db))
+    with conn:
+        conn.execute("CREATE TABLE test_data (id INTEGER PRIMARY KEY, val TEXT)")
+        conn.execute("INSERT INTO test_data (val) VALUES ('audit_proof_26106')")
+    conn.close()
+
+    # 1. Execute Backup
+    manifest = backup_database(source_db=source_db, dest_dir=dest_dir)
+    assert manifest["backup_sha256"] is not None
+    assert manifest["backup_size_bytes"] > 0
+    manifest_path = Path(manifest["backup_db_path"]).with_suffix(".manifest.json")
+    assert manifest_path.exists()
+
+    # 2. Execute Restore
+    restored = restore_database(manifest_file=manifest_path, target_db=restore_target)
+    assert restored is True
+    assert restore_target.exists()
+
+    # Verify restored data
+    r_conn = sqlite3.connect(str(restore_target))
+    cur = r_conn.cursor()
+    cur.execute("SELECT val FROM test_data")
+    row = cur.fetchone()
+    r_conn.close()
+    assert row[0] == "audit_proof_26106"
+
+
+def test_password_policy_and_account_lockout():
+    """Verify password complexity checks and 5-attempt account lockout."""
+    from fastapi import HTTPException
+
+    from backend.app.core.security import (
+        check_login_lockout,
+        record_login_attempt,
+        validate_password_strength,
+    )
+
+    # 1. Password complexity rules
+    with pytest.raises(HTTPException) as exc_too_short:
+        validate_password_strength("Short1!")
+    assert "at least 10 characters" in exc_too_short.value.detail
+
+    with pytest.raises(HTTPException) as exc_no_upper:
+        validate_password_strength("nouppercase123!")
+    assert "uppercase" in exc_no_upper.value.detail
+
+    with pytest.raises(HTTPException) as exc_no_special:
+        validate_password_strength("NoSpecialChar123")
+    assert "special character" in exc_no_special.value.detail
+
+    # Compliant password passes without exception
+    validate_password_strength("StrongPass@2026")
+
+    # 2. Account lockout on 5 consecutive failures
+    test_user = "brute_force_target_user"
+    for _ in range(4):
+        record_login_attempt(test_user, success=False)
+    # 4 failures: should not be locked out yet
+    check_login_lockout(test_user)
+
+    # 5th failure: must trigger lockout
+    record_login_attempt(test_user, success=False)
+    with pytest.raises(HTTPException) as exc_lockout:
+        check_login_lockout(test_user)
+    assert exc_lockout.value.status_code == 429
+    assert "locked out" in exc_lockout.value.detail
+
+    # Successful login resets lockout
+    record_login_attempt(test_user, success=True)
+    check_login_lockout(test_user)  # Should pass cleanly
+

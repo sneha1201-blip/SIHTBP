@@ -457,7 +457,8 @@ def test_corpus_ingestion_cli_helper(tmp_path):
 def test_offline_verify_report_cli(tmp_path):
     """Verify scripts/verify_report.py validates evidence files and catches tampered bytes."""
     import hashlib
-    from scripts.verify_report import calculate_hashes, verify_evidence
+
+    from scripts.verify_report import verify_evidence
 
     # Create authentic raw evidence file
     evidence_file = tmp_path / "evidence_sample.raw"

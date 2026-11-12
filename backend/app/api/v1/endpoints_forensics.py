@@ -30,7 +30,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from backend.app.core.rate_limiter import rate_limit_guard
-from backend.app.core.security import require_analyst, require_any_authenticated
+from backend.app.core.security import require_analyst, require_any_authenticated, require_roles
 from backend.app.core.upload_validator import stream_and_validate_upload, validate_email_bytes
 from backend.app.database.audit_service import record_chained_audit_log, verify_audit_log_chain
 from backend.app.database.models import (
@@ -38,6 +38,7 @@ from backend.app.database.models import (
     Email,
     HeaderHop,
     User,
+    UserRole,
 )
 from backend.app.database.session import get_db
 from backend.app.database.vault import read_raw_evidence
@@ -327,4 +328,51 @@ async def get_evidence_hops_geojson(
         "type": "FeatureCollection",
         "evidence_id": evidence_id,
         "features": features,
+    }
+
+
+@router.post("/vault/sweep")
+async def sweep_vault_integrity(
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.AUDITOR])),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Perform a comprehensive cryptographic integrity sweep across all vault files (Admin/Auditor)."""
+    from datetime import datetime, timezone
+
+    from backend.app.database.vault import get_vault_dir, verify_evidence_integrity
+
+    vault_dir = get_vault_dir()
+    raw_files = list(vault_dir.glob("*.raw"))
+
+    total_files = len(raw_files)
+    verified = 0
+    corrupted = 0
+    details = []
+
+    for rf in raw_files:
+        sha256 = rf.stem
+        check = verify_evidence_integrity(sha256, vault_dir=vault_dir)
+        if check.get("intact"):
+            verified += 1
+            details.append({"sha256": sha256, "status": "VERIFIED", "size": check.get("size")})
+        else:
+            corrupted += 1
+            details.append({"sha256": sha256, "status": "CORRUPTED", "error": check.get("error")})
+            await record_chained_audit_log(
+                db=db,
+                action="INTEGRITY_FAILURE",
+                actor=current_user.username,
+                evidence_sha256=sha256,
+                details={"sweep_error": check.get("error"), "path": str(rf)},
+            )
+
+    await db.commit()
+
+    return {
+        "sweep_timestamp": datetime.now(timezone.utc).isoformat(),
+        "total_files": total_files,
+        "verified": verified,
+        "corrupted": corrupted,
+        "integrity_rate_pct": round((verified / max(1, total_files)) * 100.0, 2),
+        "details": details,
     }

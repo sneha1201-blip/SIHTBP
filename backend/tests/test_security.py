@@ -417,3 +417,116 @@ async def test_sse_job_stream_requires_bearer_auth():
         assert "text/event-stream" in res_with_auth.headers.get("content-type", "")
         assert "data:" in res_with_auth.text
 
+
+@pytest.mark.asyncio
+async def test_readiness_and_metrics_endpoints():
+    """Verify /ready, /metrics, and /health observability probes."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        # Liveness
+        res_health = await ac.get("/health")
+        assert res_health.status_code == 200
+        assert res_health.json()["status"] == "HEALTHY"
+
+        # Readiness
+        res_ready = await ac.get("/ready")
+        assert res_ready.status_code == 200
+        assert res_ready.json()["status"] == "READY"
+        assert res_ready.json()["checks"]["database"] == "UP"
+
+        # Prometheus Metrics
+        res_metrics = await ac.get("/metrics")
+        assert res_metrics.status_code == 200
+        assert "forensic_emails_total" in res_metrics.text
+        assert "forensic_audit_records_total" in res_metrics.text
+        assert "forensic_vault_files_total" in res_metrics.text
+
+
+@pytest.mark.asyncio
+async def test_security_headers_and_request_id():
+    """Verify security headers (CSP, HSTS, X-Frame-Options) and X-Request-ID middleware."""
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        res = await ac.get("/")
+        assert res.status_code == 200
+        headers = res.headers
+
+        assert "x-request-id" in headers
+        assert "x-response-time-ms" in headers
+        assert headers["x-content-type-options"] == "nosniff"
+        assert headers["x-frame-options"] == "DENY"
+        assert "default-src 'self'" in headers["content-security-policy"]
+        assert "max-age=31536000" in headers["strict-transport-security"]
+
+
+@pytest.mark.asyncio
+async def test_admin_user_management_and_status_toggle():
+    """Verify Admin can list users, create users with strong passwords, and deactivate accounts."""
+    admin_token = create_access_token(subject="admin", role="ADMIN")
+    analyst_token = create_access_token(subject="analyst", role="ANALYST")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        # 1. Analyst cannot access user management (403)
+        res_forbidden = await ac.get(
+            "/api/v1/auth/users",
+            headers={"Authorization": f"Bearer {analyst_token}"},
+        )
+        assert res_forbidden.status_code == 403
+
+        # 2. Admin can list users (200)
+        res_users = await ac.get(
+            "/api/v1/auth/users",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert res_users.status_code == 200
+        user_list = res_users.json()
+        assert len(user_list) >= 1
+
+        # 3. Create new user with compliant password
+        new_username = f"analyst_step3_{uuid.uuid4().hex[:6]}"
+        res_create = await ac.post(
+            "/api/v1/auth/register",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={
+                "username": new_username,
+                "email": f"{new_username}@aicte-india.org",
+                "password": "StrongPassword#2026",
+                "role": "ANALYST",
+            },
+        )
+        assert res_create.status_code == 201
+        created_id = res_create.json()["id"]
+
+        # 4. Deactivate the user
+        res_deact = await ac.patch(
+            f"/api/v1/auth/users/{created_id}/status",
+            headers={"Authorization": f"Bearer {admin_token}"},
+            json={"is_active": False},
+        )
+        assert res_deact.status_code == 200
+        assert res_deact.json()["is_active"] is False
+
+        # 5. Deactivated user cannot login (403)
+        res_login_deact = await ac.post(
+            "/api/v1/auth/login",
+            json={"username": new_username, "password": "StrongPassword#2026"},
+        )
+        assert res_login_deact.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_vault_integrity_sweep_endpoint():
+    """Verify POST /api/v1/forensics/vault/sweep re-hashes all vault files."""
+    admin_token = create_access_token(subject="admin", role="ADMIN")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        res = await ac.post(
+            "/api/v1/forensics/vault/sweep",
+            headers={"Authorization": f"Bearer {admin_token}"},
+        )
+        assert res.status_code == 200
+        body = res.json()
+        assert "sweep_timestamp" in body
+        assert "total_files" in body
+        assert "verified" in body
+        assert "corrupted" in body
+        assert "integrity_rate_pct" in body
+
