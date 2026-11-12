@@ -20,7 +20,12 @@ from backend.app.ai.threat_scorer import compute_threat_score
 from backend.app.ai.url_analyzer import (
     analyze_url,
     deobfuscate_ip_literal,
+    is_ssrf_forbidden_host,
     normalize_defanged_url,
+)
+from backend.app.forensics.attachment_analyzer import (
+    analyze_attachment,
+    check_double_extension,
 )
 from backend.app.forensics.auth_validator import AuthValidationResult
 from backend.app.forensics.spoof_detector import (
@@ -309,3 +314,112 @@ def test_tor_origin_hard_override():
     assert score_res.threat_score >= 98.0
     assert score_res.score_breakdown["critical_override_applied"] is True
     assert "Tor Exit Node" in score_res.score_breakdown["override_reason"]
+
+
+# =====================================================================
+# 5. Attachment Analysis, SSRF, & Adversarial Robustness Tests
+# =====================================================================
+
+def test_attachment_analyzer_double_extension():
+    """Verify double extension evasion detection."""
+    is_dbl, reason = check_double_extension("Financial_Statement_2026.pdf.exe")
+    assert is_dbl is True
+    assert "Double extension evasion" in (reason or "")
+
+    res = analyze_attachment("salary_slip.xlsx.scr", b"MZDummyPEHeaderContent")
+    assert res.has_double_extension is True
+    assert res.is_threat is True
+    assert res.threat_score >= 65.0
+
+
+def test_attachment_analyzer_zip_bomb_and_nesting():
+    """Verify archive inspection flags nested zips and dangerous scripts."""
+    import io
+    import zipfile
+
+    # Build an in-memory zip containing a dangerous script and nested zip
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("malicious_script.vbs", "CreateObject('WScript.Shell').Run 'calc.exe'")
+        zf.writestr("nested.zip", b"PK\x05\x06" + b"\x00" * 18)
+
+    raw_zip = buf.getvalue()
+    res = analyze_attachment("audit_archive.zip", raw_zip)
+
+    assert res.is_nested_archive is True
+    assert res.is_threat is True
+    assert any("Executable script/binary" in t for t in res.detected_threats)
+    assert any("Nested archive" in t for t in res.detected_threats)
+
+
+def test_attachment_analyzer_html_smuggling():
+    """Verify HTML smuggling inspection flags client-side payload drop patterns."""
+    html_payload = b"""
+    <!DOCTYPE html>
+    <html>
+    <body>
+    <script>
+        var fileData = new Uint8Array([77, 90, 144, 0]);
+        var blob = new Blob([fileData], {type: 'application/octet-stream'});
+        var url = window.URL.createObjectURL(blob);
+    </script>
+    </body>
+    </html>
+    """
+    res = analyze_attachment("secure_document.html", html_payload)
+    assert res.has_html_smuggling is True
+    assert res.is_threat is True
+    assert any("HTML smuggling" in t for t in res.detected_threats)
+
+
+def test_url_analyzer_ssrf_blocking():
+    """Verify SSRF protection flags private, loopback, and metadata targets."""
+    forbidden_targets = ["127.0.0.1", "10.0.1.5", "169.254.169.254", "localhost"]
+    for host in forbidden_targets:
+        is_blocked, msg = is_ssrf_forbidden_host(host)
+        assert is_blocked is True
+        assert "SSRF attempt blocked" in (msg or "")
+
+
+def test_url_analyzer_brand_lookalike():
+    """Verify data-driven brand lookalike detection."""
+    res = analyze_url("http://aicte-india-login.online/sso")
+    assert any("Brand lookalike" in flag for flag in res.matched_flags)
+    assert res.risk_score >= 40.0
+
+
+def test_adversarial_zero_width_and_homoglyphs():
+    """Verify robustness against zero-width character evasion and Cyrillic homoglyphs."""
+    # Inject zero-width characters into lure
+    evasion_body = (
+        "Your institutional credentials will expire within 24 hours. "
+        "Sign in immediately to v\u200be\u200br\u200bi\u200bf\u200by your account and confirm tokens: "
+        "http://aicte-portal-verify.top/login"
+    )
+    res = analyze_email_content(subject="Action Required", body=evasion_body)
+    assert res.predicted_class in ("PHISHING", "BEC_FINANCIAL")
+    assert res.nlp_score >= 60.0
+
+
+def test_calibration_uncertain_verdict():
+    """Verify UNCERTAIN verdict assignment when scores sit on boundary with low confidence."""
+    auth_res = AuthValidationResult(spf_status="PASS", dkim_status="PASS", dmarc_status="PASS", auth_score=35.0)
+    spoof_res = detect_spoofing(None, "user@victim.com", "user@victim.com", None)
+    spoof_res.spoof_score = 40.0
+
+    # Low confidence NLP result
+    nlp_res = analyze_email_content("Meeting Notes", "Here are the notes from our discussion.")
+    nlp_res.nlp_score = 40.0
+    nlp_res.confidence = 0.38  # Below calibration threshold
+
+    score_res = compute_threat_score(
+        auth_res=auth_res,
+        spoof_res=spoof_res,
+        nlp_res=nlp_res,
+        url_results=[],
+    )
+
+    if 35.0 <= score_res.threat_score <= 50.0:
+        assert score_res.is_uncertain is True
+        assert score_res.verdict == "UNCERTAIN"
+

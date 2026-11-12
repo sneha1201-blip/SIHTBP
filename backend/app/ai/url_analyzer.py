@@ -7,9 +7,12 @@ integrates RDAP domain age (NRD < 30 days), and calculates comprehensive URL ris
 
 from __future__ import annotations
 
+import ipaddress
+import json
 import logging
 import re
 import socket
+from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 from urllib.parse import unquote, urlparse
 
@@ -20,6 +23,36 @@ logger = logging.getLogger("url_analyzer")
 
 DEFAULT_REDIRECT_TIMEOUT = 2.0
 MAX_REDIRECT_HOPS = 5
+PROTECTED_BRANDS_FILE = Path(__file__).resolve().parent / "protected_brands.json"
+
+
+def get_protected_brands() -> List[str]:
+    """Load protected brand and institutional domains from data file."""
+    if PROTECTED_BRANDS_FILE.exists():
+        try:
+            with open(PROTECTED_BRANDS_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as exc:
+            logger.debug("Failed loading protected_brands.json: %s", exc)
+    return [
+        "aicte-india.org", "gov.in", "nic.in", "microsoft.com",
+        "google.com", "apple.com", "amazon.com", "sbi.co.in",
+        "hdfcbank.com", "paypal.com",
+    ]
+
+
+def is_ssrf_forbidden_host(host_str: str) -> tuple[bool, Optional[str]]:
+    """Check if host resolves to an RFC 1918 private, loopback, link-local, or cloud metadata IP."""
+    clean = host_str.strip().strip("[]").lower()
+    if clean in ("localhost", "127.0.0.1", "::1", "metadata.google.internal"):
+        return True, "SSRF attempt blocked: Localhost/loopback target"
+    try:
+        ip = ipaddress.ip_address(clean)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or str(ip) == "169.254.169.254":
+            return True, f"SSRF attempt blocked: Target IP {clean} is private/metadata"
+    except ValueError:
+        pass
+    return False, None
 
 
 class RedirectHop(BaseModel):
@@ -129,6 +162,20 @@ async def trace_url_redirects(
                     logger.debug("Redirect loop detected for %s", current_url)
                     break
                 visited.add(current_url)
+
+                # SSRF Protection: Inspect candidate host
+                parsed_host = urlparse(current_url).netloc.split(":")[0].strip()
+                is_forbidden, block_msg = is_ssrf_forbidden_host(parsed_host)
+                if is_forbidden:
+                    hops.append(
+                        RedirectHop(
+                            step=step,
+                            url=current_url,
+                            status_code=403,
+                            location=block_msg,
+                        )
+                    )
+                    break
 
                 try:
                     resp = await client.head(current_url)
@@ -243,6 +290,15 @@ def analyze_url(
             is_nrd = True
             risk_score += 35.0
             flags.append(f"Newly Registered Domain (<30 days old): {domain_age} days")
+
+    # 9. Brand Lookalike Detection (driven by data file)
+    protected_brands = get_protected_brands()
+    for brand in protected_brands:
+        clean_brand = brand.split(".")[0]
+        if len(clean_brand) >= 4 and clean_brand in host and not host.endswith(brand):
+            risk_score += 40.0
+            flags.append(f"Brand lookalike target detected: '{clean_brand}' targeted by host '{host}'")
+            break
 
     risk_score = min(100.0, risk_score)
 
