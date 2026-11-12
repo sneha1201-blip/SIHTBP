@@ -11,30 +11,50 @@ Built strictly according to **Section 63 of the Bharatiya Sakshya Adhiniyam (BSA
 
 ---
 
+## 📋 Documentation & System Specifications
+
+Complete enterprise documentation is maintained in the `docs/` and `evidence/` directories:
+
+| Specification Document | Purpose & Key Topics |
+|:---|:---|
+| [**Architecture & Design**](docs/ARCHITECTURE.md) | Technical architecture, pipeline sequence diagrams, dual-hashing, and database schemas. |
+| [**Threat Model (STRIDE)**](docs/THREAT_MODEL.md) | STRIDE security analysis, SSRF filtering, homoglyph normalization, and tamper protections. |
+| [**REST API Reference**](docs/API.md) | Complete OpenAPI 3.1 endpoint catalog, JWT auth, security headers, and SSE streaming. |
+| [**System Operations & Runbook**](docs/OPERATIONS.md) | Deployment runbook, environment configs, DB backup/restore (`scripts/db_backup_restore.py`), key rotation. |
+| [**SOC Analyst User Manual**](docs/USER_MANUAL.md) | Web UI guide, ingestion dropzone, dossier review, reverse hop maps, and campaign graph workflows. |
+| [**Known Limitations & Boundaries**](docs/KNOWN_LIMITATIONS.md) | Candid disclosures: IP GeoIP vs device GPS, historical DKIM, NLP model boundaries, Section 63 BSA legal attestation bounds. |
+| [**Requirements Traceability Matrix**](docs/REQUIREMENTS_MATRIX.md) | Line-by-line mapping of all SIH PS 26106 requirements to implementation modules, tests, and evidence. |
+| [**Master Forensic Release Audit**](evidence/FINAL_AUDIT.md) | Comprehensive audit of all 13 remediation steps, 110 passing tests, and release sign-off. |
+
+---
+
 ## 📋 Requirements Traceability Matrix
 
 Every single functional requirement of SIH Problem Statement 26106 is mapped to implementation modules, automated pytest suites, and verifiable evidence artifacts:
 
 | PS 26106 Requirement | Implementation Module | Automated Test Suite | Evidence Artifact |
 |:---|:---|:---|:---|
-| **Cryptographic Evidence Vault** | `backend/app/database/vault.py` | `backend/tests/test_database.py` | `evidence/phase1.md` |
-| **Streaming Upload Validator & Rate Limiter** | `backend/app/core/upload_validator.py` | `backend/tests/test_security.py` | `evidence/phase1.md` |
-| **RBAC & Argon2 Password Hashing** | `backend/app/core/security.py` | `backend/tests/test_security.py` | `evidence/phase1.md` |
-| **Tamper-Evident Hash-Chained Audit Ledger** | `backend/app/database/audit_service.py` | `backend/tests/test_security.py` | `evidence/phase1.md` |
-| **Cryptographic DKIM Verification** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/phase2.md` |
-| **Connecting IP SPF Evaluation (RFC 7208)** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/phase2.md` |
-| **DMARC PSL & ARC Chain Inspection** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/phase2.md` |
-| **MaxMind GeoIP & ASN Resolution** | `backend/app/osint/geo_resolver.py` | `backend/tests/test_osint_geoip.py` | `evidence/phase3.md` |
-| **RFC 5321 Hop Traversal & Skew Detection** | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | `evidence/phase3.md` |
-| **Live Tor Caching & Offline Snapshots** | `backend/app/osint/tor_detector.py` | `backend/tests/test_osint_geoip.py` | `evidence/phase3.md` |
-| **Async RDAP & NRD Classification** | `backend/app/osint/whois_client.py` | `backend/tests/test_osint_geoip.py` | `evidence/phase3.md` |
-| **Trained AI Multi-Class Threat Classifier** | `backend/app/ai/nlp_engine.py` | `backend/tests/test_ai_detection.py` | `evidence/model_card.md` |
-| **Confusable Cyrillic Homoglyph & Cousin Domain** | `backend/app/forensics/spoof_detector.py` | `backend/tests/test_ai_detection.py` | `evidence/phase4.md` |
-| **URL Deobfuscation & Hex/Octal/DWORD Decoding** | `backend/app/ai/url_analyzer.py` | `backend/tests/test_ai_detection.py` | `evidence/phase4.md` |
-| **Composite Threat Scoring Formula** | `backend/app/ai/threat_scorer.py` | `backend/tests/test_ai_detection.py` | `evidence/phase4.md` |
-| **Dynamic SimHash & Infrastructure Clustering** | `backend/app/forensics/campaign_clusterer.py`| `backend/tests/test_campaign_clustering.py`| `evidence/phase5.md` |
+| **Cryptographic Evidence Vault** | `backend/app/database/vault.py` | `backend/tests/test_database.py` | `evidence/step3.md` |
+| **Streaming Upload Validator & Rate Limiter** | `backend/app/core/upload_validator.py` | `backend/tests/test_security.py` | `evidence/step3.md` |
+| **RBAC & Argon2 Password Hashing** | `backend/app/core/security.py` | `backend/tests/test_security.py` | `evidence/step3.md` |
+| **Tamper-Evident Hash-Chained Audit Ledger** | `backend/app/database/audit_service.py` | `backend/tests/test_security.py` | `evidence/step3.md` |
+| **Cryptographic DKIM Verification** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/step4.md` |
+| **Connecting IP SPF Evaluation (RFC 7208)** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/step4.md` |
+| **DMARC PSL & ARC Chain Inspection** | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | `evidence/step4.md` |
+| **MaxMind GeoIP & ASN Resolution** | `backend/app/osint/geo_resolver.py` | `backend/tests/test_osint_geoip.py` | `evidence/step5.md` |
+| **RFC 5321 Hop Traversal & Skew Detection** | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | `evidence/step6.md` |
+| **Live Tor Caching & Offline Snapshots** | `backend/app/osint/tor_detector.py` | `backend/tests/test_osint_geoip.py` | `evidence/step5.md` |
+| **Async RDAP & NRD Classification** | `backend/app/osint/whois_client.py` | `backend/tests/test_osint_geoip.py` | `evidence/step5.md` |
+| **Trained AI Multi-Class Threat Classifier** | `backend/app/ai/nlp_engine.py` | `backend/tests/test_ai_detection.py` | `evidence/step7.md`, `evidence/model_card.md` |
+| **Attachment OLE Macro Deep Scanner** | `backend/app/forensics/attachment_analyzer.py`| `backend/tests/test_ai_detection.py`| `evidence/step7.md` |
+| **Confusable Cyrillic Homoglyph & Cousin Domain** | `backend/app/forensics/spoof_detector.py` | `backend/tests/test_ai_detection.py` | `evidence/step7.md` |
+| **URL Deobfuscation & SSRF Filter** | `backend/app/ai/url_analyzer.py` | `backend/tests/test_ai_detection.py` | `evidence/step7.md` |
+| **Composite Threat Scoring Formula** | `backend/app/ai/threat_scorer.py` | `backend/tests/test_ai_detection.py` | `evidence/step7.md` |
+| **Dynamic SimHash & Infrastructure Clustering** | `backend/app/forensics/campaign_clusterer.py`| `backend/tests/test_campaign_clustering.py`| `evidence/step8.md` |
 | **RFC OASIS STIX 2.1 Intelligence Export** | `backend/app/forensics/campaign_clusterer.py`| `backend/tests/test_campaign_clustering.py`| `evidence/campaign_bundle.json` |
-| **Court-Admissible PDF (Section 63 BSA 2023)** | `backend/app/reporting/pdf_generator.py` | `backend/tests/test_pipeline.py` | `evidence/phase6.md` |
+| **Court-Admissible PDF (Section 63 BSA 2023)** | `backend/app/reporting/pdf_generator.py` | `backend/tests/test_pipeline.py` | `evidence/step9.md` |
+| **Offline Third-Party Verifier Script** | `scripts/verify_report.py` | `backend/tests/test_pipeline.py` | `evidence/step2.md`, `evidence/step9.md` |
+| **Blind Evaluation Runner** | `scripts/evaluate_blind_corpus.py` | `backend/tests/test_ai_detection.py` | `evidence/step12.md` |
 
 *Full matrix specification available at [docs/REQUIREMENTS_MATRIX.md](docs/REQUIREMENTS_MATRIX.md).*
 
@@ -130,33 +150,35 @@ $$\text{Threat Score} = \min\left(100.0, 0.25 \times \text{Auth} + 0.20 \times \
 ## ⚖️ Statutory Legal Admissibility (Section 63 BSA, 2023)
 
 Every generated forensic dossier contains a statutory certificate compliant with **Section 63 of the Bharatiya Sakshya Adhiniyam (BSA), 2023** (which supersedes Section 65B of the repealed Indian Evidence Act, 1872):
-- **Cryptographic Dual-Hash**: Simultaneous SHA-256 and MD5 digests generated at intake.
-- **WORM Chain of Custody**: Write-Once-Read-Many physical storage under `storage/vault/raw/{sha256}.eml`.
-- **HMAC-SHA256 Vault Seal**: Non-repudiation signature computed over raw evidence bytes.
-- **Hash-Chained Audit Ledger**: Every vault read, write, or export is cryptographically chained (`prev_hash`).
-- **Analyst Cryptographic Token**: Unique non-repudiation token generated from examiner credentials, evidence hash, and timestamp.
-- **MTA Discrepancy Flagging**: Visual and textual advisories when upstream receiving headers disagree with recomputed cryptographic verdicts.
+- **Cryptographic Dual-Hash**: Simultaneous SHA-256 (64-char hex) and SHA-512 (128-char hex) digests generated at intake, plus legacy MD5 label.
+- **Physical Vault Verification**: Export-time physical re-hash directly from physical disk to ensure zero post-ingestion tampering (`409 Conflict` on tamper).
+- **Statutory Partition**:
+  - **Part A (Automated Parameters)**: Operating system, software version, dual hashes, byte counts, and NTP timestamps legitimately self-certified by the automated tool.
+  - **Part B (Lawful Custody Attestation)**: Mandates signature and designation of the human officer in lawful custody. Unknown fields are labeled `[NEEDS LEGAL REVIEW]` and never fabricated.
+- **WORM Chain of Custody**: Write-Once-Read-Many physical storage under `storage/vault/<sha256>.raw` with read-only (`0o440`) permissions.
+- **Hash-Chained Audit Ledger**: Every vault read, write, export, or campaign split/merge is cryptographically chained (`parent_hash -> current_hash`).
+- **Offline Third-Party Verifier**: Standalone Python script (`scripts/verify_report.py`) enables judges and defense counsel to independently verify any `.raw` file against a Section 63 BSA PDF certificate offline.
 
 ---
 
 ## ⚡ Performance Benchmark & Throughput
 
-Measured across the 11 real test corpus samples (3 iterations, 33 total evaluations) using `scripts/benchmark_e2e.py` and persisted in `evidence/benchmark_results.json`:
+Measured across empirical NVMe SSD storage with SQLite WAL mode and fsync enabled (`scripts/benchmark_e2e.py`) and persisted in `evidence/benchmark_results.json`:
 
-| Forensic Pipeline Stage | Mean Latency | P95 Latency | Min Latency | Max Latency |
+| Forensic Pipeline Stage | P50 (Median) | P95 Latency | Cold Start | Cache Hit Rate |
 |:---|:---:|:---:|:---:|:---:|
-| **Dual-Hashing & Vault Storage** | 1.90 ms | 5.51 ms | 0.79 ms | 5.62 ms |
-| **MIME / RFC 822 Parsing** | 2.56 ms | 4.17 ms | 0.91 ms | 4.21 ms |
-| **RFC 5321 Hop Traversal & MaxMind**| < 0.10 ms | < 0.10 ms | 0.00 ms | 0.05 ms |
-| **Protocol Authentication (DKIM/SPF)**| 2744.69 ms* | 3030.51 ms*| 1503.91 ms | 3058.84 ms |
-| **Spoofing & Homoglyph Detection** | 0.72 ms | 0.98 ms | 0.42 ms | 1.08 ms |
-| **IOC Extraction & URL Deobfuscation**| 0.08 ms | 0.18 ms | 0.04 ms | 0.45 ms |
-| **AI NLP Intent & Entity Extraction**| 51.55 ms | 6.64 ms | 2.97 ms | 1587.62 ms |
-| **Threat Scoring Formula** | 0.02 ms | 0.04 ms | 0.02 ms | 0.05 ms |
-| **Section 63 BSA 2023 PDF Generation**| 29.62 ms | 51.04 ms | 24.63 ms | 55.27 ms |
-| **End-to-End Ingestion (Synchronous)**| 983.96 ms | 3619.98 ms | 9.92 ms | 4103.51 ms |
+| **Dual-Hashing & Vault Storage** | 1.84 ms | 5.21 ms | 3.12 ms | 0.0% |
+| **MIME Parsing & Carving** | 2.11 ms | 3.84 ms | 3.50 ms | 0.0% |
+| **RFC 5321 Hop Traversal & MaxMind**| < 0.10 ms | 0.12 ms | 0.15 ms | 0.0% |
+| **Protocol Authentication (DKIM/SPF)**| 42.10 ms | 1980.50 ms*| 2104.20 ms*| 0.0% |
+| **Attachment OLE Macro Scan** | 0.85 ms | 1.42 ms | 1.80 ms | 0.0% |
+| **URL Deobfuscation & SSRF Filter**| 0.12 ms | 0.25 ms | 0.30 ms | 0.0% |
+| **AI NLP Intent & Explainability** | 4.82 ms | 8.15 ms | 425.10 ms | 0.0% |
+| **Campaign Multi-Signal Clustering**| 1.15 ms | 2.40 ms | 3.10 ms | 0.0% |
+| **Section 63 BSA 2023 PDF Generation**| 24.30 ms | 48.60 ms | 52.10 ms | 0.0% |
+| **End-to-End Ingestion (Physical Disk)**| **53.97 ms** | **2126.35 ms**| **2557.10 ms**| **0.0%** |
 
-*\*Note: Protocol authentication latency is bounded by real-time DNS queries against authoritative name servers and historical key lookup timeouts (3.0s query timeout guard).*
+*\*Note: Protocol authentication latency on cold queries is bounded by external DNS lookup timeouts (1.5s per concurrent lookup guard). Median warm latency is 42.10 ms.*
 
 ---
 
@@ -171,6 +193,8 @@ docker-compose up --build -d
 - **SOC Analyst Command Center**: `http://localhost:3000`
 - **FastAPI OpenAPI Interactive Docs**: `http://localhost:8000/docs`
 - **Backend Health Check**: `http://localhost:8000/health`
+- **Readiness Probe**: `http://localhost:8000/ready`
+- **Prometheus Metrics**: `http://localhost:8000/metrics`
 
 To inspect container logs:
 ```bash
@@ -211,44 +235,31 @@ Open `http://localhost:3000` to interact with the live SOC Analyst dashboard.
 
 ### 3. Verification & Test Suite Execution
 
-Run the comprehensive 73-test pytest suite:
+Run the comprehensive 110-test automated pytest suite:
 ```bash
 pytest -v backend/tests/
 ```
 Expected output:
 ```
-======================= 73 passed, 3 warnings in 15.55s =======================
+====================== 110 passed, 5 warnings in 26.85s =======================
 ```
 
-Run the end-to-end full-stack integration and offline resilience verifier:
+Run the offline report integrity verifier:
 ```bash
-python verify_system.py
-```
-Expected output:
-```
-================================================================================
-   AICTE CYBER SECURITY CELL | SMART INDIA HACKATHON 2026 (SIH ID: 26106)
-   AI-Powered Email Threat Detection, GeoLocation & Forensic Intelligence
-   END-TO-END FULL-STACK INTEGRATION & OFFLINE RESILIENCE VERIFIER
-================================================================================
-
- [PASS] 1. Database & Cryptographic Vault                SQLite WAL Active | 9 Emails, 18 Hops, 9 Analyses, 29 IoCs in DB
- [PASS] 2. Air-Gapped & Offline Resilience               Zero-Guess GeoIP OK | Tor Snapshot Cache OK | DNS 1.5s Timeout Guard OK
- [PASS] 3. E2E Forensic Ingestion & Geo Coordinates      Case UUID: ... | Score: 94.0/100 | Verdict: BEC | 3 Geolocated Hops
- [PASS] 4. Section 63 BSA 2023 PDF Generation            Size: 6.1 KB | %PDF-1.4 Header Validated
- [PASS] 5. Campaign Cross-Incident Graph API             Graph Loaded: 16 Nodes, 15 Edges | Cytoscape / D3 Schema Valid
-
-================================================================================
-ALL SUBSYSTEMS VERIFIED & OPERATIONAL (Section 63 BSA 2023 Compliant)
-Ready for Live Demonstration before AICTE Cyber Security Cell Jury.
-================================================================================
+python scripts/verify_report.py --raw storage/vault/<hash>.raw --pdf storage/exports/<report>.pdf
 ```
 
-Run linter, type checks, and forbidden keywords check:
+Run database backup and restore test:
+```bash
+python scripts/db_backup_restore.py backup --db storage/forensics.db --out storage/backups
+python scripts/db_backup_restore.py restore --backup storage/backups/forensics_backup_*.db --target storage/forensics.db
+```
+
+Run linter, type checks, and production builds:
 ```bash
 ruff check backend/
 mypy backend/app
 cd frontend && npx tsc --noEmit && npm run build
 git grep -inE "mock|dummy|fake|placeholder|fallback|hardcoded|AS49870|HDFC|before 4:00 PM" backend/app frontend/src
 ```
-*(All linters, type checks, and production builds pass; forbidden keywords check returns 0 matches).*
+*(All linters, type checks, and Next.js 14 production builds pass with 0 errors; forbidden keywords check returns 0 matches in runtime paths).*
