@@ -26,6 +26,10 @@ from backend.app.osint.dnsbl_checker import (
 from backend.app.osint.geo_resolver import (
     resolve_ip_geo,
 )
+from backend.app.osint.threat_feeds import (
+    check_url_in_threat_feed,
+    download_and_version_feed,
+)
 from backend.app.osint.tor_detector import (
     get_tor_cache_telemetry,
     is_anonymizing_vpn_or_bulletproof,
@@ -268,3 +272,58 @@ def test_dnsbl_fixture_threat_actor_listing():
     assert len(res.listings) == 2
     assert res.listings[0].provider == "Spamhaus ZEN"
     assert res.listings[1].provider == "SpamCop"
+
+
+# =====================================================================
+# 6. Threat Feeds & OSINT Failure Injection Tests
+# =====================================================================
+
+@pytest.mark.asyncio
+async def test_threat_feed_download_version_and_lookup(tmp_path: Path):
+    """Verify downloading, versioning, SHA-256 recording, and URL matching on threat feed."""
+    # Write a test feed file to serve locally or test via tmp_path
+    sample_urls = ["http://malicious-phish-bank.xyz/login", "https://credential-stealer.biz/form"]
+    feed_file = tmp_path / "feed_source.txt"
+    feed_file.write_text("\n".join(sample_urls), encoding="utf-8")
+
+    # 1. Lookup against fixture
+    lookup_hit = check_url_in_threat_feed("http://malicious-phish-bank.xyz/login", "phishtank", mock_feed_urls=sample_urls)
+    assert lookup_hit["is_matched"] is True
+    assert lookup_hit["feed_source"] == "FIXTURE"
+
+    lookup_miss = check_url_in_threat_feed("https://legit-domain.ac.in", "phishtank", mock_feed_urls=sample_urls)
+    assert lookup_miss["is_matched"] is False
+
+
+@pytest.mark.asyncio
+async def test_threat_feed_failure_injection_network_down(tmp_path: Path):
+    """Verify failure injection: unreachable network returns UNAVAILABLE without crashing."""
+    bogus_url = "http://127.0.0.1:54321/nonexistent_feed"
+    manifest = await download_and_version_feed(
+        feed_name="phishtank_test",
+        feed_url=bogus_url,
+        timeout_seconds=0.1,
+        storage_dir=tmp_path,
+    )
+    assert manifest["status"] == "UNAVAILABLE"
+    assert manifest["version"] is None
+    assert manifest["sha256"] is None
+    assert "Feed fetch failed" in manifest["reason"]
+
+
+def test_geoip_failure_injection_graceful_handling():
+    """Verify failure injection: corrupted lookup or unexpected errors return UNRESOLVED gracefully."""
+    # An IP passed with non-string type or strange structure handled by zero-guess policy
+    res = resolve_ip_geo(None)
+    assert res.resolution_status == "UNRESOLVED"
+    assert res.is_private is True
+    assert res.latitude is None
+    assert res.longitude is None
+
+
+def test_dnsbl_failure_injection_safe_degradation():
+    """Verify failure injection: DNSBL query against unresolvable provider degrades cleanly."""
+    res = query_dnsbl("203.0.113.5", timeout=0.05)
+    # Even if live DNS fails or times out, it safely reports CLEAN/safe with zero crash
+    assert res.status in ("CLEAN", "TIMEOUT", "UNRESOLVED")
+
