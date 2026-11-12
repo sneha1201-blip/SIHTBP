@@ -122,6 +122,10 @@ def run_all_gates_in_clean_clone() -> int:
             env["PYTHONPATH"] = str(clean_clone_dir)
 
             res = subprocess.run([py_exec, str(script_path)], cwd=clean_clone_dir, capture_output=True, text=True, env=env)
+            if res.stdout:
+                print(res.stdout)
+            if res.returncode != 0 and res.stderr:
+                print(f"[!] Error in {gate_id}:\n{res.stderr}")
 
             # Read generated artifact in clean clone
             artifact_file = clean_clone_dir / "evidence" / "gates" / f"{gate_id.lower()}.json"
