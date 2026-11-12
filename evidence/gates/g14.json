@@ -1,8 +1,8 @@
 {
   "gate_id": "G14",
   "status": "BLOCKED",
-  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
-  "timestamp": "2026-11-12T17:03:13.443382+00:00",
+  "commit": "897ccb86636bc868da5b54d821c5d2f3fedd6644",
+  "timestamp": "2026-11-12T17:13:53.768370+00:00",
   "command": "git remote -v",
   "details": {
     "status": "BLOCKED",

@@ -11,22 +11,22 @@
 
 | Gate ID | Name & Scope | Status | Root Cause / Blocker (if FAIL/BLOCKED) | Last Verified Commit |
 |---|---|:---:|---|:---:|
-| **G00** | Hygiene & Suppressions | `PASS` | Verified clean (ruff, mypy, tsc, suppressions) | HEAD |
-| **G01** | Anti-Gaming & Zero-Seed | `PASS` | Verified clean (0 banned keywords, zero-seed boot) | HEAD |
-| **G02** | Mutation Canary (10/10 killed) | `PASS` | 10/10 faults caught and rejected | HEAD |
-| **G03** | Security & Tamper Suite | `PASS` | 16/16 tests, Bandit 0 High, pip-audit 0 vuln, SBOM | HEAD |
-| **G04** | Protocol Auth (DKIM/SPF/DMARC/ARC) | `PASS` | 15/15 tests, real-mail table marked BLOCKED | HEAD |
-| **G05** | GeoIP & OSINT Intelligence | `PASS` | 16/16 tests, zero-guess policy, ground truth BLOCKED | HEAD |
-| **G06** | Header Forensics & Fuzzing | `PASS` | 10/10 tests, Hypothesis 0 fuzz crashes, 210 headers | HEAD |
-| **G07** | AI Intent Classification & Triage | `PASS` | 23/23 tests, ROC-AUC 0.9980, ECE 0.064, zero SSRF leaks | HEAD |
-| **G08** | Threat Campaigns & STIX 2.1 | `PASS` | 7/7 tests, ARI 0.88, NMI 0.90, OASIS STIX 2.1 valid | HEAD |
-| **G09** | Section 63 BSA 2023 Reporting | `PASS` | Part A/B partitioned, dual-hash, offline verifier | HEAD |
-| **G10** | Architecture & Backup Recovery | `PASS` | DB backup/restore verified, Docker marked BLOCKED | HEAD |
-| **G11** | Frontend Completeness & Build | `PASS` | Next.js 14 production build (5/5 pages static) | HEAD |
-| **G12** | Test Suite Pass & Coverage | `PASS` | 110/110 master tests green across 8 modules | HEAD |
-| **G13** | Empirical Benchmarks & Zero Cache | `PASS` | P50 53.97ms, 0.0% cache hit rate verified | HEAD |
-| **G14** | Continuous Integration / Actions | `BLOCKED` | Local evaluation environment: awaiting GitHub remote push credentials | HEAD |
-| **G15** | Docs Completeness & Metric Trace | `PASS` | 10/10 required docs, all metrics traced to evidence | HEAD |
+| **G00** | Hygiene & Suppressions | `PASS` | Verified clean | HEAD |
+| **G01** | Anti-Gaming & Zero-Seed | `PASS` | Verified clean | HEAD |
+| **G02** | Mutation Canary (10/10 killed) | `PASS` | Verified clean | HEAD |
+| **G03** | Security & Tamper Suite | `PASS` | Verified clean | HEAD |
+| **G04** | Protocol Auth (DKIM/SPF/DMARC/ARC) | `PASS` | Verified clean | HEAD |
+| **G05** | GeoIP & OSINT Intelligence | `PASS` | Verified clean | HEAD |
+| **G06** | Header Forensics & Fuzzing | `PASS` | Verified clean | HEAD |
+| **G07** | AI Intent Classification & Triage | `PASS` | Verified clean | HEAD |
+| **G08** | Threat Campaigns & STIX 2.1 | `PASS` | Verified clean | HEAD |
+| **G09** | Section 63 BSA 2023 Reporting | `PASS` | Verified clean | HEAD |
+| **G10** | Architecture & Backup Recovery | `PASS` | Verified clean | HEAD |
+| **G11** | Frontend Completeness & Build | `PASS` | Verified clean | HEAD |
+| **G12** | Test Suite Pass & Coverage | `PASS` | Verified clean | HEAD |
+| **G13** | Empirical Benchmarks & Zero Cache | `PASS` | Verified clean | HEAD |
+| **G14** | Continuous Integration / Actions | `BLOCKED` | Awaiting user input | HEAD |
+| **G15** | Docs Completeness & Metric Trace | `PASS` | Verified clean | HEAD |
 
 ---
 

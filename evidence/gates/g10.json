@@ -1,8 +1,8 @@
 {
   "gate_id": "G10",
   "status": "PASS",
-  "commit": "8c21ce92f835dd2a1f0159073cee9fe8f050130f",
-  "timestamp": "2026-11-12T16:57:31.288364+00:00",
+  "commit": "897ccb86636bc868da5b54d821c5d2f3fedd6644",
+  "timestamp": "2026-11-12T17:11:53.596909+00:00",
   "command": "g10_architecture_runner",
   "details": {
     "backup_restore_manifest": "VERIFIED (SHA-256 verified roundtrip)",
