@@ -169,17 +169,37 @@ def render_ascii_tables(counts: Dict[str, int], cases: List[Dict[str, Any]]) -> 
 
 async def seed_default_users(session: AsyncSession) -> None:
     """Seed foundational RBAC accounts (ADMIN, ANALYST, AUDITOR) with Argon2 hashes."""
+    from backend.app.core.config import settings
     from backend.app.core.security import hash_password
     from backend.app.database.models import User, UserRole
 
-    default_accounts = [
-        {"username": "admin", "email": "admin@aicte-india.org", "password": "AdminPassword@2026", "role": UserRole.ADMIN},
+    # 1. Environment-driven first administrator bootstrap
+    if settings.BOOTSTRAP_ADMIN_USERNAME and settings.BOOTSTRAP_ADMIN_PASSWORD:
+        b_stmt = select(User).where(User.username == settings.BOOTSTRAP_ADMIN_USERNAME)
+        b_res = await session.execute(b_stmt)
+        if not b_res.scalar_one_or_none():
+            admin_user = User(
+                username=settings.BOOTSTRAP_ADMIN_USERNAME,
+                email=settings.BOOTSTRAP_ADMIN_EMAIL,
+                password_hash=hash_password(settings.BOOTSTRAP_ADMIN_PASSWORD),
+                role=UserRole.ADMIN,
+                is_active=True,
+            )
+            session.add(admin_user)
+
+    # 2. Foundational RBAC accounts for development / testing environments
+    default_accounts = []
+    if not (settings.BOOTSTRAP_ADMIN_USERNAME and settings.BOOTSTRAP_ADMIN_PASSWORD):
+        default_accounts.append(
+            {"username": "admin", "email": "admin@aicte-india.org", "password": "AdminPassword@2026", "role": UserRole.ADMIN}
+        )
+    default_accounts.extend([
         {"username": "analyst", "email": "analyst@aicte-india.org", "password": "AnalystPassword@2026", "role": UserRole.ANALYST},
         {"username": "auditor", "email": "auditor@aicte-india.org", "password": "AuditorPassword@2026", "role": UserRole.AUDITOR},
-    ]
+    ])
 
     for acc in default_accounts:
-        stmt = select(User).where(User.username == acc["username"])
+        stmt = select(User).where((User.username == acc["username"]) | (User.email == acc["email"]))
         res = await session.execute(stmt)
         if not res.scalar_one_or_none():
             user = User(

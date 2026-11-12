@@ -9,7 +9,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
@@ -43,6 +43,9 @@ class Settings(BaseModel):
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "")
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24
+    BOOTSTRAP_ADMIN_USERNAME: Optional[str] = os.getenv("BOOTSTRAP_ADMIN_USERNAME", None)
+    BOOTSTRAP_ADMIN_PASSWORD: Optional[str] = os.getenv("BOOTSTRAP_ADMIN_PASSWORD", None)
+    BOOTSTRAP_ADMIN_EMAIL: str = os.getenv("BOOTSTRAP_ADMIN_EMAIL", "admin@aicte-india.org")
 
     # Security & Ingestion Limits
     MAX_UPLOAD_SIZE_BYTES: int = int(os.getenv("MAX_UPLOAD_SIZE_BYTES", str(25 * 1024 * 1024)))

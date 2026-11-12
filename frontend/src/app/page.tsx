@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { TopBar } from '../components/TopBar';
 import { ThreatScoreGauge } from '../components/ThreatScoreGauge';
 import { AuthBadges } from '../components/AuthBadges';
@@ -12,7 +13,7 @@ import { CampaignGraph } from '../components/CampaignGraph';
 import { AuditLedgerTable } from '../components/AuditLedgerTable';
 import { IngestionModal } from '../components/IngestionModal';
 import { FullForensicDossier, CampaignGraphData } from '../lib/types';
-import { fetchCampaignGraph, fetchEvidenceDossier } from '../lib/api';
+import { fetchCampaignGraph, fetchEvidenceDossier, getAuthToken } from '../lib/api';
 import { Shield, AlertTriangle, RefreshCw, UploadCloud, Search } from 'lucide-react';
 
 // SSR-Safe dynamic import for Leaflet Geotrace Map
@@ -27,6 +28,7 @@ const GeoTraceMap = dynamic(() => import('../components/GeoTraceMap'), {
 });
 
 export default function SOCDashboardPage() {
+  const router = useRouter();
   const [dossier, setDossier] = useState<FullForensicDossier | null>(null);
   const [graphData, setGraphData] = useState<CampaignGraphData>({
     graph: { total_nodes: 0, total_edges: 0, nodes: [], edges: [] },
@@ -35,6 +37,14 @@ export default function SOCDashboardPage() {
   const [backendOnline, setBackendOnline] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Authentication Guard: Ensure user has valid JWT token in browser session
+  useEffect(() => {
+    const token = getAuthToken();
+    if (!token) {
+      router.push('/login');
+    }
+  }, [router]);
 
   // Sync live intelligence from backend
   const loadLiveIntelligence = useCallback(async () => {

@@ -350,3 +350,70 @@ def test_startup_refusal_when_secrets_missing():
     res3 = subprocess.run(cmd_check, env=env_valid, capture_output=True, text=True)
     assert res3.returncode == 0
 
+
+@pytest.mark.asyncio
+async def test_first_user_bootstrap_from_env_vars():
+    """Verify administrator account bootstrap when BOOTSTRAP_ADMIN_* environment variables are set."""
+    from sqlalchemy import select
+    from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+
+    from backend.app.core.config import settings
+    from backend.app.database.init_db import seed_default_users
+    from backend.app.database.models import User, UserRole
+    from backend.app.database.session import Base
+
+    original_u = settings.BOOTSTRAP_ADMIN_USERNAME
+    original_p = settings.BOOTSTRAP_ADMIN_PASSWORD
+    settings.BOOTSTRAP_ADMIN_USERNAME = "secops_bootstrap_lead"
+    settings.BOOTSTRAP_ADMIN_PASSWORD = "StrongBootstrapPassword#2026"
+
+    try:
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        session_maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+        async with session_maker() as session:
+            await seed_default_users(session)
+
+            stmt = select(User).where(User.username == "secops_bootstrap_lead")
+            res = await session.execute(stmt)
+            admin_user = res.scalar_one_or_none()
+            assert admin_user is not None
+            assert admin_user.role == UserRole.ADMIN
+            assert admin_user.is_active is True
+
+            from backend.app.core.security import verify_password
+            assert verify_password("StrongBootstrapPassword#2026", admin_user.password_hash)
+
+        await engine.dispose()
+    finally:
+        settings.BOOTSTRAP_ADMIN_USERNAME = original_u
+        settings.BOOTSTRAP_ADMIN_PASSWORD = original_p
+
+
+@pytest.mark.asyncio
+async def test_sse_job_stream_requires_bearer_auth():
+    """Verify GET /api/v1/forensics/jobs/{id}/stream rejects unauthenticated requests with 401."""
+    from backend.app.core.security import create_access_token
+    from backend.app.forensics.job_queue import JobStatus, job_manager
+
+    job = await job_manager.create_job(file_name="stream_auth_test.eml", actor="analyst")
+    # Mark as completed so SSE stream generator terminates after emitting final payload
+    job.status = JobStatus.COMPLETED
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        # Requesting without token must return 401
+        res_no_auth = await ac.get(f"/api/v1/forensics/jobs/{job.job_id}/stream")
+        assert res_no_auth.status_code == 401
+
+        # Requesting with valid Bearer token must succeed
+        token = create_access_token(subject="analyst", role="ANALYST")
+        res_with_auth = await ac.get(
+            f"/api/v1/forensics/jobs/{job.job_id}/stream",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert res_with_auth.status_code == 200
+        assert "text/event-stream" in res_with_auth.headers.get("content-type", "")
+        assert "data:" in res_with_auth.text
+

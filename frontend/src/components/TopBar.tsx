@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ShieldAlert,
   Copy,
@@ -8,9 +8,11 @@ import {
   FileDown,
   UploadCloud,
   Activity,
+  LogOut,
+  UserCheck,
 } from 'lucide-react';
 import { copyToClipboard } from '../lib/utils';
-import { downloadForensicReportPdf } from '../lib/api';
+import { downloadForensicReportPdf, getStoredUser, logoutUser } from '../lib/api';
 
 interface TopBarProps {
   caseId?: string;
@@ -29,6 +31,11 @@ export function TopBar({
 }: TopBarProps) {
   const [copiedSha, setCopiedSha] = useState(false);
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ username: string; role: string } | null>(null);
+
+  useEffect(() => {
+    setCurrentUser(getStoredUser());
+  }, []);
 
   const handleCopySha = async () => {
     if (!sha256) return;
@@ -129,6 +136,24 @@ export function TopBar({
             <UploadCloud className="w-3.5 h-3.5" />
             <span>New Investigation</span>
           </button>
+
+          {/* User Profile & Logout */}
+          <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-xs">
+              <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-mono text-slate-200">{currentUser?.username || 'analyst'}</span>
+              <span className="text-[10px] text-cyan-400 bg-cyan-950 px-1 py-0.2 rounded font-bold">
+                {currentUser?.role || 'ANALYST'}
+              </span>
+            </div>
+            <button
+              onClick={() => logoutUser()}
+              title="Sign Out / Switch Analyst"
+              className="p-1.5 rounded-lg bg-slate-900 hover:bg-red-950/60 border border-slate-800 hover:border-red-800 text-slate-400 hover:text-red-300 transition"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </header>

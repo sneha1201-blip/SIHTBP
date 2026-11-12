@@ -44,6 +44,8 @@ Authentication-Results: edge-mx.annauniv.edu;
 export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps) {
   const [rawHeaders, setRawHeaders] = useState<string>('');
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
+  const [progressPercent, setProgressPercent] = useState<number>(0);
+  const [jobStage, setJobStage] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
@@ -54,8 +56,13 @@ export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps)
 
     setIsAnalyzing(true);
     setErrorMsg(null);
+    setProgressPercent(10);
+    setJobStage('QUEUED');
     try {
-      const dossier = await analyzeEmailHeaders(rawHeaders);
+      const dossier = await analyzeEmailHeaders(rawHeaders, (job) => {
+        setProgressPercent(job.progress_percent);
+        setJobStage(job.stage.replace(/_/g, ' '));
+      });
       onSuccess(dossier);
     } catch (err: any) {
       console.error('Header analysis failed:', err);
@@ -111,6 +118,28 @@ export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps)
         <div className="flex items-center gap-2 text-xs text-rose-400 bg-rose-950/40 border border-rose-800 px-3 py-2 rounded-lg">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>{errorMsg}</span>
+        </div>
+      )}
+
+      {/* Real-Time SSE Pipeline Progress Streaming */}
+      {isAnalyzing && (
+        <div className="bg-slate-950/90 border border-cyan-500/30 rounded-xl p-4 flex flex-col gap-2 animate-fade-in shadow-lg shadow-cyan-950/30">
+          <div className="flex items-center justify-between text-xs">
+            <span className="flex items-center gap-2 font-mono text-cyan-400 font-semibold">
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <span>STAGE: {jobStage || 'PIPELINE_ACTIVE'}</span>
+            </span>
+            <span className="font-mono text-white font-bold">{progressPercent}%</span>
+          </div>
+          <div className="w-full bg-slate-900 rounded-full h-2 overflow-hidden border border-slate-800">
+            <div
+              className="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-300"
+              style={{ width: `${Math.max(5, progressPercent)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-slate-400 font-mono">
+            Streaming live telemetry from backend via Server-Sent Events (SSE).
+          </p>
         </div>
       )}
 
