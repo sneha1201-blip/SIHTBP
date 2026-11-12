@@ -8,19 +8,37 @@ along with RFC-compliant STIX 2.1 threat intelligence bundle exports.
 from __future__ import annotations
 
 import uuid
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.core.security import require_any_authenticated
-from backend.app.database.models import Campaign, CampaignEmail, Email, User
+from backend.app.core.security import require_any_authenticated, require_roles
+from backend.app.database.audit_service import record_chained_audit_log
+from backend.app.database.models import Campaign, CampaignEmail, Email, User, UserRole
 from backend.app.database.session import get_db
 from backend.app.forensics.campaign_clusterer import generate_stix21_bundle
 
 router = APIRouter()
+
+
+class CampaignLabelRequest(BaseModel):
+    name: str
+    description: Optional[str] = None
+    threat_actor: Optional[str] = None
+
+
+class CampaignMergeRequest(BaseModel):
+    target_campaign_id: uuid.UUID
+
+
+class CampaignSplitRequest(BaseModel):
+    email_ids: List[uuid.UUID]
+    new_campaign_name: str
 
 
 @router.get("/")
@@ -272,3 +290,145 @@ async def export_single_campaign_stix(
 
     emails = [assoc.email for assoc in camp.email_associations if assoc.email]
     return generate_stix21_bundle(camp, emails)
+
+
+@router.patch("/{campaign_id}/label")
+async def label_campaign(
+    campaign_id: uuid.UUID,
+    payload: CampaignLabelRequest,
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Relabel or annotate a campaign cluster (Admin/Analyst) with hash-chained audit logging."""
+    camp = await db.get(Campaign, campaign_id)
+    if not camp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Campaign {campaign_id} not found",
+        )
+
+    old_name = camp.name
+    camp.name = payload.name
+    if payload.description is not None:
+        camp.description = payload.description
+    if payload.threat_actor is not None:
+        meta = dict(camp.campaign_metadata or {})
+        meta["threat_actor"] = payload.threat_actor
+        camp.campaign_metadata = meta
+
+    await record_chained_audit_log(
+        db=db,
+        action="CAMPAIGN_LABELED",
+        actor=current_user.username,
+        evidence_sha256=f"campaign:{camp.id}",
+        details={
+            "campaign_id": str(camp.id),
+            "old_name": old_name,
+            "new_name": camp.name,
+            "threat_actor": payload.threat_actor,
+        },
+    )
+    await db.commit()
+    return camp.to_dict()
+
+
+@router.post("/{campaign_id}/merge")
+async def merge_campaigns(
+    campaign_id: uuid.UUID,
+    payload: CampaignMergeRequest,
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Merge source campaign into target campaign with full audit trail."""
+    source_camp = await db.get(Campaign, campaign_id)
+    target_camp = await db.get(Campaign, payload.target_campaign_id)
+
+    if not source_camp or not target_camp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Source or target campaign not found",
+        )
+
+    # Re-link email associations
+    stmt = select(CampaignEmail).where(CampaignEmail.campaign_id == source_camp.id)
+    assocs = (await db.execute(stmt)).scalars().all()
+    for a in assocs:
+        a.campaign_id = target_camp.id
+
+    target_camp.total_emails += len(assocs)
+    target_camp.last_seen = max(target_camp.last_seen, source_camp.last_seen)
+
+    await record_chained_audit_log(
+        db=db,
+        action="CAMPAIGN_MERGED",
+        actor=current_user.username,
+        evidence_sha256=f"campaign:{target_camp.id}",
+        details={
+            "source_campaign_id": str(source_camp.id),
+            "source_name": source_camp.name,
+            "target_campaign_id": str(target_camp.id),
+            "target_name": target_camp.name,
+            "migrated_email_count": len(assocs),
+        },
+    )
+
+    await db.delete(source_camp)
+    await db.commit()
+    return target_camp.to_dict()
+
+
+@router.post("/{campaign_id}/split")
+async def split_campaign(
+    campaign_id: uuid.UUID,
+    payload: CampaignSplitRequest,
+    current_user: User = Depends(require_roles([UserRole.ADMIN, UserRole.ANALYST])),
+    db: AsyncSession = Depends(get_db),
+) -> Dict[str, Any]:
+    """Split specified emails out of a campaign into a newly created cluster."""
+    parent_camp = await db.get(Campaign, campaign_id)
+    if not parent_camp:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Parent campaign {campaign_id} not found",
+        )
+
+    # Create new campaign
+    new_camp = Campaign(
+        id=uuid.uuid4(),
+        name=payload.new_campaign_name,
+        cluster_type=parent_camp.cluster_type,
+        cluster_key=parent_camp.cluster_key,
+        first_seen=datetime.now(timezone.utc),
+        last_seen=datetime.now(timezone.utc),
+        total_emails=len(payload.email_ids),
+    )
+    db.add(new_camp)
+    await db.flush()
+
+    # Move selected associations
+    stmt = (
+        select(CampaignEmail)
+        .where(CampaignEmail.campaign_id == parent_camp.id)
+        .where(CampaignEmail.email_id.in_(payload.email_ids))
+    )
+    assocs = (await db.execute(stmt)).scalars().all()
+    for a in assocs:
+        a.campaign_id = new_camp.id
+
+    parent_camp.total_emails = max(0, parent_camp.total_emails - len(assocs))
+
+    await record_chained_audit_log(
+        db=db,
+        action="CAMPAIGN_SPLIT",
+        actor=current_user.username,
+        evidence_sha256=f"campaign:{new_camp.id}",
+        details={
+            "parent_campaign_id": str(parent_camp.id),
+            "new_campaign_id": str(new_camp.id),
+            "new_campaign_name": new_camp.name,
+            "moved_email_count": len(assocs),
+        },
+    )
+
+    await db.commit()
+    return new_camp.to_dict()

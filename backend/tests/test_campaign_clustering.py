@@ -22,7 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.orm import selectinload
 
 from backend.app.core.security import create_access_token
-from backend.app.database.models import Campaign, Email, HeaderHop, User, UserRole
+from backend.app.database.models import Campaign, CampaignEmail, Email, HeaderHop, User, UserRole
 from backend.app.database.session import Base, get_db
 from backend.app.forensics.campaign_clusterer import cluster_email_dynamically, generate_stix21_bundle
 from backend.app.main import app
@@ -557,3 +557,88 @@ async def test_campaign_clustering_corpus_eval_gates():
     assert metrics["clustering_purity"] >= 0.90, f"Purity {metrics['clustering_purity']} < 0.90"
     assert metrics["noise_false_positive_rate"] == 0.0, f"Noise FP rate {metrics['noise_false_positive_rate']} != 0.0"
     assert hyperscaler["hyperscaler_clustering_status"] == "PASS"
+
+
+@pytest.mark.asyncio
+async def test_analyst_campaign_label_merge_split(campaign_test_session: AsyncSession):
+    """Verify analyst actions: relabeling, merging, and splitting campaigns with hash-chained audit logging."""
+    from backend.app.database.models import EvidenceAuditLog
+
+    db = campaign_test_session
+    now = datetime.now(timezone.utc)
+
+    # 1. Create two test campaigns
+    camp1 = Campaign(
+        id=uuid.uuid4(),
+        name="Campaign Alpha",
+        cluster_type="ASN",
+        cluster_key="AS208294",
+        first_seen=now,
+        last_seen=now,
+        total_emails=2,
+    )
+    camp2 = Campaign(
+        id=uuid.uuid4(),
+        name="Campaign Beta",
+        cluster_type="SIMHASH",
+        cluster_key="0x12345678",
+        first_seen=now,
+        last_seen=now,
+        total_emails=1,
+    )
+    db.add(camp1)
+    db.add(camp2)
+    await db.flush()
+
+    em1 = Email(id=uuid.uuid4(), sha256_hash="1"*64, md5_hash="1"*32, file_name="e1.eml", file_size_bytes=100, raw_storage_path="v/e1")
+    em2 = Email(id=uuid.uuid4(), sha256_hash="2"*64, md5_hash="2"*32, file_name="e2.eml", file_size_bytes=100, raw_storage_path="v/e2")
+    em3 = Email(id=uuid.uuid4(), sha256_hash="3"*64, md5_hash="3"*32, file_name="e3.eml", file_size_bytes=100, raw_storage_path="v/e3")
+    db.add_all([em1, em2, em3])
+    await db.flush()
+
+    db.add(CampaignEmail(campaign_id=camp1.id, email_id=em1.id, similarity_score=0.9))
+    db.add(CampaignEmail(campaign_id=camp1.id, email_id=em2.id, similarity_score=0.9))
+    db.add(CampaignEmail(campaign_id=camp2.id, email_id=em3.id, similarity_score=0.9))
+    await db.commit()
+
+    # 2. Test relabeling via client
+    analyst_token = create_access_token(subject="test_analyst_camp", role="ANALYST")
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        # Override get_db to use test session
+        app.dependency_overrides[get_db] = lambda: db
+
+        # Relabel
+        resp_label = await client.patch(
+            f"/api/v1/campaigns/{camp1.id}/label",
+            json={"name": "Operation Sovereign Shield", "threat_actor": "APT-26106"},
+            headers={"Authorization": f"Bearer {analyst_token}"},
+        )
+        assert resp_label.status_code == 200
+        assert resp_label.json()["name"] == "Operation Sovereign Shield"
+
+        # Split: Split em2 from camp1 into new campaign
+        resp_split = await client.post(
+            f"/api/v1/campaigns/{camp1.id}/split",
+            json={"email_ids": [str(em2.id)], "new_campaign_name": "Campaign Gamma"},
+            headers={"Authorization": f"Bearer {analyst_token}"},
+        )
+        assert resp_split.status_code == 200
+        assert resp_split.json()["name"] == "Campaign Gamma"
+        assert resp_split.json()["total_emails"] == 1
+
+        # Merge: Merge camp2 into camp1
+        resp_merge = await client.post(
+            f"/api/v1/campaigns/{camp2.id}/merge",
+            json={"target_campaign_id": str(camp1.id)},
+            headers={"Authorization": f"Bearer {analyst_token}"},
+        )
+        assert resp_merge.status_code == 200
+
+        # Verify audit logs created
+        stmt_audit = select(EvidenceAuditLog).where(EvidenceAuditLog.action_performed.in_(["CAMPAIGN_LABELED", "CAMPAIGN_SPLIT", "CAMPAIGN_MERGED"]))
+        logs = (await db.execute(stmt_audit)).scalars().all()
+        assert len(logs) == 3
+
+        app.dependency_overrides.clear()
+
