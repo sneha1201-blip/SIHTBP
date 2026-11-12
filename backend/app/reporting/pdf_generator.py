@@ -10,8 +10,11 @@ from __future__ import annotations
 
 import hashlib
 import io
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List
+
+logger = logging.getLogger("pdf_generator")
 
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
@@ -180,8 +183,9 @@ def generate_forensic_pdf(
 
     try:
         vault_hmac = email_data.get("hmac_signature") or generate_hmac_signature(sha256.encode("utf-8"))
-    except Exception:
-        vault_hmac = hashlib.sha256(f"VAULT_SEAL:{sha256}".encode("utf-8")).hexdigest()
+    except Exception as exc:
+        logger.warning("Could not generate HMAC signature for PDF export: %s", exc)
+        vault_hmac = "UNAVAILABLE"
 
     analyst_token = hashlib.sha256(f"{examiner_name}:{sha256}:{examiner_designation}".encode("utf-8")).hexdigest()[:32].upper()
 

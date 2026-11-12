@@ -261,8 +261,8 @@ async def execute_forensic_pipeline(
                 if dom_intel.is_newly_registered:
                     is_nrd = True
                 ioc.metadata.update({"domain_age_days": dom_intel.domain_age_days, "registrar": dom_intel.registrar})
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Domain WHOIS lookup skipped or timed out for %s: %s", ioc.raw_value, exc)
 
     # 9. NLP & Content Analysis
     nlp_res = analyze_email_content(parsed.subject, parsed.body_plain or parsed.body_html)

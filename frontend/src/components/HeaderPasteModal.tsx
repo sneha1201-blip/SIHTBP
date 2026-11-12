@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Terminal, Shield, AlertCircle, Loader2, Sparkles, FileText } from 'lucide-react';
+import { Terminal, Shield, AlertCircle, Loader2 } from 'lucide-react';
 import { analyzeEmailHeaders } from '../lib/api';
 import { FullForensicDossier } from '../lib/types';
 
@@ -9,37 +9,6 @@ interface HeaderPasteModalProps {
   onSuccess: (dossier: FullForensicDossier) => void;
   onCancel?: () => void;
 }
-
-const SAMPLE_BEC_HEADERS = `Received: from mail-relay.aicte-india.org (14.139.245.10) by mx1.iitd.ac.in with ESMTP id m123456789;
-    Thu, 29 Oct 2026 14:32:05 +0530
-Received: from mail.chairman-aicte-desk.com (45.154.255.88) by mail-relay.aicte-india.org with ESMTP id h987654321;
-    Thu, 29 Oct 2026 14:30:45 +0530
-From: "Prof. T.G. Sitharam" <chairman@chairman-aicte-desk.com>
-To: registrar@iitd.ac.in
-Reply-To: executive-fund-desk@consultant.com
-Subject: STRICTLY CONFIDENTIAL: Immediate Emergency Grant Allocation - NEQIP 2026
-Date: Thu, 29 Oct 2026 14:30:12 +0530
-Message-ID: <20261029143012.8841.aicte@chairman-aicte-desk.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Authentication-Results: mx1.iitd.ac.in;
-    spf=fail (sender IP 45.154.255.88 is not designated for aicte-india.org);
-    dkim=none;
-    dmarc=fail (p=reject) header.from=chairman-aicte-desk.com`;
-
-const SAMPLE_HOMOGRAPH_HEADERS = `Received: from edge-mx.annauniv.edu (210.212.242.1) by mx1.annauniv.edu with ESMTPS id hop4;
-    Fri, 30 Oct 2026 08:24:45 +0530
-Received: from smtp-out.xn--icte-india-e1a.org (193.109.69.52) by edge-mx.annauniv.edu with ESMTPS id hop3;
-    Fri, 30 Oct 2026 08:22:15 +0530
-From: "AICTE Approval Bureau" <scrutiny@\u0430icte-india.org>
-To: principal@annauniv.edu
-Subject: URGENT DEFICIENCY NOTICE: Extension of Approval (EoA) 2026-27
-Date: Fri, 30 Oct 2026 08:20:00 +0530
-Message-ID: <aph2026-def-notice-098@xn--icte-india-e1a.org>
-Authentication-Results: edge-mx.annauniv.edu;
-    spf=pass smtp.mailfrom=xn--icte-india-e1a.org;
-    dkim=pass header.d=xn--icte-india-e1a.org;
-    dmarc=fail (p=reject) header.from=aicte-india.org`;
 
 export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps) {
   const [rawHeaders, setRawHeaders] = useState<string>('');
@@ -74,27 +43,14 @@ export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps)
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Sample presets bar */}
-      <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-slate-800">
-        <span className="text-xs text-slate-400 font-semibold flex items-center gap-1.5">
-          <Terminal className="w-3.5 h-3.5 text-cyan-400" /> Quick Forensic Header Presets:
+      {/* Forensic Header Guidance Banner */}
+      <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-800">
+        <span className="text-xs text-slate-300 font-medium flex items-center gap-1.5">
+          <Terminal className="w-3.5 h-3.5 text-cyan-400" /> RFC 822 / MIME Header Triage
         </span>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setRawHeaders(SAMPLE_BEC_HEADERS)}
-            className="text-[11px] px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-800 transition flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3 text-amber-400" /> Load BEC Wire Fraud
-          </button>
-          <button
-            type="button"
-            onClick={() => setRawHeaders(SAMPLE_HOMOGRAPH_HEADERS)}
-            className="text-[11px] px-2.5 py-1 rounded bg-slate-900 hover:bg-slate-800 text-rose-300 border border-slate-800 transition flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3 text-rose-400" /> Load Cyrillic Homograph
-          </button>
-        </div>
+        <span className="text-[11px] text-slate-500 font-mono">
+          Paste unedited headers directly from your email client
+        </span>
       </div>
 
       {/* Textarea */}

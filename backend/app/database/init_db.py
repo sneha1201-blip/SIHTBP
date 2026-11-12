@@ -213,7 +213,7 @@ async def seed_default_users(session: AsyncSession) -> None:
     await session.commit()
 
 
-async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
+async def initialize_and_verify(reset: bool = False, seed: bool = False) -> bool:
     """Execute complete database initialization, optional seeding, and verification."""
     print_banner()
     vault_dir = get_vault_dir()
@@ -248,6 +248,8 @@ async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
                 print(f"[+] Seeding completed successfully: {seed_counts}")
             else:
                 print(f"[*] Database already populated with {existing_count} emails. Skipping duplicate seeding.")
+        else:
+            print("[*] Production zero-seed mode active: fresh database initialized with 0 emails.")
         print()
 
         # Gather metrics for verification table
@@ -273,7 +275,7 @@ async def initialize_and_verify(reset: bool = False, seed: bool = True) -> bool:
         return all_vault_intact and all_hmac_valid
 
 
-def init_db_and_verify(reset: bool = False, seed: bool = True) -> bool:
+def init_db_and_verify(reset: bool = False, seed: bool = False) -> bool:
     """Synchronous entry point for initialize_and_verify.
 
     Executes complete database schema migration, forensic seeding, and cryptographic
@@ -304,10 +306,21 @@ def main() -> None:
         description="AICTE Forensic Intelligence Platform Database Initializer & Verification Runner"
     )
     parser.add_argument("--reset", action="store_true", help="Drop and recreate all tables from scratch")
-    parser.add_argument("--no-seed", action="store_true", help="Skip populating sample seed data")
+    parser.add_argument(
+        "--seed",
+        action="store_true",
+        default=False,
+        help="Explicitly populate sample forensic cases (opt-in only for development/demo testing)",
+    )
+    parser.add_argument(
+        "--no-seed",
+        dest="seed",
+        action="store_false",
+        help="Do not populate sample seed data (default behavior)",
+    )
     args = parser.parse_args()
 
-    success = init_db_and_verify(reset=args.reset, seed=not args.no_seed)
+    success = init_db_and_verify(reset=args.reset, seed=args.seed)
     sys.exit(0 if success else 1)
 
 

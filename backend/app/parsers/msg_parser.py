@@ -1,8 +1,9 @@
-"""Outlook MSG (.msg) Parser with Resilient Secondary Salvage Regex Scanner.
+"""Outlook MSG (.msg) Parser with Partial Stream Best-Effort Recovery.
 
 Extracts headers, bodies, recipients, and attachments from Outlook compound document files.
-Includes a dedicated salvage ASCII/MIME regex scanner to handle corrupted OLE streams
-or truncated files without raising unhandled 500 exceptions.
+When handling severely corrupted OLE streams or non-standard compound files, invokes
+carve_partial_msg_stream to recover raw ASCII segments with an explicit
+forensic status of 'PARTIAL_PARSE_CORRUPT_OLE_STREAM'.
 """
 
 from __future__ import annotations
@@ -24,15 +25,18 @@ from backend.app.parsers.mime_normalizer import (
 logger = logging.getLogger("msg_parser")
 
 
-def salvage_ascii_msg_scanner(
+def carve_partial_msg_stream(
     raw_bytes: bytes, filename: str, sha256_hash: str, md5_hash: str
 ) -> ParsedEmailData:
-    """Extract forensic metadata from corrupted OLE streams using raw ASCII/UTF-8 regex scanning.
+    """Best-effort ASCII carving from corrupted OLE streams.
 
-    Ensures that corrupted Outlook files, partial memory dumps, or invalid compound documents
-    never cause an unhandled 500 server crash during forensic triage.
+    Flags the forensic parsing status as 'PARTIAL_PARSE_CORRUPT_OLE_STREAM' and records
+    only verifiable ASCII/UTF-8 segments without inventing synthetic or placeholder values.
     """
-    logger.warning("Invoking salvage ASCII/MIME regex scanner for corrupted .msg: %s", filename)
+    logger.warning(
+        "Corrupted or invalid OLE compound file '%s': executing partial ASCII carving. Forensic status: PARTIAL_PARSE.",
+        filename,
+    )
 
     # Extract all printable ASCII string segments of length >= 4
     string_chunks = re.findall(rb"[\x20-\x7E\r\n\t]{4,}", raw_bytes)
@@ -40,36 +44,37 @@ def salvage_ascii_msg_scanner(
 
     # Scan for Subject
     subject_match = re.search(r"(?:Subject|Thread-Topic)\s*:\s*([^\r\n]+)", text_content, re.IGNORECASE)
-    subject = subject_match.group(1).strip() if subject_match else f"[Corrupted MSG Stream: {filename}]"
+    subject = subject_match.group(1).strip() if subject_match else f"[Unparsed MSG: {filename}]"
 
     # Scan for Sender
     sender_match = re.search(r"(?:From|Sender|Return-Path)\s*:\s*([^\r\n]+)", text_content, re.IGNORECASE)
-    sender_raw = sender_match.group(1).strip() if sender_match else "unknown-sender@corrupted.msg"
+    sender_raw = sender_match.group(1).strip() if sender_match else ""
     sender_email = None
     sender_display = None
-    if "<" in sender_raw and ">" in sender_raw:
-        parts = sender_raw.split("<")
-        sender_display = parts[0].strip(' "\'')
-        sender_email = parts[1].split(">")[0].strip().lower()
-    else:
-        sender_email = sender_raw.strip().lower()
+    if sender_raw:
+        if "<" in sender_raw and ">" in sender_raw:
+            parts = sender_raw.split("<")
+            sender_display = parts[0].strip(' "\'')
+            sender_email = parts[1].split(">")[0].strip().lower()
+        else:
+            sender_email = sender_raw.strip().lower()
 
     # Scan for Recipients
-    recipients = []
+    recipients: list[str] = []
     to_matches = re.findall(r"(?:To|Cc)\s*:\s*([^\r\n]+)", text_content, re.IGNORECASE)
     for tm in to_matches:
         for r in tm.split(";"):
             cleaned_r = r.strip().lower()
-            if "@" in cleaned_r:
+            if "@" in cleaned_r and cleaned_r not in recipients:
                 recipients.append(cleaned_r)
 
     # Scan for Received headers
-    received_headers = []
+    received_headers: list[str] = []
     rec_matches = re.findall(r"Received\s*:\s*([^\r\n]+(?:[\r\n]+[ \t]+[^\r\n]+)*)", text_content, re.IGNORECASE)
     for rm in rec_matches:
         received_headers.append(" ".join(rm.split()))
 
-    # Build plain text body from the longest text blocks
+    # Build plain text body from longest text blocks
     body_blocks = [chunk.decode("ascii", errors="replace") for chunk in string_chunks if len(chunk) > 40]
     body_plain = "\n\n".join(body_blocks[:15]) if body_blocks else text_content[:2000]
 
@@ -85,9 +90,9 @@ def salvage_ascii_msg_scanner(
         sender_raw=sender_raw,
         sender_email=sender_email,
         sender_display=sender_display,
-        recipient_list=recipients or ["forensics-triage@institution.ac.in"],
+        recipient_list=recipients,
         received_headers=received_headers,
-        headers_dict={"X-Forensic-Note": ["Corrupted MSG stream recovered via ASCII scanner"]},
+        headers_dict={"X-Forensic-Parsing-Status": ["PARTIAL_PARSE_CORRUPT_OLE_STREAM"]},
         body_plain=body_plain,
         body_html=None,
         simhash_body=simhash_body,
@@ -190,9 +195,11 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
     # Tier 2: EML parser (in case file is RFC 822 ASCII mislabeled as .msg)
     try:
         from backend.app.parsers.eml_parser import parse_eml
-        return parse_eml(raw_bytes, filename=filename)
+        eml_candidate = parse_eml(raw_bytes, filename=filename)
+        if eml_candidate.headers_dict or eml_candidate.received_headers or eml_candidate.sender_email:
+            return eml_candidate
     except Exception as exc_eml:
-        logger.debug("EML parser attempt failed on %s: %s. Attempting Tier 3 ASCII regex scanner.", filename, exc_eml)
+        logger.debug("EML parser attempt failed on %s: %s. Attempting Tier 3 ASCII carving.", filename, exc_eml)
 
-    # Tier 3: Resilient salvage ASCII regex scanner
-    return salvage_ascii_msg_scanner(raw_bytes, filename, sha256_hash, md5_hash)
+    # Tier 3: Best-effort ASCII carving with documented PARTIAL_PARSE status
+    return carve_partial_msg_stream(raw_bytes, filename, sha256_hash, md5_hash)

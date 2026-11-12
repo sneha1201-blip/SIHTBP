@@ -9,6 +9,7 @@ from __future__ import annotations
 import email
 import email.policy
 import hashlib
+import logging
 from email.utils import parseaddr, parsedate_to_datetime
 
 from backend.app.database.vault import calculate_hashes
@@ -17,6 +18,8 @@ from backend.app.parsers.mime_normalizer import (
     ParsedEmailData,
     compute_simhash,
 )
+
+logger = logging.getLogger("eml_parser")
 
 DANGEROUS_EXTENSIONS = {
     ".exe", ".scr", ".vbs", ".bat", ".cmd", ".ps1", ".xlsm", ".docm",
@@ -41,7 +44,8 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
     if raw_date:
         try:
             date_header = parsedate_to_datetime(raw_date)
-        except Exception:
+        except (ValueError, TypeError) as exc:
+            logger.debug("Failed parsing Date header '%s': %s", raw_date, exc)
             date_header = None
 
     # Sender parsing

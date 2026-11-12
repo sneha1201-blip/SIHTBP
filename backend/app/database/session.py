@@ -7,6 +7,7 @@ Provides a unified SQLAlchemy 2.0 asyncio layer supporting:
 
 from __future__ import annotations
 
+import logging
 import os
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -92,6 +93,8 @@ engine: AsyncEngine = create_async_engine(DATABASE_URL, **engine_kwargs)
 
 
 # Attach SQLite PRAGMAs for foreign keys, WAL mode, and sync optimization
+logger = logging.getLogger("database.session")
+
 if IS_SQLITE:
     @event.listens_for(engine.sync_engine, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):
@@ -105,8 +108,8 @@ if IS_SQLITE:
             cursor.execute("PRAGMA synchronous = NORMAL;")
             # Increase busy timeout to 60 seconds to prevent file locking contention
             cursor.execute("PRAGMA busy_timeout = 60000;")
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.warning("Failed configuring SQLite pragmas: %s", exc)
         finally:
             cursor.close()
 

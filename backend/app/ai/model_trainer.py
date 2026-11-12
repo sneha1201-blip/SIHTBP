@@ -11,12 +11,15 @@ Trains, validates, and benchmarks a TF-IDF + Logistic Regression multi-class thr
 from __future__ import annotations
 
 import json
+import logging
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict
 
 import joblib
 import numpy as np
+
+logger = logging.getLogger("model_trainer")
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import (
@@ -107,13 +110,13 @@ def train_and_evaluate_model(
 
     # Multi-class ROC-AUC (One-vs-Rest)
     y_test_bin = label_binarize(y_test, classes=classes)
+    roc_auc: float = 0.0
     try:
         if y_test_bin.shape[1] > 1:
             roc_auc = float(roc_auc_score(y_test_bin, y_prob, multi_class="ovr", average="macro"))
-        else:
-            roc_auc = 1.0
-    except Exception:
-        roc_auc = 1.0
+    except Exception as exc:
+        logger.warning("Multi-class ROC-AUC could not be calculated: %s", exc)
+        roc_auc = 0.0
 
     cm = confusion_matrix(y_test, y_pred, labels=classes).tolist()
     clf_report = classification_report(y_test, y_pred, labels=classes, output_dict=True, zero_division=0)

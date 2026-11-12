@@ -6,12 +6,15 @@ and headers, with automatic cryptographic hashing and safe defanging (`hxxps://`
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import List, Set
 from urllib.parse import urlparse
 
 from bs4 import BeautifulSoup
 from pydantic import BaseModel
+
+logger = logging.getLogger("ioc_extractor")
 
 
 class ExtractedIOC(BaseModel):
@@ -89,8 +92,8 @@ def extract_iocs(
                             metadata={"link_text": a_tag.get_text(strip=True)[:100]},
                         )
                     )
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.debug("HTML href parsing error: %s", exc)
 
     # 2. Extract URLs from plaintext and HTML bodies
     combined_text = f"{body_plain or ''} {body_html or ''}"
@@ -123,8 +126,8 @@ def extract_iocs(
                             context="EMBEDDED_URL_DOMAIN",
                         )
                     )
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.debug("Failed parsing domain from URL '%s': %s", ioc.raw_value, exc)
 
     # 4. Extract Hop IPs
     if hop_ips:

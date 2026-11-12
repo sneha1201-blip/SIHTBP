@@ -63,8 +63,8 @@ def parse_rdap_response(domain: str, rdap_json: Dict[str, Any], source: str = "R
                     dt = datetime.fromisoformat(str(raw_date).replace("Z", "+00:00"))
                     creation_dt = dt.astimezone(timezone.utc)
                     break
-                except Exception:
-                    pass
+                except (ValueError, TypeError) as exc:
+                    logger.debug("Failed parsing RDAP eventDate '%s': %s", raw_date, exc)
 
     # 2. Parse Entities for Registrar
     entities = rdap_json.get("entities", [])

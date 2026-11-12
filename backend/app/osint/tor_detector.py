@@ -66,21 +66,22 @@ def load_tor_exit_cache(custom_snapshot_path: Optional[Path] = None) -> Dict[str
         for sub in data.get("exit_subnets", []):
             try:
                 _ACTIVE_TOR_NETWORKS.append(ipaddress.ip_network(sub))
-            except ValueError:
-                pass
+            except ValueError as exc:
+                logger.debug("Skipping invalid CIDR in Tor subnet list '%s': %s", sub, exc)
 
         for sub in data.get("bulletproof_subnets", []):
             try:
                 _ACTIVE_BULLETPROOF_NETWORKS.append(ipaddress.ip_network(sub))
-            except ValueError:
-                pass
+            except ValueError as exc:
+                logger.debug("Skipping invalid CIDR in bulletproof subnet list '%s': %s", sub, exc)
 
         fetched_str = data.get("fetched_at") or data.get("updated_at")
         if fetched_str:
             try:
                 dt = datetime.fromisoformat(fetched_str.replace("Z", "+00:00"))
                 _CACHE_FETCHED_AT = dt.astimezone(timezone.utc)
-            except Exception:
+            except Exception as exc:
+                logger.debug("Failed parsing Tor cache timestamp '%s': %s", fetched_str, exc)
                 _CACHE_FETCHED_AT = datetime.now(timezone.utc)
         else:
             _CACHE_FETCHED_AT = datetime.now(timezone.utc)
@@ -194,8 +195,8 @@ def is_tor_exit_node(ip_str: Optional[str]) -> bool:
         for net in _ACTIVE_TOR_NETWORKS:
             if ip_obj in net:
                 return True
-    except ValueError:
-        pass
+    except ValueError as exc:
+        logger.debug("Invalid IP format '%s' for Tor subnet membership check: %s", clean, exc)
 
     return False
 
@@ -216,8 +217,8 @@ def is_anonymizing_vpn_or_bulletproof(ip_str: Optional[str]) -> Tuple[bool, bool
         for net in _ACTIVE_BULLETPROOF_NETWORKS:
             if ip_obj in net:
                 return True, True
-    except ValueError:
-        pass
+    except ValueError as exc:
+        logger.debug("Invalid IP format '%s' for bulletproof subnet check: %s", clean, exc)
 
     return False, False
 

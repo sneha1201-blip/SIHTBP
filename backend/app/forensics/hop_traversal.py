@@ -254,8 +254,8 @@ def reverse_hop_traversal(received_headers: List[str]) -> Tuple[List[HopAnalysis
                     curr_hop.anomaly_reasons.append(
                         f"Temporal Anomaly: Hop timestamp claims to occur {time_delta:.0f}s in the future relative to downstream receiver."
                     )
-            except Exception:
-                pass
+            except (TypeError, ValueError, OverflowError) as exc:
+                logger.debug("Failed calculating hop temporal delta: %s", exc)
 
         # 2. Syntax anomaly: No identifying IP or from_mta hostname
         if not curr_hop.hop_ip and not curr_hop.from_mta:

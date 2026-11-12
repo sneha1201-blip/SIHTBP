@@ -335,8 +335,8 @@ def verify_dkim_signatures(
                     res_item.is_expired = True
                     res_item.signature_status = "EXPIRED"
                     res_item.details = f"DKIM Signature expired at Unix timestamp {x_val} (current {current_unix_time})."
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as exc:
+                logger.debug("Failed parsing DKIM x= expiration tag: %s", exc)
 
         # 2. Check l= tag abuse (RFC 6376 Section 8.2)
         if b"l" in sig_parsed:
@@ -355,8 +355,8 @@ def verify_dkim_signatures(
                         )
                 except Exception as exc:
                     logger.debug("DKIM l= canonicalization check error: %s", exc)
-            except (ValueError, TypeError):
-                pass
+            except (ValueError, TypeError) as exc:
+                logger.debug("Failed parsing DKIM l= length tag: %s", exc)
 
         # 3. DNS Public Key Resolution
         fqdn_bytes = f"{s_val}._domainkey.{d_val}.".encode("utf-8")

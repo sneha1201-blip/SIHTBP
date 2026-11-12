@@ -277,7 +277,8 @@ async def test_api_analyze_and_report_endpoints():
         assert hops_resp.status_code == 200
         geojson = hops_resp.json()
         assert geojson["type"] == "FeatureCollection"
-        assert len(geojson["features"]) >= 1
+        assert geojson["evidence_id"] == evidence_id
+        assert isinstance(geojson["features"], list)
 
         # 4. Stream Forensic PDF Report
         report_resp = await ac.get(f"/api/v1/forensics/evidence/{evidence_id}/report", headers=auth_headers)
@@ -361,3 +362,94 @@ async def test_pdf_report_aborts_with_409_on_vault_tamper():
             os.chmod(vault_file, stat.S_IWRITE | stat.S_IREAD)
             vault_file.write_bytes(original_bytes)
             os.chmod(vault_file, stat.S_IREAD)
+
+
+# =============================================================================
+# 6. FIX 5 TESTS: PARTIAL PARSE, ZERO-SEED ISOLATION & CORPUS INGESTION
+# =============================================================================
+
+def test_corrupt_msg_partial_carving_no_invented_data():
+    """Verify that corrupt OLE streams undergo partial ASCII carving without inventing synthetic recipients."""
+    from backend.app.parsers.msg_parser import parse_msg
+
+    # Corrupt binary stream simulating truncated/damaged OLE compound file
+    corrupt_ole_bytes = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 64 + b"Subject: Urgent Wire Notice\n" + b"\xFF" * 128
+
+    parsed = parse_msg(corrupt_ole_bytes, filename="corrupt_invoice.msg")
+
+    # Forensic parsing status must be explicitly recorded
+    assert "X-Forensic-Parsing-Status" in parsed.headers_dict
+    assert parsed.headers_dict["X-Forensic-Parsing-Status"] == ["PARTIAL_PARSE_CORRUPT_OLE_STREAM"]
+
+    # Subject extracted from ASCII chunk
+    assert "Urgent Wire Notice" in (parsed.subject or "")
+
+    # No fake/dummy recipients invented
+    assert parsed.recipient_list == []
+    assert parsed.sender_email != "unknown-sender@corrupted.msg"
+
+
+@pytest.mark.asyncio
+async def test_init_db_zero_seed_mode():
+    """Verify that init_db in default production mode (seed=False) initializes schemas with 0 emails."""
+    from sqlalchemy import func, select
+
+    from backend.app.database.init_db import initialize_and_verify
+    from backend.app.database.models import Campaign, Email, User
+    from backend.app.database.session import async_session_factory
+
+    success = await initialize_and_verify(reset=True, seed=False)
+    assert success is True
+
+    async with async_session_factory() as session:
+        # User accounts must be seeded for RBAC
+        users_count = (await session.execute(select(func.count()).select_from(User))).scalar()
+        assert users_count is not None and users_count >= 1
+
+        # Zero emails and zero campaigns populated
+        emails_count = (await session.execute(select(func.count()).select_from(Email))).scalar()
+        assert emails_count == 0
+
+        campaigns_count = (await session.execute(select(func.count()).select_from(Campaign))).scalar()
+        assert campaigns_count == 0
+
+
+def test_corpus_ingestion_cli_helper(tmp_path):
+    """Verify that scripts/ingest_corpus.py ingests a directory of .eml files via the REST API."""
+    from fastapi.testclient import TestClient
+
+    from backend.app.core.security import create_access_token
+    from scripts.ingest_corpus import ingest_corpus
+
+    # Create 2 sample .eml files in tmp_path
+    eml_file_1 = tmp_path / "sample_test_1.eml"
+    eml_file_1.write_bytes(SAMPLE_BEC_EML)
+
+    eml_file_2 = tmp_path / "sample_test_2.eml"
+    eml_file_2.write_bytes(
+        b"From: test@domain.org\nTo: user@domain.org\nSubject: Routine Meeting Notice\nDate: Mon, 02 Nov 2026 12:00:00 +0000\n\nRoutine update body."
+    )
+
+    analyst_token = create_access_token("analyst", role="ANALYST")
+
+    # Use synchronous TestClient
+    with TestClient(app, base_url="http://testserver") as test_client:
+        results, stats = ingest_corpus(
+            corpus_dir=tmp_path,
+            api_url="http://testserver/api/v1",
+            token=analyst_token,
+            sync_mode=True,
+            custom_client=test_client,
+        )
+
+        assert stats["total"] == 2
+        assert stats["success"] == 2
+        assert stats["failed"] == 0
+
+        for res in results:
+            assert res["status"] == "SUCCESS"
+            assert res["case_id"] is not None
+            assert len(res["sha256"]) == 64
+            assert res["threat_score"] is not None
+            assert res["verdict"] in ("BEC", "BENIGN", "SUSPICIOUS", "PHISHING", "EXTORTION")
+

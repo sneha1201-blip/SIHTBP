@@ -86,10 +86,16 @@ def get_node_and_npm() -> tuple[str, str]:
 def initialize_database():
     """Initialize database schemas via migrations/verification without wiping data unless --reset is passed."""
     should_reset = "--reset" in sys.argv
+    should_seed = "--seed" in sys.argv
     if should_reset:
         print(f"{YELLOW}[*] --reset flag detected: Wiping database schemas...{RESET}")
     else:
         print(f"{YELLOW}[*] Verifying database schemas & persistence layer...{RESET}")
+
+    if should_seed:
+        print(f"{YELLOW}[*] --seed flag detected: Sample forensic test cases will be populated.{RESET}")
+    else:
+        print(f"{CYAN}[*] Production zero-seed default active: No sample emails populated.{RESET}")
 
     sys.path.insert(0, str(PROJECT_ROOT))
     try:
@@ -102,7 +108,7 @@ def initialize_database():
         def init_db_and_verify(**kw):
             return asyncio.run(initialize_and_verify(**kw))
 
-    success = init_db_and_verify(reset=should_reset)
+    success = init_db_and_verify(reset=should_reset, seed=should_seed)
     if not success:
         print(f"{RED}[!] Database initialization failed. Exiting.{RESET}")
         sys.exit(1)

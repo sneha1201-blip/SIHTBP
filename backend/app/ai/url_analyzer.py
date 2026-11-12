@@ -79,8 +79,8 @@ def deobfuscate_ip_literal(host: str) -> Optional[str]:
         try:
             val = int(clean, 16)
             return socket.inet_ntoa(val.to_bytes(4, byteorder="big"))
-        except Exception:
-            pass
+        except (ValueError, OverflowError, OSError) as exc:
+            logger.debug("Failed decoding hex IP literal '%s': %s", clean, exc)
 
     # Pure DWORD integer
     if clean.isdigit():
@@ -88,16 +88,16 @@ def deobfuscate_ip_literal(host: str) -> Optional[str]:
             val = int(clean)
             if 0 <= val <= 0xFFFFFFFF:
                 return socket.inet_ntoa(val.to_bytes(4, byteorder="big"))
-        except Exception:
-            pass
+        except (ValueError, OverflowError, OSError) as exc:
+            logger.debug("Failed decoding DWORD IP literal '%s': %s", clean, exc)
 
     # Octal dotted notation: e.g. 0177.0.0.1
     if "." in clean and any(part.startswith("0") and len(part) > 1 for part in clean.split(".")):
         try:
             octets = [str(int(p, 8)) for p in clean.split(".")]
             return ".".join(octets)
-        except Exception:
-            pass
+        except (ValueError, OverflowError) as exc:
+            logger.debug("Failed decoding octal IP literal '%s': %s", clean, exc)
 
     return None
 

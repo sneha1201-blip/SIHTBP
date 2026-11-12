@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import logging
 import os
 import stat
 import tempfile
@@ -19,6 +20,8 @@ from pathlib import Path
 from typing import BinaryIO, Optional, Tuple, Union
 
 from backend.app.core.config import settings
+
+logger = logging.getLogger("vault")
 
 # Environment-configurable vault directory
 DEFAULT_VAULT_DIR = Path(__file__).resolve().parent.parent.parent.parent / "storage" / "vault"
@@ -193,16 +196,16 @@ def store_raw_evidence(
         # Set read-only permission (Write-Once-Read-Many forensic principle)
         try:
             os.chmod(temp_file_path, stat.S_IREAD | stat.S_IRGRP | stat.S_IROTH)
-        except Exception:
-            pass  # Non-fatal on platforms that don't support full POSIX modes
+        except OSError as exc:
+            logger.debug("Non-fatal OS error applying read-only permissions to temp evidence: %s", exc)
 
         os.replace(temp_file_path, evidence_path)
     except Exception:
         if os.path.exists(temp_file_path):
             try:
                 os.remove(temp_file_path)
-            except Exception:
-                pass
+            except OSError as exc:
+                logger.debug("Non-fatal OS error removing temp evidence file: %s", exc)
         raise
 
     return sha256_hash, md5_hash, str(evidence_path), len(raw_bytes)
