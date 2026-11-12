@@ -34,13 +34,13 @@ MODEL_FILE = STORAGE_DIR / "models" / "email_threat_classifier.joblib"
 _MODEL_PIPELINE: Any = None
 
 
-def get_or_load_model() -> Any:
+def get_or_load_model(reload: bool = False) -> Any:
     """Load the serialized scikit-learn classifier pipeline or train on first run."""
     global _MODEL_PIPELINE
-    if _MODEL_PIPELINE is not None:
+    if _MODEL_PIPELINE is not None and not reload:
         return _MODEL_PIPELINE
 
-    if MODEL_FILE.exists():
+    if MODEL_FILE.exists() and not reload:
         try:
             _MODEL_PIPELINE = joblib.load(MODEL_FILE)
             logger.info("Loaded persisted AI threat classifier from %s", MODEL_FILE)
@@ -212,6 +212,14 @@ def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAna
     pred_class = str(pipeline.predict([full_text])[0])
     confidence = float(probabilities[pred_class])
 
+    prob_benign = float(probabilities.get("BENIGN", 0.0))
+    prob_threat = float(1.0 - prob_benign)
+
+    # Low-confidence thresholding: if confidence is below 0.40 and benign probability >= 0.35, default to BENIGN
+    if confidence < 0.40 and prob_benign >= 0.35:
+        pred_class = "BENIGN"
+        confidence = prob_benign
+
     # 2. Entity Extraction
     extracted_entities, cues = extract_entities_and_cues(full_text)
 
@@ -219,9 +227,12 @@ def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAna
     attributions = compute_token_attributions(pipeline, full_text, pred_class)
 
     # 4. Intent Classification Flags
-    is_bec = pred_class == "BEC_FINANCIAL" or (
-        bool(extracted_entities["ifsc_codes"] or extracted_entities["bank_accounts"])
-        and bool(extracted_entities["amounts"])
+    has_banking_coords = bool(extracted_entities["ifsc_codes"] or extracted_entities["bank_accounts"])
+    has_wire_cues = any("Banking coordinates" in c or "Monetary" in c for c in cues) or any(
+        w in full_text.lower() for w in ["wire transfer", "rtgs", "neft", "remittance", "escrow", "beneficiary account"]
+    )
+    is_bec = (pred_class == "BEC_FINANCIAL") or (
+        has_banking_coords and bool(extracted_entities["amounts"]) and has_wire_cues and pred_class != "BENIGN"
     )
     is_cred = pred_class == "PHISHING"
     is_urgency = pred_class == "EXTORTION_COERCION" or len(extracted_entities["deadlines"]) > 0
@@ -247,21 +258,17 @@ def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAna
     # 5. Calibrated NLP Threat Score (0.0 to 100.0)
     score = 0.0
     if pred_class == "BEC_FINANCIAL":
-        score = 65.0 + (confidence * 30.0)
-    elif pred_class == "PHISHING":
         score = 55.0 + (confidence * 35.0)
+        if has_banking_coords and has_wire_cues:
+            score = max(score, 80.0)
+    elif pred_class == "PHISHING":
+        score = 50.0 + (confidence * 40.0)
     elif pred_class == "EXTORTION_COERCION":
-        score = 50.0 + (confidence * 35.0)
+        score = 45.0 + (confidence * 45.0)
     else:  # BENIGN
-        score = (1.0 - confidence) * 20.0
+        score = prob_threat * 25.0
 
-    # Entity severity adjustments
-    if extracted_entities["ifsc_codes"] and extracted_entities["bank_accounts"]:
-        score = max(score, 75.0)
-    if is_bec and extracted_entities["amounts"]:
-        score = max(score, 80.0)
-
-    score = min(100.0, round(score, 1))
+    score = min(100.0, max(0.0, round(score, 1)))
 
     matched_phrases = [attr.token for attr in attributions] + cues
 

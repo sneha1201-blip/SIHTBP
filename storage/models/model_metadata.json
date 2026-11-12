@@ -1,6 +1,6 @@
 {
   "model_type": "TF-IDF + LogisticRegression",
-  "trained_at": "2026-11-10T19:07:46.026332+00:00",
+  "trained_at": "2026-11-12T03:31:06.822257+00:00",
   "seed": 26106,
   "classes": [
     "BEC_FINANCIAL",
@@ -8,83 +8,162 @@
     "EXTORTION_COERCION",
     "PHISHING"
   ],
-  "total_samples": 45,
-  "train_samples": 36,
-  "test_samples": 9,
-  "cv_accuracy_mean": 1.0,
-  "cv_accuracy_std": 0.0,
-  "test_accuracy": 1.0,
-  "precision_macro": 1.0,
-  "recall_macro": 1.0,
-  "f1_macro": 1.0,
-  "f1_weighted": 1.0,
-  "roc_auc_ovr": 1.0,
+  "total_samples": 120,
+  "train_samples": 96,
+  "test_samples": 24,
+  "cv_accuracy_mean": 0.9579,
+  "cv_accuracy_std": 0.0394,
+  "test_accuracy": 0.9167,
+  "precision_macro": 0.95,
+  "recall_macro": 0.9,
+  "f1_macro": 0.9167,
+  "f1_weighted": 0.9167,
+  "roc_auc_ovr": 0.998,
+  "pr_auc_ovr": 0.9965,
+  "fpr_at_95_recall": 0.125,
   "confusion_matrix": [
     [
-      2,
-      0,
-      0,
-      0
-    ],
-    [
-      0,
-      3,
+      4,
+      1,
       0,
       0
     ],
     [
       0,
+      8,
       0,
-      2,
+      0
+    ],
+    [
+      0,
+      1,
+      4,
       0
     ],
     [
       0,
       0,
       0,
-      2
+      6
     ]
   ],
   "top_features": {
     "BEC_FINANCIAL": [
-      "transfer",
+      "wire",
       "ifsc",
+      "transfer",
       "000",
       "account",
       "rs",
-      "wire",
-      "payment",
-      "remittance"
+      "remittance",
+      "wire transfer"
     ],
     "BENIGN": [
       "2026",
+      "semester",
+      "attached",
+      "schedule",
+      "dear",
       "annual",
-      "council",
       "research",
-      "placement",
-      "convocation",
-      "submit",
-      "feedback"
+      "student"
     ],
     "EXTORTION_COERCION": [
       "notice",
-      "compliance",
-      "non",
-      "hearing",
       "immediate",
+      "compliance",
       "regulatory",
-      "non compliance",
-      "cause"
+      "non",
+      "hours",
+      "hearing",
+      "formal"
     ],
     "PHISHING": [
       "http",
       "credentials",
       "verify",
+      "sign",
       "security",
-      "login",
-      "portal",
       "auth",
-      "access"
+      "login",
+      "portal"
+    ]
+  },
+  "unseen_benchmark": {
+    "total_samples": 10,
+    "correct": 10,
+    "accuracy": 1.0,
+    "samples": [
+      {
+        "subject": "Vendor Invoice INV-2026-889 Attached",
+        "expected": "BENIGN",
+        "predicted": "BENIGN",
+        "confidence": 0.583,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Password Reset Request",
+        "expected": "BENIGN",
+        "predicted": "BENIGN",
+        "confidence": 0.5032,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Final Capstone Project Submission",
+        "expected": "BENIGN",
+        "predicted": "BENIGN",
+        "confidence": 0.5802,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Weekly Sync Rescheduled",
+        "expected": "BENIGN",
+        "predicted": "BENIGN",
+        "confidence": 0.5794,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Account Statement for October 2026",
+        "expected": "BENIGN",
+        "predicted": "BENIGN",
+        "confidence": 0.4104,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Action Required: Your mailbox is full",
+        "expected": "PHISHING",
+        "predicted": "PHISHING",
+        "confidence": 0.6456,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "URGENT: Wire Transfer",
+        "expected": "BEC_FINANCIAL",
+        "predicted": "BEC_FINANCIAL",
+        "confidence": 0.7416,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Security Breached - You have 48 hours",
+        "expected": "EXTORTION_COERCION",
+        "predicted": "EXTORTION_COERCION",
+        "confidence": 0.586,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Microsoft 365: Re-authenticate MFA session",
+        "expected": "PHISHING",
+        "predicted": "PHISHING",
+        "confidence": 0.6222,
+        "verdict": "MATCH"
+      },
+      {
+        "subject": "Formal Notice of Copyright Infringement & Impending Litigation",
+        "expected": "EXTORTION_COERCION",
+        "predicted": "EXTORTION_COERCION",
+        "confidence": 0.6146,
+        "verdict": "MATCH"
+      }
     ]
   }
 }

@@ -32,7 +32,7 @@ Phase 4 elevates email threat detection from static regexes into a verified, exp
      - High-pressure deadline constraints (`before [time]`, `within [n] hours/days`, `close of business`)
    - **Documented Model Card (`evidence/model_card.md`):**
      - Complete documentation of dataset provenance (Nazario Phishing Corpus, Enron Academic Corpus, CEAS Spam/BEC Benchmark).
-     - Quantitative metrics: **100.0% Test Accuracy, 1.0000 F1-Macro, 1.0000 ROC-AUC (OvR), 100.0% 3-Fold CV Accuracy**.
+     - Quantitative metrics: **91.67% Test Accuracy, 0.9167 F1-Macro, 0.9980 ROC-AUC (OvR), 0.9965 PR-AUC, 95.79% (+/- 3.94%) 5-Fold CV Accuracy, 100.0% Unseen Real-World Audit Benchmark Accuracy** (see `evidence/model_card.md`).
 
 2. **Advanced Spoofing & Confusable Homograph Engine (`backend/app/forensics/spoof_detector.py`):**
    - Unicode Confusable Mapping Table translating Cyrillic (e.g. Cyrillic `а` U+0430, `с` U+0441, `е` U+0435, `о` U+043E, `р` U+0440) and Greek homoglyphs to canonical ASCII skeletons.
