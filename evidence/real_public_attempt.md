@@ -51,3 +51,4 @@ Consequently:
 1. Genuine, pass-verifying DKIM fixtures cannot be scraped from modified mailing list relays without violating the laws of cryptographic hashes.
 2. Direct `.eml` files exported from primary user mailboxes (Gmail, Microsoft 365, Zoho) that have not undergone list mediation are strictly required for authentic DKIM/SPF/ARC validation.
 3. In strict compliance with **Rule R3**, Gate G04 accurately and honestly records status **`BLOCKED`** pending the provision of $\ge 20$ authentic user `.eml` files in `tests/fixtures/real/`.
+
