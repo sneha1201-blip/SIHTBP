@@ -107,7 +107,7 @@ export default function GeoTraceMapInner({ hops, selectedHopOrder, onSelectHop }
         className: 'custom-mx-marker',
         html: `
           <div class="relative flex items-center justify-center">
-            <span class="w-5 h-5 rounded-full bg-emerald-500 border-2 border-white shadow-lg shadow-emerald-500/80 flex items-center justify-center text-[9px] font-black text-white">
+            <span class="w-5 h-5 rounded-full bg-emerald-400 border-2 border-slate-950 shadow-lg shadow-emerald-400/80 flex items-center justify-center text-[9px] font-black text-slate-950">
               MX
             </span>
           </div>

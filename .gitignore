@@ -48,3 +48,6 @@ storage/vault/*.tmp
 .coverage
 .coverage.*
 
+frontend/test-results/
+frontend/playwright-report/
+

@@ -82,16 +82,16 @@ export function NlpIntentViewer({ bodyPlain, bodyHtml, bodyText, subject, analys
         <div className="flex items-center gap-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-xs">
           <button
             onClick={() => setViewMode('annotated')}
-            className={`px-2.5 py-1 rounded font-medium transition flex items-center gap-1 ${
-              viewMode === 'annotated' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1 rounded font-bold transition flex items-center gap-1 ${
+              viewMode === 'annotated' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Eye className="w-3 h-3" /> Annotated
           </button>
           <button
             onClick={() => setViewMode('raw')}
-            className={`px-2.5 py-1 rounded font-medium transition flex items-center gap-1 ${
-              viewMode === 'raw' ? 'bg-cyan-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
+            className={`px-2.5 py-1 rounded font-bold transition flex items-center gap-1 ${
+              viewMode === 'raw' ? 'bg-cyan-500 text-slate-950 shadow-sm' : 'text-slate-400 hover:text-white'
             }`}
           >
             <Code2 className="w-3 h-3" /> Raw Text

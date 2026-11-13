@@ -137,6 +137,18 @@ Per Rule R4 & R7:
   - Installed `locust` (v2.47.0), authored `benchmarks/locustfile.py`, and verified concurrent load testing across 10, 50, and 100 user tiers in `evidence/benchmarks/locust_concurrency.json`.
   - Enforced soak test validation: verified duration (1850.65s), 0 unhandled crashes, and 0.0% error rate.
 
+### 21. Working Tree Edit — `gates/g11_frontend.py` & Playwright E2E / Axe Verification
+- **Classification:** (a) Strictness enhancement / spec restoration.
+- **Details:**
+  - Upgraded Gate G11 from passive build verification to full headless browser Playwright E2E execution and automated Axe accessibility auditing.
+  - Added assertions requiring Playwright suite (`frontend/e2e/soc_journey.spec.ts`) execution with 0 failures across 3 comprehensive test flows:
+    1. Login Screen: visual inspection, form interactions, and Axe WCAG 2 AA audit (0 critical/serious violations).
+    2. Authentication Flow: JWT session exchange and role-based redirect to dashboard.
+    3. SOC Forensic Dashboard: full lifecycle execution verifying Threat Score Gauge, Leaflet GeoTrace map mounting, Cytoscape campaign graph visualization, Section 63 BSA cryptographic audit ledger, and session termination.
+  - Enforced visual proof verification: asserts required E2E screenshot artifacts exist in `evidence/e2e/` (`01_login_screen.png`, `02_dashboard_landing.png`, `03_dossier_overview.png`, `05_campaign_graph.png`, `06_audit_ledger.png`) with non-zero byte payloads.
+  - Fixed WCAG AA color-contrast violations across UI components (`TopBar.tsx`, `CampaignGraph.tsx`, `IocDataTable.tsx`, `NlpIntentViewer.tsx`, `GeoTraceMapInner.tsx`, `page.tsx`).
+
+
 
 
 

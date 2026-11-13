@@ -152,9 +152,9 @@ export function CampaignGraph({ graphData, activeEmailId }: CampaignGraphProps) 
               <button
                 key={t}
                 onClick={() => setFilterType(t)}
-                className={`px-2 py-0.5 rounded font-semibold transition ${
+                className={`px-2 py-0.5 rounded font-bold transition ${
                   filterType === t
-                    ? 'bg-cyan-600 text-white'
+                    ? 'bg-cyan-500 text-slate-950'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >

@@ -131,7 +131,7 @@ export function TopBar({
           {/* New Investigation Ingestion Button */}
           <button
             onClick={onOpenIngest}
-            className="flex items-center gap-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold px-4 py-1.5 rounded-lg text-xs shadow-md shadow-cyan-600/30 transition active:scale-95"
+            className="flex items-center gap-1.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold px-4 py-1.5 rounded-lg text-xs shadow-md shadow-cyan-500/20 transition active:scale-95"
           >
             <UploadCloud className="w-3.5 h-3.5" />
             <span>New Investigation</span>

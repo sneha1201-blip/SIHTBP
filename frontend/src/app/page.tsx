@@ -57,10 +57,11 @@ export default function SOCDashboardPage() {
         setBackendOnline(true);
         // If graph has email nodes and no dossier is loaded, load the primary email node
         if (!dossier && g.graph.nodes && g.graph.nodes.length > 0) {
-          const emailNode = g.graph.nodes.find((n: { type: string; id: string }) => n.type === 'email');
+          const emailNode = g.graph.nodes.find((n: { type: string; id: string }) => n.type?.toLowerCase() === 'email');
           if (emailNode) {
             try {
-              const liveDossier = await fetchEvidenceDossier(emailNode.id);
+              const rawId = emailNode.id.replace(/^email_/, '');
+              const liveDossier = await fetchEvidenceDossier(rawId);
               setDossier(liveDossier);
             } catch {
               // Non-fatal if specific dossier cannot load
@@ -246,7 +247,7 @@ export default function SOCDashboardPage() {
       />
 
       {/* Footer Legal & Compliance Disclaimer */}
-      <footer className="border-t border-cyber-border py-4 px-6 text-center text-xs text-slate-500 bg-slate-950/80">
+      <footer className="border-t border-cyber-border py-4 px-6 text-center text-xs text-slate-400 bg-slate-950/80">
         <p>
           AICTE Cyber Security Cell &bull; Smart India Hackathon (SIH ID: 26106) Platform &bull; Forensic Evidence Admissibility under Section 63 of the Bharatiya Sakshya Adhiniyam (BSA), 2023.
         </p>

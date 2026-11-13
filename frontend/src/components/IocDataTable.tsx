@@ -89,8 +89,8 @@ export function IocDataTable({ indicators }: IocDataTableProps) {
             <button
               key={type}
               onClick={() => setFilterType(type)}
-              className={`px-2.5 py-1 rounded text-[11px] font-semibold transition ${filterType === type
-                  ? 'bg-cyan-600 text-white'
+              className={`px-2.5 py-1 rounded text-[11px] font-bold transition ${filterType === type
+                  ? 'bg-cyan-500 text-slate-950'
                   : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
                 }`}
             >
