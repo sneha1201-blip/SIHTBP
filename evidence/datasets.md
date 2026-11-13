@@ -14,6 +14,8 @@
 | **Apache SpamAssassin Hard Ham** | Apache License 2.0 | `https://spamassassin.apache.org/old/publiccorpus/20030228_hard_ham.tar.bz2` | `ce2ce67880643dbde65ea7f85bffbfe4417349c4bd80b6b0de56262ae6b0a9c9` | 1,029,898 bytes |
 | **Enron Email Academic Corpus** | Public Domain | `https://raw.githubusercontent.com/MWiechmann/enron_spam_data/master/enron_spam_data.zip` | `e994ad3c09fd7528b397e1f921742da5dd59f19695bc25cdb3617eb3ded17634` | 15,642,124 bytes |
 | **Tranco Top-1M Research List** | Creative Commons Attribution 4.0 | `https://tranco-list.eu/top-1m.csv.zip` | `e3ec5c22b344256766a3d0f917e747a554192086bddd22f24dd148a521228100` | 9,683,903 bytes |
+| **Official SIH PS 26106 Text** | Official SIH 2026 Portal Scraped Data | `https://raw.githubusercontent.com/Rajkumar-Porandla/SIH-2026-Problem-Statements/main/sih2026_problem_statements.json` | `6ad5eb7495824359871cddc038c01a80bd49a670e6a1a39891bc12e4f42e212f` | 7,701 bytes |
+| **Section 63 BSA 2023 & Schedule** | Statutory Gazette & Supreme Court WP(C) 599/2026 | Gazette of India Act No. 47 of 2023 / Supreme Court Judgment (2026) | `b63317166078ff4ea4cd955d5f402d8495b8b0311fe590970ab17788b0b4a2b7` | 11,117 bytes |
 
 ---
 

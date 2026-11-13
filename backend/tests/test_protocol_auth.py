@@ -399,3 +399,65 @@ def test_confusion_matrix_verification(corpus):
     # Assert 100% accuracy on all evaluated samples
     mismatches = [c for c in confusion_records if not (c["spf_match"] and c["dkim_match"] and c["dmarc_match"] and c["disc_match"])]
     assert len(mismatches) == 0, f"Confusion matrix mismatches: {mismatches}"
+
+
+def test_dmarc_strict_alignment_subdomain_failure():
+    """Verify strict DMARC alignment (aspf=s, adkim=s) rejects cross-subdomain alignment."""
+    # From: user@sub.company.org, SPF validated on company.org
+    headers = {
+        "from": ["user@sub.company.org"],
+        "dmarc-record": ["v=DMARC1; p=reject; aspf=s; adkim=s"],
+    }
+    custom_dns = {
+        "_dmarc.sub.company.org": ["v=DMARC1; p=reject; aspf=s; adkim=s"],
+        "_dmarc.company.org": ["v=DMARC1; p=reject; aspf=s; adkim=s"],
+        "company.org": ["v=spf1 ip4:198.51.100.1 -all"],
+    }
+    res = validate_protocol_authentication(
+        from_email="user@sub.company.org",
+        return_path="bounce@company.org",  # relaxed would align, strict must fail
+        headers_dict=headers,
+        connecting_ip="198.51.100.1",
+        custom_dns_records=custom_dns,
+    )
+    # Under strict alignment, sub.company.org != company.org
+    assert res.spf_status == "PASS"
+    assert res.dmarc_alignment_spf is False
+    assert res.dmarc_status == "FAIL"
+
+
+def test_arc_chain_detailed_statuses():
+    """Verify RFC 8617 ARC chain validation across multiple seal states."""
+    # 1. ARC with valid structure
+    sample_arc = (
+        b"ARC-Seal: i=1; a=rsa-sha256; cv=none; d=relay.org; s=arc1; b=sig\r\n"
+        b"ARC-Message-Signature: i=1; a=rsa-sha256; c=relaxed/relaxed; d=relay.org; s=arc1; bh=abc; b=sig\r\n"
+        b"ARC-Authentication-Results: i=1; relay.org; spf=pass; dkim=pass\r\n"
+        b"From: test@sender.com\r\n\r\nHello"
+    )
+    arc_res = verify_arc_chain(sample_arc)
+    assert arc_res.instances_count == 1
+
+    # 2. ARC chain with cv=fail
+    broken_arc = (
+        b"ARC-Seal: i=2; a=rsa-sha256; cv=fail; d=relay2.org; s=arc2; b=sig\r\n"
+        b"ARC-Authentication-Results: i=2; relay2.org; spf=fail\r\n"
+        b"From: test@sender.com\r\n\r\nHello"
+    )
+    res_fail = verify_arc_chain(broken_arc)
+    assert res_fail.status in ("FAIL", "INVALID", "NONE")
+
+
+def test_dns_records_missing_or_timeout():
+    """Verify robust handling of missing DNS keys and DNS timeouts."""
+    res = validate_protocol_authentication(
+        from_email="user@unknown-domain-test-404.org",
+        return_path="user@unknown-domain-test-404.org",
+        headers_dict={"from": ["user@unknown-domain-test-404.org"]},
+        connecting_ip="203.0.113.99",
+        custom_dns_records={},
+    )
+    assert res.spf_status in ("NONE", "UNKNOWN", "UNVERIFIABLE")
+    assert res.dkim_status in ("NONE", "UNSIGNED", "UNVERIFIABLE")
+    assert res.dmarc_status in ("NONE", "ABSENT", "UNVERIFIABLE")
+

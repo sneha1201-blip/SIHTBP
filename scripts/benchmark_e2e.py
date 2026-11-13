@@ -248,7 +248,7 @@ async def run_failure_injections(db: AsyncSession, sample_raw: bytes) -> Dict[st
     logger.info("Executing failure injection: Disk Full (ENOSPC)...")
     try:
         unique_enospc_bytes = f"enospc_test_{uuid.uuid4().hex}".encode("ascii")
-        with patch("os.fdopen", side_effect=OSError(28, "No space left on device")):
+        with patch("backend.app.database.vault.tempfile.mkstemp", side_effect=OSError(28, "No space left on device")):
             try:
                 store_raw_evidence(unique_enospc_bytes, "test_full.eml", vault_dir=BENCHMARK_STORAGE_DIR)
                 results["disk_full"] = {"status": "FAIL", "behavior": "Did not catch ENOSPC"}

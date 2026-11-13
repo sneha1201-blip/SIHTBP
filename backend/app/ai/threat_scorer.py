@@ -21,9 +21,23 @@ class CompositeThreatScore(BaseModel):
     """Unified composite forensic score, categorical verdict, and explainability report."""
     threat_score: float
     verdict: str  # BENIGN, SUSPICIOUS, PHISHING, BEC, MALICIOUS, UNCERTAIN
+    ps_verdict: str = "legitimate"  # Official PS 26106 5-class verdict: legitimate, suspicious, impersonated, phishing, fraud-related
     is_uncertain: bool = False
     score_breakdown: Dict[str, Any]
     reasons: List[str]
+
+
+PS_VERDICT_MAP: Dict[str, str] = {
+    "BENIGN": "legitimate",
+    "LEGITIMATE": "legitimate",
+    "SUSPICIOUS": "suspicious",
+    "BEC": "impersonated",
+    "IMPERSONATED": "impersonated",
+    "PHISHING": "phishing",
+    "MALICIOUS": "fraud-related",
+    "FRAUD_RELATED": "fraud-related",
+    "UNCERTAIN": "uncertain",
+}
 
 
 def compute_threat_score(
@@ -141,9 +155,13 @@ def compute_threat_score(
     if override_reason:
         reasons.insert(0, override_reason)
 
+    ps_verdict = PS_VERDICT_MAP.get(verdict, "legitimate")
+
     score_breakdown = {
         "final_score": final_score,
         "verdict": verdict,
+        "ps_verdict": ps_verdict,
+        "official_ps_classes": ["legitimate", "suspicious", "impersonated", "phishing", "fraud-related"],
         "weights": {
             "auth": settings.WEIGHT_AUTH,
             "header": settings.WEIGHT_HEADER,
@@ -178,6 +196,7 @@ def compute_threat_score(
     return CompositeThreatScore(
         threat_score=final_score,
         verdict=verdict,
+        ps_verdict=ps_verdict,
         is_uncertain=is_uncertain,
         score_breakdown=score_breakdown,
         reasons=reasons,
