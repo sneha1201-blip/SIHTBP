@@ -63,14 +63,31 @@ def run_auth_gate() -> int:
         return 1
 
     print("[+] All 15 protocol authentication and confusion matrix verification tests PASSED.")
-    print("[PASS] Gate G04 Auth Correctness passed (Generated mail verified, Real mail BLOCKED as documented).")
 
+    details = {
+        "generated_mail_test_suite": "VERIFIED (15/15 passed)",
+        "real_mail_fixtures": f"{real_count} real signed .eml fixtures (requires >=20: awaiting external user input)",
+    }
+
+    if not has_real or real_count < 20:
+        blocked_msg = f"Awaiting external user input: {real_count}/20 real-world signed .eml files in tests/fixtures/real/ for live DKIM/SPF/ARC validation"
+        print(f"[BLOCKED] Gate G04 Auth Correctness is BLOCKED: {blocked_msg} (Rule R3).")
+        record_gate_result(
+            "G04",
+            "BLOCKED",
+            "pytest backend/tests/test_protocol_auth.py",
+            "\n".join(logs),
+            details=details,
+        )
+        return 0
+
+    print(f"[PASS] Gate G04 Auth Correctness passed with {real_count} real-world .eml fixtures verified.")
     record_gate_result(
         "G04",
         "PASS",
         "pytest backend/tests/test_protocol_auth.py",
         "\n".join(logs),
-        details={"real_mail_status": "BLOCKED_AWAITING_INPUT", "generated_mail_status": "VERIFIED"},
+        details=details,
     )
     return 0
 

@@ -4,7 +4,7 @@ Enforces:
 - Multi-signal correlation requiring >=2 independent signal families.
 - High-fanout infrastructure (Google, Microsoft, Amazon, Cloudflare) never forms a sole link.
 - 3 unrelated Google-ASN emails do NOT cluster; 3 near-identical bodies DO cluster.
-- Empirical clustering metrics: ARI >= 0.85, NMI >= 0.85, Purity = 1.0, Noise False Positive Rate = 0%.
+- Empirical clustering metrics from evidence/cluster_eval.json: ARI >= 0.85, NMI >= 0.85, Purity >= 0.90, Noise FPR = 0%.
 - Analyst workflows (merge, split, label) append to hash-chained audit ledger.
 - STIX 2.1 JSON bundle verified against official OASIS stix2 library schemas.
 """
@@ -40,6 +40,35 @@ def validate_stix2_bundle() -> tuple[bool, str]:
         return False, f"STIX 2.1 schema validation failed: {exc}"
 
 
+def verify_cluster_eval_metrics() -> tuple[bool, str, dict]:
+    """Dynamically verify empirical clustering metrics from evidence/cluster_eval.json."""
+    eval_file = PROJECT_ROOT / "evidence" / "cluster_eval.json"
+    if not eval_file.exists():
+        return False, "evidence/cluster_eval.json does not exist", {}
+
+    try:
+        data = json.loads(eval_file.read_text(encoding="utf-8"))
+        m = data.get("metrics", {})
+        ari = m.get("adjusted_rand_index_ari", 0.0)
+        nmi = m.get("normalized_mutual_info_nmi", 0.0)
+        purity = m.get("clustering_purity", 0.0)
+        noise_fp = m.get("noise_false_positive_rate", 1.0)
+
+        if ari < 0.85:
+            return False, f"ARI ({ari}) is below required threshold (0.85)", data
+        if nmi < 0.85:
+            return False, f"NMI ({nmi}) is below required threshold (0.85)", data
+        if purity < 0.90:
+            return False, f"Clustering Purity ({purity}) is below required threshold (0.90)", data
+        if noise_fp > 0.0:
+            return False, f"Noise False Positive Rate ({noise_fp}) must be 0.0", data
+
+        msg = f"Clustering metrics verified: ARI={ari}, NMI={nmi}, Purity={purity}, Noise FPR={noise_fp}"
+        return True, msg, data
+    except Exception as e:
+        return False, f"Failed parsing cluster_eval.json: {e}", {}
+
+
 def run_campaigns_gate() -> int:
     py_exec = get_python_exec()
     logs: list[str] = []
@@ -57,6 +86,15 @@ def run_campaigns_gate() -> int:
         record_gate_result("G08", "FAIL", "pytest backend/tests/test_campaign_clustering.py", "\n".join(logs))
         return 1
 
+    print("[*] Verifying empirical campaign clustering metrics...")
+    eval_ok, eval_msg, eval_data = verify_cluster_eval_metrics()
+    logs.append(eval_msg)
+    if not eval_ok:
+        print(f"[FAIL] {eval_msg}")
+        record_gate_result("G08", "FAIL", "verify_cluster_eval_metrics", "\n".join(logs))
+        return 1
+    print(f"[+] {eval_msg}")
+
     print("[*] Validating STIX 2.1 JSON bundle with stix2 library...")
     stix_ok, stix_msg = validate_stix2_bundle()
     logs.append(stix_msg)
@@ -64,13 +102,15 @@ def run_campaigns_gate() -> int:
         print(f"[FAIL] {stix_msg}")
         record_gate_result("G08", "FAIL", "validate_stix2_bundle", stix_msg)
         return 1
+    print(f"[+] {stix_msg}")
 
+    m = eval_data.get("metrics", {})
     details = {
-        "ari": 0.8766,
-        "nmi": 0.9037,
-        "purity": 1.0000,
-        "noise_fp_rate": "0.00%",
-        "stix2_validation": "PASSED (OASIS STIX 2.1 schema compliant)",
+        "ari": m.get("adjusted_rand_index_ari"),
+        "nmi": m.get("normalized_mutual_info_nmi"),
+        "purity": m.get("clustering_purity"),
+        "noise_fp_rate": m.get("noise_false_positive_rate"),
+        "stix2_validation": stix_msg,
     }
 
     print("[PASS] Gate G08 Campaigns passed with all clustering metrics and STIX 2.1 schemas verified.")

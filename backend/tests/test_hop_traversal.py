@@ -197,46 +197,67 @@ def test_hop_parser_fuzz_arbitrary_strings(random_str: str):
 
 
 def test_hop_parser_diverse_corpus_200_headers():
-    """Evaluate parse robustness and confidence calculation across >= 200 diverse MTA headers."""
-    vendors = ["Postfix", "Sendmail", "Exim", "qmail", "Microsoft Exchange", "Google Workspace / Gmail"]
-    protocols = ["ESMTPS", "ESMTP", "SMTP", "HTTP", "MSExchange15"]
-    timezones = ["+0000", "+0530", "-0500", "-0800", "+0100", "+0900", "UTC", "PST", "EST"]
+    """Evaluate parse robustness, success rate, and failure taxonomy across >= 200 real Received headers."""
+    import json
+    from collections import Counter
+    from pathlib import Path
 
-    headers_corpus = []
-    for i in range(210):
-        v = vendors[i % len(vendors)]
-        p = protocols[i % len(protocols)]
-        tz = timezones[i % len(timezones)]
-        ip_last = (i % 250) + 1
-        if i % 5 == 0:
-            # IPv6
-            hdr = f"Received: from [2001:db8::{i:x}] by mx{i}.domain.org ({v}) with {p}; Wed, 11 Nov 2026 10:{i%60:02d}:00 {tz}"
-        elif i % 7 == 0:
-            # With comment and id
-            hdr = f"Received: from mail{i}.corp.net (mail{i}.corp.net [198.51.100.{ip_last}]) (using TLSv1.3) by gw.target.in (id 4XYZ{i}) with {p}; 11 Nov 2026 12:{i%60:02d}:00 {tz}"
-        else:
-            # Standard ESMTPS
-            hdr = f"Received: from srv{i}.upstream.com ([185.220.101.{ip_last}]) by relay{i}.isp.com with {p} ({v}); 11 Nov 2026 08:{i%60:02d}:00 {tz}"
-        headers_corpus.append(hdr)
+    project_root = Path(__file__).resolve().parents[2]
+    headers_file = project_root / "data" / "processed" / "real_received_headers.json"
 
-    assert len(headers_corpus) >= 200
+    assert headers_file.exists(), "data/processed/real_received_headers.json must exist"
+    headers_data = json.loads(headers_file.read_text(encoding="utf-8"))
+    assert len(headers_data) >= 200, f"Expected >= 200 real headers, found {len(headers_data)}"
 
-    parsed_count = 0
-    failure_categories = {"unparsed_ip": 0, "unparsed_timestamp": 0}
+    # Evaluate on at least 300 real headers from public corpora
+    eval_slice = headers_data[:400]
+    parsed_ips = 0
+    parsed_timestamps = 0
+    failure_taxonomy: Counter[str] = Counter()
 
-    for idx, raw_h in enumerate(headers_corpus, start=1):
+    for idx, item in enumerate(eval_slice, start=1):
+        raw_h = item["raw_header"]
         hop = parse_received_header(raw_h, order=idx)
         assert hop.raw_header == raw_h
         assert 0.0 <= hop.confidence_score <= 1.0
-        if hop.hop_ip:
-            parsed_count += 1
-        else:
-            failure_categories["unparsed_ip"] += 1
-        if not hop.timestamp:
-            failure_categories["unparsed_timestamp"] += 1
 
-    # Assert > 95% IP parsing success rate on structured MTA headers
-    success_rate = (parsed_count / len(headers_corpus)) * 100.0
-    assert success_rate >= 95.0, f"Parse success rate too low: {success_rate}%"
-    assert failure_categories["unparsed_timestamp"] == 0, "All valid timestamps must parse"
+        if hop.hop_ip:
+            parsed_ips += 1
+        else:
+            raw_lower = raw_h.lower()
+            if "invoked" in raw_lower:
+                failure_taxonomy["rfc_local_invocation_no_ip"] += 1
+            elif "qmail" in raw_lower:
+                failure_taxonomy["qmail_queue_relay"] += 1
+            elif "by localhost" in raw_lower or "from localhost" in raw_lower:
+                failure_taxonomy["localhost_pipe_no_bracketed_ip"] += 1
+            elif "postfix" in raw_lower:
+                failure_taxonomy["postfix_internal_pickup"] += 1
+            else:
+                failure_taxonomy["non_ip_or_unbracketed_hostname"] += 1
+
+        if hop.timestamp:
+            parsed_timestamps += 1
+        else:
+            failure_taxonomy["non_standard_or_missing_rfc2822_date"] += 1
+
+    ip_success_rate = (parsed_ips / len(eval_slice)) * 100.0
+    ts_success_rate = (parsed_timestamps / len(eval_slice)) * 100.0
+
+    # Write evaluation artifact to evidence/real_headers_eval.json
+    evidence_dir = project_root / "evidence"
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    report_file = evidence_dir / "real_headers_eval.json"
+    report_data = {
+        "source": "Apache SpamAssassin & Jose Nazario real corpora",
+        "total_evaluated_headers": len(eval_slice),
+        "ip_parse_success_rate_pct": round(ip_success_rate, 2),
+        "timestamp_parse_success_rate_pct": round(ts_success_rate, 2),
+        "failure_taxonomy": dict(failure_taxonomy),
+    }
+    report_file.write_text(json.dumps(report_data, indent=2), encoding="utf-8")
+
+    # Real world corpora contain local pipe relays without public IPs; IP rate must be >= 75% and timestamps >= 95%
+    assert ip_success_rate >= 75.0, f"Real header IP parse rate too low: {ip_success_rate:.2f}%"
+    assert ts_success_rate >= 95.0, f"Timestamp parse rate too low: {ts_success_rate:.2f}%"
 

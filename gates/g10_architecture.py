@@ -101,10 +101,16 @@ def run_architecture_gate() -> int:
         "docker_container_orchestration": docker_status,
     }
 
-    print("[PASS] Gate G10 Architecture passed (Backup/restore, probes, and vault sweep verified).")
-    record_gate_result("G10", "PASS", "g10_architecture_runner", "\n".join(logs), details=details)
-    return 0
+    if not docker_available:
+        print("[BLOCKED] Gate G10 Architecture: Docker daemon unavailable on host (Rule R3).")
+        record_gate_result("G10", "BLOCKED", "check_docker_availability", "\n".join(logs), details=details)
+        return 0
+    else:
+        print("[PASS] Gate G10 Architecture passed (Backup/restore, probes, vault sweep, and Docker verified).")
+        record_gate_result("G10", "PASS", "g10_architecture_runner", "\n".join(logs), details=details)
+        return 0
 
 
 if __name__ == "__main__":
     sys.exit(run_architecture_gate())
+

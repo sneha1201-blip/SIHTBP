@@ -2,161 +2,173 @@
   "benchmark_metadata": {
     "sih_problem_statement_id": "26106",
     "statutory_mandate": "Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA)",
-    "git_commit": "f11349f1f57196f7144b6e8e8b777dc442239c24",
-    "execution_timestamp": "2026-11-12T15:51:13.305870+00:00",
+    "git_commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
+    "execution_timestamp": "2026-11-13T01:45:23.962482+00:00",
     "environment": {
       "operating_system": "Windows 11 (10.0.26200)",
       "processor_architecture": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel",
       "python_version": "3.12.14",
       "sqlite_version": "3.53.1",
-      "storage_backend": "Physical On-Disk NVMe/SSD (SQLite WAL Mode + O_SYNC fsync)",
-      "disk_db_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\benchmark_2629f9eff72d.db",
-      "vault_storage_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\vault_2629f9eff72d",
-      "db_size_bytes": 4096,
-      "vault_size_bytes": 13567
+      "storage_backend": "Physical NVMe/SSD (Measured write: 839.58 MB/s, WAL Mode + fsync)",
+      "disk_db_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\benchmark_0544379b599f.db",
+      "vault_storage_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\vault_0544379b599f",
+      "db_size_bytes": 487424,
+      "vault_size_bytes": 86356
     },
     "evaluations_summary": {
-      "total_unique_samples_evaluated": 15,
-      "steady_state_samples": 14,
-      "cold_start_latency_ms": 2557.1,
-      "steady_state_wall_time_sec": 17.087,
-      "steady_state_throughput_eps": 0.82,
+      "total_unique_samples_evaluated": 50,
+      "steady_state_samples": 49,
+      "cold_start_latency_ms": 4227.84,
+      "steady_state_wall_time_sec": 80.627,
+      "steady_state_throughput_eps": 0.61,
       "duplicate_hashes_prevented": true,
-      "cache_bypass_verified": true
+      "cache_bypass_verified": true,
+      "e2e_exceeds_stages_invariant_verified": true
+    },
+    "failure_injections": {
+      "dns_timeout": {
+        "status": "PASS",
+        "behavior": "Graceful fallback: SPF=NONE, DKIM=NONE, DMARC=NONE",
+        "elapsed_ms": 1590.15
+      },
+      "db_locked": {
+        "status": "PASS",
+        "behavior": "Handled expected lock exception gracefully: database is locked"
+      },
+      "disk_full": {
+        "status": "PASS",
+        "behavior": "Caught storage exhaustion cleanly (errno 28): [Errno 28] No space left on device"
+      },
+      "geoip_missing": {
+        "status": "PASS",
+        "behavior": "Zero-guess verified fallback: status=UNRESOLVED, lat=None, lon=None"
+      }
+    },
+    "soak_test": {
+      "label": "SHORT-SOAK",
+      "duration_seconds": 80.63,
+      "requests_evaluated": 49,
+      "throughput_requests_per_sec": 0.61,
+      "error_rate_pct": 0.0,
+      "unhandled_crashes": 0
+    },
+    "physical_disk_benchmark": {
+      "physical_disk_hardware": "Physical NVMe/SSD",
+      "write_throughput_mb_s": 839.58,
+      "test_payload_mb": 32,
+      "sync_enforced": true
     }
   },
   "stage_latency_breakdown_ms": {
     "dual_hashing_vault_store": {
-      "count": 14,
-      "mean_ms": 5.14,
-      "p50_ms": 5.18,
-      "p90_ms": 6.08,
-      "p95_ms": 6.99,
-      "p99_ms": 6.99,
-      "min_ms": 3.75,
-      "max_ms": 6.99,
-      "stddev_ms": 0.88
+      "mean_ms": 5.15,
+      "p50_ms": 4.61,
+      "p90_ms": 5.74,
+      "p95_ms": 6.3,
+      "p99_ms": 30.49,
+      "min_ms": 3.44,
+      "max_ms": 30.49,
+      "stddev_ms": 3.72
     },
     "mime_rfc822_parsing": {
-      "count": 14,
-      "mean_ms": 3.88,
-      "p50_ms": 3.57,
-      "p90_ms": 6.14,
-      "p95_ms": 6.77,
-      "p99_ms": 6.77,
-      "min_ms": 1.39,
-      "max_ms": 6.77,
-      "stddev_ms": 1.36
+      "mean_ms": 5.22,
+      "p50_ms": 4.86,
+      "p90_ms": 7.96,
+      "p95_ms": 8.72,
+      "p99_ms": 10.36,
+      "min_ms": 2.71,
+      "max_ms": 10.36,
+      "stddev_ms": 1.74
     },
     "hop_traversal_geoip_asn": {
-      "count": 14,
-      "mean_ms": 0.07,
-      "p50_ms": 0.0,
-      "p90_ms": 0.12,
-      "p95_ms": 0.68,
-      "p99_ms": 0.68,
-      "min_ms": 0.0,
-      "max_ms": 0.68,
-      "stddev_ms": 0.17
+      "mean_ms": 0.14,
+      "p50_ms": 0.11,
+      "p90_ms": 0.22,
+      "p95_ms": 0.23,
+      "p99_ms": 0.47,
+      "min_ms": 0.1,
+      "max_ms": 0.47,
+      "stddev_ms": 0.06
     },
     "protocol_auth_dkim_spf_dmarc": {
-      "count": 14,
-      "mean_ms": 539.27,
-      "p50_ms": 0.26,
-      "p90_ms": 1509.05,
-      "p95_ms": 3026.54,
-      "p99_ms": 3026.54,
-      "min_ms": 0.13,
-      "max_ms": 3026.54,
-      "stddev_ms": 921.68
+      "mean_ms": 0.15,
+      "p50_ms": 0.13,
+      "p90_ms": 0.21,
+      "p95_ms": 0.22,
+      "p99_ms": 0.25,
+      "min_ms": 0.12,
+      "max_ms": 0.25,
+      "stddev_ms": 0.04
     },
     "spoof_homoglyph_detection": {
-      "count": 14,
-      "mean_ms": 0.6,
-      "p50_ms": 0.5,
-      "p90_ms": 0.87,
-      "p95_ms": 1.27,
-      "p99_ms": 1.27,
-      "min_ms": 0.38,
-      "max_ms": 1.27,
-      "stddev_ms": 0.26
+      "mean_ms": 0.82,
+      "p50_ms": 0.64,
+      "p90_ms": 1.21,
+      "p95_ms": 1.25,
+      "p99_ms": 2.14,
+      "min_ms": 0.6,
+      "max_ms": 2.14,
+      "stddev_ms": 0.31
     },
     "ioc_extraction_url_deobfuscation": {
-      "count": 14,
-      "mean_ms": 0.15,
-      "p50_ms": 0.07,
-      "p90_ms": 0.15,
-      "p95_ms": 1.3,
-      "p99_ms": 1.3,
+      "mean_ms": 0.68,
+      "p50_ms": 0.65,
+      "p90_ms": 1.04,
+      "p95_ms": 1.17,
+      "p99_ms": 1.67,
       "min_ms": 0.03,
-      "max_ms": 1.3,
-      "stddev_ms": 0.32
+      "max_ms": 1.67,
+      "stddev_ms": 0.3
     },
     "nlp_intent_and_entity_extraction": {
-      "count": 14,
-      "mean_ms": 5.48,
-      "p50_ms": 5.04,
-      "p90_ms": 8.37,
-      "p95_ms": 10.67,
-      "p99_ms": 10.67,
-      "min_ms": 4.07,
-      "max_ms": 10.67,
-      "stddev_ms": 1.76
+      "mean_ms": 19.25,
+      "p50_ms": 15.99,
+      "p90_ms": 29.89,
+      "p95_ms": 31.43,
+      "p99_ms": 68.65,
+      "min_ms": 11.79,
+      "max_ms": 68.65,
+      "stddev_ms": 9.57
     },
     "threat_scoring_formula": {
-      "count": 14,
-      "mean_ms": 0.02,
+      "mean_ms": 0.03,
       "p50_ms": 0.02,
       "p90_ms": 0.04,
       "p95_ms": 0.04,
-      "p99_ms": 0.04,
+      "p99_ms": 0.23,
       "min_ms": 0.02,
-      "max_ms": 0.04,
-      "stddev_ms": 0.01
+      "max_ms": 0.23,
+      "stddev_ms": 0.03
     },
     "database_orm_persistence": {
-      "count": 14,
-      "mean_ms": 0.07,
+      "mean_ms": 0.09,
       "p50_ms": 0.07,
-      "p90_ms": 0.08,
-      "p95_ms": 0.08,
-      "p99_ms": 0.08,
-      "min_ms": 0.07,
-      "max_ms": 0.08,
-      "stddev_ms": 0.01
+      "p90_ms": 0.14,
+      "p95_ms": 0.15,
+      "p99_ms": 0.19,
+      "min_ms": 0.06,
+      "max_ms": 0.19,
+      "stddev_ms": 0.03
     },
     "pdf_generation_section63_bsa": {
-      "count": 14,
-      "mean_ms": 37.68,
-      "p50_ms": 35.09,
-      "p90_ms": 41.66,
-      "p95_ms": 63.92,
-      "p99_ms": 63.92,
-      "min_ms": 32.91,
-      "max_ms": 63.92,
-      "stddev_ms": 7.75
+      "mean_ms": 42.36,
+      "p50_ms": 42.36,
+      "p90_ms": 42.36,
+      "p95_ms": 42.36,
+      "p99_ms": 42.36,
+      "min_ms": 42.36,
+      "max_ms": 42.36,
+      "stddev_ms": 0.0
     },
     "full_pipeline_ingest_e2e": {
-      "count": 14,
-      "mean_ms": 628.1,
-      "p50_ms": 53.97,
-      "p90_ms": 1568.05,
-      "p95_ms": 2051.58,
-      "p99_ms": 2051.58,
-      "min_ms": 42.07,
-      "max_ms": 2051.58,
-      "stddev_ms": 778.64
-    },
-    "concurrent_dns_resolution_latency": {
-      "count": 20,
-      "mean_ms": 4018.07,
-      "p50_ms": 4017.58,
-      "p90_ms": 4022.62,
-      "p95_ms": 4025.29,
-      "p99_ms": 4025.29,
-      "min_ms": 4014.44,
-      "max_ms": 4025.29,
-      "stddev_ms": 3.14
+      "mean_ms": 1581.39,
+      "p50_ms": 1575.77,
+      "p90_ms": 1610.47,
+      "p95_ms": 1618.53,
+      "p99_ms": 1631.55,
+      "min_ms": 1552.42,
+      "max_ms": 1631.55,
+      "stddev_ms": 19.02
     }
   }
 }

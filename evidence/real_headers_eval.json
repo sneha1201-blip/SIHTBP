@@ -1,0 +1,13 @@
+{
+  "source": "Apache SpamAssassin & Jose Nazario real corpora",
+  "total_evaluated_headers": 400,
+  "ip_parse_success_rate_pct": 86.75,
+  "timestamp_parse_success_rate_pct": 99.75,
+  "failure_taxonomy": {
+    "non_ip_or_unbracketed_hostname": 26,
+    "rfc_local_invocation_no_ip": 17,
+    "postfix_internal_pickup": 9,
+    "qmail_queue_relay": 1,
+    "non_standard_or_missing_rfc2822_date": 1
+  }
+}

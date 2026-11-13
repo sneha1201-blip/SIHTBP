@@ -7,7 +7,6 @@ SIH Problem Statement ID: 26106
 from __future__ import annotations
 
 import logging
-import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
@@ -223,6 +222,5 @@ app = create_application()
 if __name__ == "__main__":
     import uvicorn
 
-    host = os.getenv("HOST", "127.0.0.1")
-    uvicorn.run("backend.app.main:app", host=host, port=8000, reload=True)
+    uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
 

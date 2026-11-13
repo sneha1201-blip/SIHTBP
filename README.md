@@ -153,12 +153,12 @@ Empirical metrics evaluated on stratified holdout test set (provenance in `evide
 
 | Evaluation Metric | Score | Verification Status |
 |---|---|---|
-| **Holdout Test Accuracy** | **91.67%** | **VERIFIED** |
-| **ROC-AUC (One-vs-Rest Macro)** | **0.9980** | **VERIFIED** |
-| **PR-AUC (Average Precision Macro)** | **0.9965** | **VERIFIED** |
-| **F1-Score (Macro / Weighted)** | **0.9167** | **VERIFIED** |
-| **Expected Calibration Error (ECE)** | **0.0640** | **VERIFIED** |
-| **False Positive Rate @ 95% Recall** | **12.50%** | **VERIFIED** |
+| **Holdout Test Accuracy** | **94.26%** | **VERIFIED (Empirical on Real Corpora)** |
+| **ROC-AUC (One-vs-Rest Macro)** | **0.9660** | **VERIFIED** |
+| **PR-AUC (Average Precision Macro)** | **0.8239** | **VERIFIED** |
+| **F1-Score (Macro / Weighted)** | **0.7731 / 0.9382** | **VERIFIED** |
+| **Expected Calibration Error (ECE)** | **0.0334 (95% CI: [0.0269, 0.0528])** | **VERIFIED** |
+| **False Positive Rate @ 95% Recall** | **6.62%** | **VERIFIED** |
 
 ---
 

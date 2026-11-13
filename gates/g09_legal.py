@@ -54,15 +54,17 @@ def run_legal_gate() -> int:
 
     details = {
         "part_a_automated_parameters": "VERIFIED (Hashes, byte count, NTP timestamps, OS specs)",
-        "part_b_human_attestation": "BLOCKED: requires human signature (marked REQUIRES HUMAN ATTESTATION)",
+        "part_b_human_attestation": "BLOCKED: requires human signature and verified statute text",
         "export_time_rehash": "VERIFIED (409 Conflict on disk tamper)",
         "offline_verifier": "VERIFIED (scripts/verify_report.py active)",
     }
 
-    print("[PASS] Gate G09 Legal/report passed with court-admissible certificate controls verified.")
-    record_gate_result("G09", "PASS", "g09_legal_runner", "\n".join(logs), details=details)
+    # Under Rule R3: Part B human attestation and official statute text are unsupplied inputs -> gate is BLOCKED
+    print("[BLOCKED] Gate G09 Legal/report is BLOCKED: Part B requires human attestation and official statute text (Rule R3).")
+    record_gate_result("G09", "BLOCKED", "g09_legal_runner", "\n".join(logs), details=details)
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(run_legal_gate())
+

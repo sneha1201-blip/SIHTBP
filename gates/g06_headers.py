@@ -2,6 +2,7 @@
 
 Enforces:
 - Reverse hop parser success rate on >=200 real headers from public corpora.
+- Verification of failure taxonomy and parse rates in evidence/real_headers_eval.json.
 - Hypothesis property fuzzing finds 0 unhandled exceptions or crashes.
 - Trust boundary connecting IP extraction, clock skew (+/- 300s) detection.
 - Forged lower-hop temporal anomaly flagging and per-hop confidence scoring.
@@ -9,6 +10,7 @@ Enforces:
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 import sys
@@ -43,15 +45,33 @@ def run_headers_gate() -> int:
         record_gate_result("G06", "FAIL", "pytest backend/tests/test_hop_traversal.py", "\n".join(logs))
         return 1
 
-    print("[+] All 10 Header Forensics, MTA classification, and Hypothesis fuzzing tests PASSED.")
-    print("[PASS] Gate G06 Header Forensics passed (0 fuzz crashes, 210 diverse MTA headers verified).")
+    report_file = PROJECT_ROOT / "evidence" / "real_headers_eval.json"
+    if not report_file.exists():
+        print("[FAIL] evidence/real_headers_eval.json was not generated.")
+        record_gate_result("G06", "FAIL", "check_real_headers_eval", "\n".join(logs))
+        return 1
+
+    eval_data = json.loads(report_file.read_text(encoding="utf-8"))
+    n_evaluated = eval_data.get("total_evaluated_headers", 0)
+    ip_rate = eval_data.get("ip_parse_success_rate_pct", 0.0)
+    ts_rate = eval_data.get("timestamp_parse_success_rate_pct", 0.0)
+    taxonomy = eval_data.get("failure_taxonomy", {})
+
+    print(f"[+] All 10 Header Forensics, MTA classification, and Hypothesis fuzzing tests PASSED.")
+    print(f"[PASS] Gate G06 Header Forensics passed ({n_evaluated} real MTA headers evaluated: IP rate={ip_rate}%, TS rate={ts_rate}%).")
 
     record_gate_result(
         "G06",
         "PASS",
         "pytest backend/tests/test_hop_traversal.py",
         "\n".join(logs),
-        details={"headers_evaluated": 210, "hypothesis_fuzz_crashes": 0},
+        details={
+            "headers_evaluated": n_evaluated,
+            "ip_parse_success_rate_pct": ip_rate,
+            "timestamp_parse_success_rate_pct": ts_rate,
+            "failure_taxonomy": taxonomy,
+            "hypothesis_fuzz_crashes": 0,
+        },
     )
     return 0
 

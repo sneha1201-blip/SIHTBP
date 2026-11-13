@@ -1,9 +1,9 @@
 {
   "gate_id": "G10",
-  "status": "PASS",
-  "commit": "897ccb86636bc868da5b54d821c5d2f3fedd6644",
-  "timestamp": "2026-11-12T17:11:53.596909+00:00",
-  "command": "g10_architecture_runner",
+  "status": "BLOCKED",
+  "commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
+  "timestamp": "2026-11-13T01:57:17.529367+00:00",
+  "command": "check_docker_availability",
   "details": {
     "backup_restore_manifest": "VERIFIED (SHA-256 verified roundtrip)",
     "observability_endpoints": "VERIFIED (/health, /ready, /metrics)",

@@ -1,15 +1,32 @@
 {
   "gate_id": "G13",
   "status": "PASS",
-  "commit": "897ccb86636bc868da5b54d821c5d2f3fedd6644",
-  "timestamp": "2026-11-12T17:13:53.430153+00:00",
+  "commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
+  "timestamp": "2026-11-13T01:46:40.540072+00:00",
   "command": "g13_performance_runner",
   "details": {
-    "p50_ms": 53.97,
-    "p95_ms": 2051.58,
-    "cold_start_ms": 2557.1,
+    "total_samples": 50,
+    "p50_ms": 1575.77,
+    "p95_ms": 1618.53,
+    "p99_ms": 1631.55,
+    "cold_start_ms": 4227.84,
     "cache_hit_rate": 0.0,
-    "benchmark_provenance": "Physical NVMe SSD execution with fsync"
+    "physical_disk_hardware": "Physical NVMe/SSD",
+    "write_throughput_mb_s": 839.58,
+    "failure_injections": [
+      "dns_timeout",
+      "db_locked",
+      "disk_full",
+      "geoip_missing"
+    ],
+    "soak_test": {
+      "label": "SHORT-SOAK",
+      "duration_seconds": 80.63,
+      "requests_evaluated": 49,
+      "throughput_requests_per_sec": 0.61,
+      "error_rate_pct": 0.0,
+      "unhandled_crashes": 0
+    }
   },
-  "raw_output": "{\n  \"p50_ms\": 53.97,\n  \"p95_ms\": 2051.58,\n  \"cold_start_ms\": 2557.1,\n  \"cache_hit_rate\": 0.0,\n  \"benchmark_provenance\": \"Physical NVMe SSD execution with fsync\"\n}"
+  "raw_output": "{\n  \"total_samples\": 50,\n  \"p50_ms\": 1575.77,\n  \"p95_ms\": 1618.53,\n  \"p99_ms\": 1631.55,\n  \"cold_start_ms\": 4227.84,\n  \"cache_hit_rate\": 0.0,\n  \"physical_disk_hardware\": \"Physical NVMe/SSD\",\n  \"write_throughput_mb_s\": 839.58,\n  \"failure_injections\": [\n    \"dns_timeout\",\n    \"db_locked\",\n    \"disk_full\",\n    \"geoip_missing\"\n  ],\n  \"soak_test\": {\n    \"label\": \"SHORT-SOAK\",\n    \"duration_seconds\": 80.63,\n    \"requests_evaluated\": 49,\n    \"throughput_requests_per_sec\": 0.61,\n    \"error_rate_pct\": 0.0,\n    \"unhandled_crashes\": 0\n  }\n}"
 }

@@ -1,8 +1,8 @@
 {
   "gate_id": "G15",
   "status": "PASS",
-  "commit": "897ccb86636bc868da5b54d821c5d2f3fedd6644",
-  "timestamp": "2026-11-12T17:13:54.059869+00:00",
+  "commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
+  "timestamp": "2026-11-13T01:58:51.203707+00:00",
   "command": "g15_docs_runner",
   "details": {
     "all_required_docs_present": true,

@@ -8,7 +8,7 @@
     {
       "filename": "sample1.eml",
       "predicted": "PHISHING",
-      "confidence": 0.5396,
+      "confidence": 0.912,
       "expected": "PHISHING",
       "is_correct": true
     }

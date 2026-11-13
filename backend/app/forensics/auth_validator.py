@@ -176,10 +176,12 @@ def query_dns_txt_with_timeout(
     clean_domain = domain.strip().rstrip(".").lower()
 
     # Check local test/fixture dictionary if provided
-    if custom_records:
+    if custom_records is not None:
         for k, recs in custom_records.items():
             if k.strip().rstrip(".").lower() == clean_domain:
                 return recs
+        if "*" in custom_records:
+            return custom_records["*"]
 
     if "." not in clean_domain:
         return []
@@ -348,12 +350,14 @@ def verify_dkim_signatures(
         name_str = name.decode("utf-8", errors="replace").rstrip(".")
 
         # Custom local test records
-        if custom_records:
+        if custom_records is not None:
             for k, recs in custom_records.items():
                 if k.strip().rstrip(".").lower() == name_str.lower():
                     if recs:
                         return recs[0].encode("utf-8")
                     return None
+            if "*" in custom_records:
+                return None
 
         # Live DNS query
         recs = query_dns_txt_with_timeout(name_str, timeout=timeout)

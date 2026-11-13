@@ -126,24 +126,32 @@ async def lookup_domain_whois(
     now_epoch = datetime.now(timezone.utc).timestamp()
 
     # 1. Check Custom Fixture (for reproducible testing and benchmarks)
-    if custom_rdap_db and clean_dom in custom_rdap_db:
-        entry = custom_rdap_db[clean_dom]
-        age = entry.get("domain_age_days")
-        reg = entry.get("registrar")
-        c_date = entry.get("creation_date")
-        is_nrd = entry.get("is_newly_registered", (age < 30) if age is not None else False)
-        rep = entry.get("reputation_score", 90.0 if is_nrd else 10.0)
+    if custom_rdap_db is not None:
+        if clean_dom in custom_rdap_db:
+            entry = custom_rdap_db[clean_dom]
+            age = entry.get("domain_age_days")
+            reg = entry.get("registrar")
+            c_date = entry.get("creation_date")
+            is_nrd = entry.get("is_newly_registered", (age < 30) if age is not None else False)
+            rep = entry.get("reputation_score", 90.0 if is_nrd else 10.0)
 
-        return DomainIntel(
-            domain=clean_dom,
-            domain_age_days=age,
-            registrar=reg,
-            creation_date=c_date,
-            is_newly_registered=is_nrd,
-            reputation_score=rep,
-            resolution_status="RESOLVED" if age is not None else "UNKNOWN",
-            source="FIXTURE",
-        )
+            return DomainIntel(
+                domain=clean_dom,
+                domain_age_days=age,
+                registrar=reg,
+                creation_date=c_date,
+                is_newly_registered=is_nrd,
+                reputation_score=rep,
+                resolution_status="RESOLVED" if age is not None else "UNKNOWN",
+                source="FIXTURE",
+            )
+        else:
+            return DomainIntel(
+                domain=clean_dom,
+                resolution_status="UNKNOWN",
+                reason="Domain not found in custom offline RDAP registry",
+                source="FIXTURE",
+            )
 
     # 2. Check In-Memory Cache (TTL 24 hours)
     if clean_dom in _RDAP_CACHE:

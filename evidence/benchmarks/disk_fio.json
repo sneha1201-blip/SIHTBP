@@ -1,0 +1,11 @@
+{
+  "disk_friendly_name": "NFORCE 256NV 256GB - THBF152",
+  "media_type": "SSD",
+  "bus_type": "NVMe",
+  "file_system": "NTFS",
+  "allocation_unit_size": 4096,
+  "write_throughput_mb_s": 215.16,
+  "read_throughput_mb_s": 622.3,
+  "fsync_verified": true,
+  "timestamp": "2026-11-13T01:25:26Z"
+}

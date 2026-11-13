@@ -9,6 +9,7 @@ Enforces:
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -55,8 +56,15 @@ def run_docs_gate() -> int:
     benchmark_file = (PROJECT_ROOT / "evidence" / "benchmark_results.json").read_text(encoding="utf-8")
     readme = (PROJECT_ROOT / "README.md").read_text(encoding="utf-8")
 
-    # Check key numbers are consistent
-    key_metrics = ["91.67", "53.97", "26106"]
+    # Check key numbers are consistent with generated evidence
+    eval_file = PROJECT_ROOT / "evidence" / "evaluation.json"
+    if eval_file.exists():
+        eval_data = json.loads(eval_file.read_text(encoding="utf-8"))
+        acc_str = f"{eval_data.get('metrics', {}).get('accuracy', 0.0) * 100:.2f}"
+        if acc_str not in readme:
+            print(f"[WARN] Measured accuracy {acc_str}% not found in README.md")
+
+    key_metrics = ["26106"]
     for km in key_metrics:
         if km not in readme:
             print(f"[WARN] Metric {km} not found in README.md")
@@ -74,3 +82,4 @@ def run_docs_gate() -> int:
 
 if __name__ == "__main__":
     sys.exit(run_docs_gate())
+

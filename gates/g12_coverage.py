@@ -23,52 +23,81 @@ from gates.common import get_python_exec, record_gate_result
 def run_coverage_gate() -> int:
     py_exec = get_python_exec()
     logs: list[str] = []
+    cov_json_path = PROJECT_ROOT / "evidence" / "coverage.json"
 
-    print("[*] Running master pytest test suite across all 8 backend test modules...")
+    print("[*] Running master pytest test suite across all backend test modules with coverage...")
     res = subprocess.run(
-        [py_exec, "-m", "pytest", "backend/tests/", "-v"],
+        [
+            py_exec,
+            "-m",
+            "pytest",
+            "backend/tests/",
+            "-v",
+            "--cov=backend/app",
+            f"--cov-report=json:{cov_json_path}",
+        ],
         cwd=PROJECT_ROOT,
         capture_output=True,
         text=True,
+        timeout=180,
     )
     logs.append(res.stdout + res.stderr)
     if res.returncode != 0:
         print("[FAIL] Master test suite failed:\n", res.stdout, res.stderr)
-        record_gate_result("G12", "FAIL", "pytest backend/tests/", "\n".join(logs))
+        record_gate_result("G12", "FAIL", "pytest backend/tests/ --cov", "\n".join(logs))
+        return 1
+
+    if not cov_json_path.exists():
+        print("[FAIL] evidence/coverage.json was not generated.")
+        record_gate_result("G12", "FAIL", "check_coverage_json", "\n".join(logs))
+        return 1
+
+    cov_data = json.loads(cov_json_path.read_text(encoding="utf-8"))
+    totals = cov_data.get("totals", {})
+    overall_pct = round(totals.get("percent_covered", 0.0), 2)
+
+    files_cov = cov_data.get("files", {})
+    core_coverage = {}
+    for filepath, data in files_cov.items():
+        norm_path = filepath.replace("\\", "/")
+        pct = data.get("summary", {}).get("percent_covered", 0.0)
+        for target in [
+            "threat_scorer.py",
+            "auth_validator.py",
+            "hop_traversal.py",
+            "eml_parser.py",
+            "msg_parser.py",
+            "mime_normalizer.py",
+            "vault.py",
+            "audit_service.py",
+            "campaign_clusterer.py",
+            "spoof_detector.py",
+            "pdf_generator.py",
+        ]:
+            if target in norm_path:
+                core_coverage[target] = f"{pct:.1f}%"
+
+    print(f"[*] Overall Test Coverage: {overall_pct}% (Empirically measured)")
+    print(f"[*] Core module coverage: {json.dumps(core_coverage, indent=2)}")
+
+    if overall_pct < 70.0:
+        print(f"[FAIL] Overall coverage {overall_pct}% is below 70.0% threshold.")
+        record_gate_result("G12", "FAIL", "verify_coverage_threshold", f"Overall coverage is {overall_pct}%")
         return 1
 
     details = {
-        "tests_passed": 110,
-        "test_suites": [
-            "test_ai_detection.py",
-            "test_campaign_clustering.py",
-            "test_database.py",
-            "test_hop_traversal.py",
-            "test_osint_geoip.py",
-            "test_pipeline.py",
-            "test_protocol_auth.py",
-            "test_security.py",
-        ],
-        "core_coverage": {
-            "pdf_generator": "95%",
-            "models": "95%",
-            "threat_scorer": "95%",
-            "mime_normalizer": "93%",
-            "config": "93%",
-            "spoof_detector": "90%",
-            "hop_traversal": "89%",
-            "audit_service": "89%",
-            "campaign_clusterer": "87%",
-            "init_db": "82%",
-            "auth_validator": "81%",
-        },
+        "overall_coverage_pct": overall_pct,
+        "covered_lines": totals.get("covered_lines", 0),
+        "total_statements": totals.get("num_statements", 0),
+        "core_coverage": core_coverage,
         "overall_status": "ALL_TESTS_GREEN",
     }
 
-    print("[PASS] Gate G12 Tests/coverage passed with all 110 tests green.")
+    print(f"[PASS] Gate G12 Tests/coverage passed ({overall_pct}% overall coverage, all test suites green).")
     record_gate_result("G12", "PASS", "g12_coverage_runner", "\n".join(logs), details=details)
     return 0
 
 
 if __name__ == "__main__":
     sys.exit(run_coverage_gate())
+

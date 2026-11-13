@@ -17,6 +17,9 @@ from pathlib import Path
 
 import pytest
 import pytest_asyncio
+from hypothesis import given
+from hypothesis import settings as hyp_settings
+from hypothesis import strategies as st
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
@@ -26,6 +29,7 @@ from backend.app.database.models import (
     Campaign,
     CampaignEmail,
     Email,
+    EvidenceAuditLog,
     ForensicAnalysis,
     HeaderHop,
     ThreatIndicator,
@@ -433,4 +437,96 @@ def test_password_policy_and_account_lockout():
     # Successful login resets lockout
     record_login_attempt(test_user, success=True)
     check_login_lockout(test_user)  # Should pass cleanly
+
+
+# =============================================================================
+# Hypothesis Property-Based Tests: Vault Integrity & Audit Ledger Chaining
+# =============================================================================
+
+@given(st.binary(min_size=1, max_size=5000))
+@hyp_settings(max_examples=30, deadline=None)
+def test_vault_integrity_property(data: bytes):
+    """Property test: arbitrary bytes stored in vault must strictly preserve SHA-256/MD5 digests,
+    bit-exact read recovery, and tamper detection when mutated."""
+    temp_dir = tempfile.mkdtemp(prefix="aicte_vault_hyp_")
+    try:
+        sha256_calc = hashlib.sha256(data).hexdigest()
+        md5_calc = hashlib.md5(data).hexdigest()
+
+        sha256_res, md5_res, path_res, size_res = store_raw_evidence(data, vault_dir=temp_dir)
+        assert sha256_res == sha256_calc
+        assert md5_res == md5_calc
+        assert size_res == len(data)
+        assert Path(path_res).exists()
+
+        # Bit-exact recovery
+        recovered = read_raw_evidence(sha256_res, vault_dir=temp_dir)
+        assert recovered == data
+
+        # Integrity verification
+        rep = verify_evidence_integrity(sha256_res, vault_dir=temp_dir)
+        assert rep["exists"] is True
+        assert rep["intact"] is True
+        assert rep["computed_sha256"] == sha256_calc
+
+        # Mutation tampering property: flip the first byte
+        import stat
+        target_path = Path(path_res)
+        os.chmod(target_path, stat.S_IWRITE | stat.S_IREAD)
+        raw_mutated = bytearray(data)
+        raw_mutated[0] = (raw_mutated[0] + 1) % 256
+        target_path.write_bytes(bytes(raw_mutated))
+
+        rep_mutated = verify_evidence_integrity(sha256_res, vault_dir=temp_dir)
+        assert rep_mutated["intact"] is False
+    finally:
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+
+@given(st.lists(st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=3, max_size=15), min_size=2, max_size=8))
+@hyp_settings(max_examples=15, deadline=None)
+def test_audit_chain_tamper_detection_property(actions: list[str]):
+    """Property test: arbitrary sequence of audit logs forms an unbroken hash chain.
+    Modifying any intermediate HMAC signature or record breaks the chain verification."""
+    import asyncio
+
+    from backend.app.database.audit_service import record_chained_audit_log, verify_audit_log_chain
+
+    async def _run():
+        engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+
+        session_maker = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+        async with session_maker() as db:
+            for idx, act in enumerate(actions):
+                await record_chained_audit_log(
+                    db=db,
+                    action=f"ACTION_{act}_{idx}",
+                    actor="analyst_test",
+                    evidence_sha256=hashlib.sha256(f"ev_{idx}".encode()).hexdigest(),
+                    details={"index": idx, "action": act},
+                )
+            await db.commit()
+
+            # Verify unbroken chain
+            outcome = await verify_audit_log_chain(db)
+            assert outcome["valid"] is True
+            assert outcome["total_records"] == len(actions)
+
+            # Tamper test: mutate the first record's HMAC signature
+            if len(actions) > 0:
+                stmt = select(EvidenceAuditLog).order_by(EvidenceAuditLog.recorded_at.asc(), EvidenceAuditLog.id.asc()).limit(1)
+                res = await db.execute(stmt)
+                first_rec = res.scalar_one()
+                first_rec.hmac_signature = "bad" * 21 + "f"
+                await db.commit()
+
+                tampered_outcome = await verify_audit_log_chain(db)
+                assert tampered_outcome["valid"] is False
+
+        await engine.dispose()
+
+    asyncio.run(_run())
 

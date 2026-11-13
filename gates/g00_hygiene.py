@@ -56,9 +56,40 @@ def audit_suppressions() -> tuple[bool, list[str]]:
     return len(violations) == 0, violations
 
 
+def audit_gate_changelog() -> tuple[bool, str]:
+    """Verify that every edited gate script has an entry in evidence/GATE_CHANGELOG.md."""
+    changelog_path = PROJECT_ROOT / "evidence" / "GATE_CHANGELOG.md"
+    if not changelog_path.exists():
+        return False, "evidence/GATE_CHANGELOG.md is missing"
+
+    changelog_text = changelog_path.read_text(encoding="utf-8")
+
+    # Check git diff of gates/
+    res = subprocess.run(["git", "diff", "--name-only", "HEAD", "gates/"], cwd=PROJECT_ROOT, capture_output=True, text=True)
+    modified_gates = [Path(line.strip()).name for line in res.stdout.splitlines() if line.strip().endswith(".py")]
+
+    missing_from_changelog = []
+    for g in modified_gates:
+        if g not in changelog_text:
+            missing_from_changelog.append(g)
+
+    if missing_from_changelog:
+        return False, f"Modified gate scripts missing from GATE_CHANGELOG.md: {', '.join(missing_from_changelog)}"
+    return True, "All gate modifications are documented in GATE_CHANGELOG.md"
+
+
 def run_hygiene_gate() -> int:
     py_exec = get_python_exec()
     raw_logs = []
+
+    print("[*] Auditing gate modifications against evidence/GATE_CHANGELOG.md...")
+    changelog_ok, changelog_msg = audit_gate_changelog()
+    raw_logs.append(changelog_msg)
+    if not changelog_ok:
+        print(f"[FAIL] {changelog_msg}")
+        record_gate_result("G00", "FAIL", "audit_gate_changelog", changelog_msg)
+        return 1
+    print(f"[+] {changelog_msg}")
 
     print("[*] Running ruff check backend/...")
     ruff_res = subprocess.run([py_exec, "-m", "ruff", "check", "backend/"], cwd=PROJECT_ROOT, capture_output=True, text=True)
