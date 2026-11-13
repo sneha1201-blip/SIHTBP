@@ -51,19 +51,40 @@ def verify_calibrated_evaluation() -> tuple[bool, str, dict]:
         m = data.get("metrics", {})
         ds = data.get("dataset_statistics", {})
         roc_auc = m.get("roc_auc_ovr", 0.0)
-        ece = m.get("expected_calibration_error", {}).get("ece_point", 1.0)
+        ece_dict = m.get("expected_calibration_error", {})
+        ece = ece_dict.get("ece_point", 1.0)
+        ci_lower = ece_dict.get("ece_95_ci_lower")
+        ci_upper = ece_dict.get("ece_95_ci_upper")
         total_samples = ds.get("total_samples", 0)
+        train_samples = ds.get("train_samples", 0)
+        test_samples = ds.get("holdout_test_samples", 0)
+        conf_mat = data.get("confusion_matrix", [])
 
-        if total_samples < 1000:
-            return False, f"Total dataset size ({total_samples}) is below threshold (1000)", data
+        if total_samples < 2872:
+            return False, f"Total dataset size ({total_samples}) is below strict threshold (2872)", data
+        if train_samples != 2297 or test_samples != 575:
+            return False, f"Split counts ({train_samples} train / {test_samples} test) mismatch expected 2297/575", data
         if roc_auc < 0.95:
             return False, f"ROC-AUC ({roc_auc:.4f}) is below threshold (0.95)", data
         if ece > 0.10:
             return False, f"Expected Calibration Error ({ece:.4f}) exceeds threshold (0.10)", data
+        if ci_lower is None or ci_upper is None or not (0.0 <= ci_lower <= ece <= ci_upper <= 0.10):
+            return False, f"Invalid 95% bootstrap confidence interval: [{ci_lower}, {ci_upper}] for ECE={ece}", data
+        if not conf_mat or len(conf_mat) != 4 or any(len(row) != 4 for row in conf_mat):
+            return False, f"Confusion matrix missing or invalid dimensions: {conf_mat}", data
+
+        # Verify docs/MODEL_CARD.md documents 4-class model to 5-class verdict mapping
+        model_card = PROJECT_ROOT / "docs" / "MODEL_CARD.md"
+        if not model_card.exists():
+            return False, "docs/MODEL_CARD.md is missing", data
+        mc_content = model_card.read_text(encoding="utf-8")
+        if "4-Class NLP Model to 5-Class Forensic Verdict Mapping" not in mc_content:
+            return False, "docs/MODEL_CARD.md lacks required Section 6 architectural mapping documentation", data
 
         msg = (
-            f"Calibrated metrics verified: ROC-AUC={roc_auc:.4f}, ECE={ece:.4f}, "
-            f"Accuracy={m.get('accuracy', 0.0)*100:.2f}%, Total Samples={total_samples}"
+            f"Calibrated metrics verified: N={total_samples} (Train={train_samples}, Test={test_samples}), "
+            f"ROC-AUC={roc_auc:.4f}, ECE={ece:.4f} (95% CI: [{ci_lower:.4f}, {ci_upper:.4f}]), "
+            f"Accuracy={m.get('accuracy', 0.0)*100:.2f}%, Model Card Section 6 verified."
         )
         return True, msg, data
     except Exception as exc:

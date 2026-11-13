@@ -148,6 +148,20 @@ Per Rule R4 & R7:
   - Enforced visual proof verification: asserts required E2E screenshot artifacts exist in `evidence/e2e/` (`01_login_screen.png`, `02_dashboard_landing.png`, `03_dossier_overview.png`, `05_campaign_graph.png`, `06_audit_ledger.png`) with non-zero byte payloads.
   - Fixed WCAG AA color-contrast violations across UI components (`TopBar.tsx`, `CampaignGraph.tsx`, `IocDataTable.tsx`, `NlpIntentViewer.tsx`, `GeoTraceMapInner.tsx`, `page.tsx`).
 
+### 22. Working Tree Edit — `gates/g07_detection.py` & AI Intent Mapping Specifications
+- **Classification:** (a) Strictness enhancement / spec restoration.
+- **Details:**
+  - Enforced strict quantitative thresholds in `gates/g07_detection.py` against `evidence/evaluation.json`:
+    - Full sample count $N \ge 2872$ (with exact train=2297, holdout test=575 split validation).
+    - ROC-AUC $\ge 0.95$ (verified 0.9660).
+    - ECE $\le 0.10$ (verified 0.0334).
+    - 95% bootstrap confidence interval validation on ECE ($[0.0269, 0.0528]$).
+    - 4x4 multi-class confusion matrix validation.
+  - Documented two-tier architecture in `docs/MODEL_CARD.md` and `evidence/model_card.md` (Section 6):
+    - Detailed explicit mathematical mapping from 4-class calibrated NLP model (`BENIGN`, `PHISHING`, `BEC_FINANCIAL`, `EXTORTION_COERCION`) to the official PS 26106 5-class court-admissible forensic verdicts (`legitimate`, `suspicious`, `impersonated`, `phishing`, `fraud-related`) via the composite scoring engine (`threat_scorer.py`).
+  - Added gate assertion verifying presence and completeness of Section 6 architectural documentation in `docs/MODEL_CARD.md`.
+
+
 
 
 
