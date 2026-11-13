@@ -9,15 +9,14 @@ Ensures >=90% branch coverage across:
 
 from __future__ import annotations
 
-import asyncio
 import datetime
 import io
 import time
 import unittest.mock as mock
-from unittest.mock import MagicMock, patch
 import zipfile
 from email.message import EmailMessage
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 import pytest
 import spf
@@ -33,10 +32,9 @@ from backend.app.forensics.attachment_analyzer import (
     check_double_extension,
 )
 from backend.app.forensics.auth_validator import (
-    DNSNegativeCache,
-    GLOBAL_DNS_CACHE,
     ArcChainResult,
     AuthValidationResult,
+    DNSNegativeCache,
     async_resolve_txt_concurrent,
     check_alignment,
     extract_organizational_domain,
@@ -50,7 +48,6 @@ from backend.app.forensics.auth_validator import (
     verify_spf_pyspf,
 )
 from backend.app.forensics.job_queue import (
-    IngestionJob,
     JobManager,
     JobStage,
     JobStatus,
@@ -71,7 +68,6 @@ from backend.app.osint.tor_detector import (
 from backend.app.parsers.eml_parser import parse_eml
 from backend.app.parsers.msg_parser import carve_partial_msg_stream, parse_msg
 from backend.tests.fixtures.email_corpus import DNS_FIXTURES
-
 
 # =============================================================================
 # 1. EML Parser Branch Coverage
@@ -497,7 +493,7 @@ def test_verify_dkim_signatures_edge_cases():
 
 
 def test_verify_spf_record_helo_fallback():
-    status, explanation, code, record, is_live = verify_spf_pyspf(
+    status, domain, lookups, explanation, is_live = verify_spf_pyspf(
         connecting_ip="198.51.100.10",
         envelope_sender="",
         helo_name="aicte-india.org",
@@ -508,13 +504,14 @@ def test_verify_spf_record_helo_fallback():
 
 def test_verify_spf_record_temperror():
     with patch("spf.query.check", side_effect=spf.TempError("DNS server timeout")):
-        status, explanation, _, _, _ = verify_spf_pyspf(
+        status, domain, lookups, explanation, is_live = verify_spf_pyspf(
             connecting_ip="198.51.100.10",
             envelope_sender="user@aicte-india.org",
             helo_name="aicte-india.org",
             custom_records=DNS_FIXTURES,
         )
         assert status == "TEMPERROR"
+        assert domain == "aicte-india.org"
         assert "DNS" in explanation
 
 
