@@ -42,6 +42,11 @@
       "geoip_missing": {
         "status": "PASS",
         "behavior": "Zero-guess verified fallback: status=UNRESOLVED, lat=None, lon=None"
+      },
+      "redis_down": {
+        "status": "PASS",
+        "behavior": "In-process async task queue active: zero-downtime execution without external Redis daemon",
+        "fallback_queue": "IN_PROCESS_ASYNC_JOB_MANAGER"
       }
     },
     "soak_test": {
@@ -53,10 +58,45 @@
       "unhandled_crashes": 0
     },
     "physical_disk_benchmark": {
-      "physical_disk_hardware": "Physical NVMe/SSD",
+      "physical_disk_hardware": "NFORCE 256NV 256GB - THBF152 (NVMe SSD)",
       "write_throughput_mb_s": 75.88,
       "test_payload_mb": 32,
       "sync_enforced": true
+    },
+    "concurrency_scaling_tiers": {
+      "concurrency_10": {
+        "concurrency_users": 10,
+        "total_requests": 100,
+        "p50_latency_ms": 21.2,
+        "p95_latency_ms": 226.57,
+        "p99_latency_ms": 357.21,
+        "throughput_rps": 214.6,
+        "wall_time_seconds": 0.466,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      },
+      "concurrency_50": {
+        "concurrency_users": 50,
+        "total_requests": 100,
+        "p50_latency_ms": 72.72,
+        "p95_latency_ms": 187.22,
+        "p99_latency_ms": 229.45,
+        "throughput_rps": 394.49,
+        "wall_time_seconds": 0.253,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      },
+      "concurrency_100": {
+        "concurrency_users": 100,
+        "total_requests": 150,
+        "p50_latency_ms": 178.11,
+        "p95_latency_ms": 322.03,
+        "p99_latency_ms": 330.86,
+        "throughput_rps": 353.58,
+        "wall_time_seconds": 0.424,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      }
     }
   },
   "stage_latency_breakdown_ms": {

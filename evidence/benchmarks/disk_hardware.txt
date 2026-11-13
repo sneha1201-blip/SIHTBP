@@ -1,0 +1,113 @@
+=== PHYSICAL DISK HARDWARE TELEMETRY ===
+Generated via: Get-PhysicalDisk | Format-List
+
+ObjectId                         : {1}\\SHRAVAN-PC\root/Microsoft/Windows/Storage/Providers_v2\SPACES_PhysicalDisk.ObjectId="{2a695bae-299a-11ef-a55d-806e6f6e6963}:PD:{2048c3e4-f16b-8189-224c-ce3db44bca1d}"
+PassThroughClass                 : 
+PassThroughIds                   : 
+PassThroughNamespace             : 
+PassThroughServer                : 
+UniqueId                         : eui.2C3EBFFFF0000000
+Description                      : 
+FriendlyName                     : NFORCE 256NV 256GB - THBF152
+HealthStatus                     : Healthy
+Manufacturer                     : 
+Model                            : NFORCE 256NV 256GB - THBF152
+OperationalDetails               : 
+OperationalStatus                : OK
+PhysicalLocation                 : Integrated : Bus 3 : Device 0 : Function 0 : Adapter 1
+SerialNumber                     : 2C3E_BFFF_F000_0000.
+AdapterSerialNumber              : THBF152TVGNV3229    _0001
+AllocatedSize                    : 256058417152
+BusType                          : NVMe
+CannotPoolReason                 : Insufficient Capacity
+CanPool                          : False
+DeviceId                         : 1
+EnclosureNumber                  : 
+FirmwareVersion                  : APF1M3R1
+FruId                            : THBF152TVGNV3229
+IsIndicationEnabled              : False
+IsPartial                        : True
+LogicalSectorSize                : 512
+MediaType                        : SSD
+OtherCannotPoolReasonDescription : 
+PartNumber                       : 
+PhysicalSectorSize               : 4096
+Size                             : 256060514304
+SlotNumber                       : 
+SoftwareVersion                  : 
+SpindleSpeed                     : 0
+StoragePoolUniqueId              : 
+SupportedUsages                  : {Auto-Select, Manual-Select, Hot Spare, Retired…}
+UniqueIdFormat                   : SCSI Name String
+Usage                            : Auto-Select
+VirtualDiskFootprint             : 0
+PSComputerName                   : 
+ClassName                        : MSFT_PhysicalDisk
+
+ObjectId                         : {1}\\SHRAVAN-PC\root/Microsoft/Windows/Storage/Providers_v2\SPACES_PhysicalDisk.ObjectId="{2a695bae-299a-11ef-a55d-806e6f6e6963}:PD:{6039b461-efc1-01e3-9a6d-f782e613b0dc}"
+PassThroughClass                 : 
+PassThroughIds                   : 
+PassThroughNamespace             : 
+PassThroughServer                : 
+UniqueId                         : 5000039A12088324
+Description                      : 
+FriendlyName                     : TOSHIBA MQ04ABF100
+HealthStatus                     : Healthy
+Manufacturer                     : 
+Model                            : TOSHIBA MQ04ABF100
+OperationalDetails               : 
+OperationalStatus                : OK
+PhysicalLocation                 : Integrated : Bus 0 : Device 23 : Function 0 : Adapter 0 : Port 0 : Target 0 : LUN 0
+SerialNumber                     : 60HYT24MT
+AdapterSerialNumber              : 
+AllocatedSize                    : 1000204886016
+BusType                          : RAID
+CannotPoolReason                 : Insufficient Capacity
+CanPool                          : False
+DeviceId                         : 0
+EnclosureNumber                  : 
+FirmwareVersion                  : JU007C
+FruId                            : 
+IsIndicationEnabled              : False
+IsPartial                        : True
+LogicalSectorSize                : 512
+MediaType                        : HDD
+OtherCannotPoolReasonDescription : 
+PartNumber                       : 
+PhysicalSectorSize               : 4096
+Size                             : 1000204886016
+SlotNumber                       : 
+SoftwareVersion                  : 
+SpindleSpeed                     : Unknown
+StoragePoolUniqueId              : 
+SupportedUsages                  : {Auto-Select, Manual-Select, Hot Spare, Retired…}
+UniqueIdFormat                   : FCPH Name
+Usage                            : Auto-Select
+VirtualDiskFootprint             : 0
+PSComputerName                   : 
+ClassName                        : MSFT_PhysicalDisk
+
+=== VOLUME C: STORAGE TELEMETRY ===
+Generated via: Get-Volume C | Format-List
+
+ObjectId             : {1}\\SHRAVAN-PC\root/Microsoft/Windows/Storage/Providers_v2\WSP_Volume.ObjectId="{2a695bae-299a-11ef-a55d-806e6f6e6963}:VO:\\?\Volume{4b8d1e81-967a-4a3f-b91b-ee0adf5d46fc}\"
+PassThroughClass     : 
+PassThroughIds       : 
+PassThroughNamespace : 
+PassThroughServer    : 
+UniqueId             : \\?\Volume{4b8d1e81-967a-4a3f-b91b-ee0adf5d46fc}\
+AllocationUnitSize   : 4096
+DedupMode            : NotAvailable
+DriveLetter          : C
+DriveType            : Fixed
+FileSystem           : NTFS
+FileSystemLabel      : 
+FileSystemType       : NTFS
+HealthStatus         : Healthy
+OperationalStatus    : OK
+Path                 : \\?\Volume{4b8d1e81-967a-4a3f-b91b-ee0adf5d46fc}\
+ReFSDedupMode        : NotAvailable
+Size                 : 254834036736
+SizeRemaining        : 53169356800
+PSComputerName       : 
+

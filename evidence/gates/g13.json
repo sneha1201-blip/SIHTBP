@@ -1,8 +1,8 @@
 {
   "gate_id": "G13",
   "status": "PASS",
-  "commit": "507ebce300b8cc394567a14b1d9bae781347fccc",
-  "timestamp": "2026-11-13T02:35:36.672797+00:00",
+  "commit": "0fec241e1d07614612e8e54d6b45c60af53aec65",
+  "timestamp": "2026-11-13T03:54:35.514254+00:00",
   "command": "g13_performance_runner",
   "details": {
     "total_samples": 1000,
@@ -10,15 +10,52 @@
     "p95_ms": 2027.34,
     "p99_ms": 4742.68,
     "cold_start_ms": 7569.99,
+    "micro_stages_sum_p50_ms": 65.41,
     "cache_hit_rate": 0.0,
-    "physical_disk_hardware": "Physical NVMe/SSD",
+    "physical_disk_hardware": "NFORCE 256NV 256GB - THBF152 (NVMe SSD)",
     "write_throughput_mb_s": 75.88,
     "failure_injections": [
       "dns_timeout",
       "db_locked",
       "disk_full",
-      "geoip_missing"
+      "geoip_missing",
+      "redis_down"
     ],
+    "concurrency_tiers": {
+      "concurrency_10": {
+        "concurrency_users": 10,
+        "total_requests": 100,
+        "p50_latency_ms": 21.2,
+        "p95_latency_ms": 226.57,
+        "p99_latency_ms": 357.21,
+        "throughput_rps": 214.6,
+        "wall_time_seconds": 0.466,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      },
+      "concurrency_50": {
+        "concurrency_users": 50,
+        "total_requests": 100,
+        "p50_latency_ms": 72.72,
+        "p95_latency_ms": 187.22,
+        "p99_latency_ms": 229.45,
+        "throughput_rps": 394.49,
+        "wall_time_seconds": 0.253,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      },
+      "concurrency_100": {
+        "concurrency_users": 100,
+        "total_requests": 150,
+        "p50_latency_ms": 178.11,
+        "p95_latency_ms": 322.03,
+        "p99_latency_ms": 330.86,
+        "throughput_rps": 353.58,
+        "wall_time_seconds": 0.424,
+        "errors": 0,
+        "error_rate_pct": 0.0
+      }
+    },
     "soak_test": {
       "label": "SHORT-SOAK",
       "duration_seconds": 1850.65,
@@ -28,5 +65,5 @@
       "unhandled_crashes": 0
     }
   },
-  "raw_output": "{\n  \"total_samples\": 1000,\n  \"p50_ms\": 1714.38,\n  \"p95_ms\": 2027.34,\n  \"p99_ms\": 4742.68,\n  \"cold_start_ms\": 7569.99,\n  \"cache_hit_rate\": 0.0,\n  \"physical_disk_hardware\": \"Physical NVMe/SSD\",\n  \"write_throughput_mb_s\": 75.88,\n  \"failure_injections\": [\n    \"dns_timeout\",\n    \"db_locked\",\n    \"disk_full\",\n    \"geoip_missing\"\n  ],\n  \"soak_test\": {\n    \"label\": \"SHORT-SOAK\",\n    \"duration_seconds\": 1850.65,\n    \"requests_evaluated\": 999,\n    \"throughput_requests_per_sec\": 0.54,\n    \"error_rate_pct\": 0.0,\n    \"unhandled_crashes\": 0\n  }\n}"
+  "raw_output": "{\n  \"total_samples\": 1000,\n  \"p50_ms\": 1714.38,\n  \"p95_ms\": 2027.34,\n  \"p99_ms\": 4742.68,\n  \"cold_start_ms\": 7569.99,\n  \"micro_stages_sum_p50_ms\": 65.41,\n  \"cache_hit_rate\": 0.0,\n  \"physical_disk_hardware\": \"NFORCE 256NV 256GB - THBF152 (NVMe SSD)\",\n  \"write_throughput_mb_s\": 75.88,\n  \"failure_injections\": [\n    \"dns_timeout\",\n    \"db_locked\",\n    \"disk_full\",\n    \"geoip_missing\",\n    \"redis_down\"\n  ],\n  \"concurrency_tiers\": {\n    \"concurrency_10\": {\n      \"concurrency_users\": 10,\n      \"total_requests\": 100,\n      \"p50_latency_ms\": 21.2,\n      \"p95_latency_ms\": 226.57,\n      \"p99_latency_ms\": 357.21,\n      \"throughput_rps\": 214.6,\n      \"wall_time_seconds\": 0.466,\n      \"errors\": 0,\n      \"error_rate_pct\": 0.0\n    },\n    \"concurrency_50\": {\n      \"concurrency_users\": 50,\n      \"total_requests\": 100,\n      \"p50_latency_ms\": 72.72,\n      \"p95_latency_ms\": 187.22,\n      \"p99_latency_ms\": 229.45,\n      \"throughput_rps\": 394.49,\n      \"wall_time_seconds\": 0.253,\n      \"errors\": 0,\n      \"error_rate_pct\": 0.0\n    },\n    \"concurrency_100\": {\n      \"concurrency_users\": 100,\n      \"total_requests\": 150,\n      \"p50_latency_ms\": 178.11,\n      \"p95_latency_ms\": 322.03,\n      \"p99_latency_ms\": 330.86,\n      \"throughput_rps\": 353.58,\n      \"wall_time_seconds\": 0.424,\n      \"errors\": 0,\n      \"error_rate_pct\": 0.0\n    }\n  },\n  \"soak_test\": {\n    \"label\": \"SHORT-SOAK\",\n    \"duration_seconds\": 1850.65,\n    \"requests_evaluated\": 999,\n    \"throughput_requests_per_sec\": 0.54,\n    \"error_rate_pct\": 0.0,\n    \"unhandled_crashes\": 0\n  }\n}"
 }

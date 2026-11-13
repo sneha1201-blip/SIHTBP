@@ -67,9 +67,9 @@ def run_performance_gate() -> int:
         print(f"    - Measured Disk Speed: {disk_perf.get('write_throughput_mb_s', 0.0)} MB/s")
 
         # Invariant checks
-        if total_samples < 50:
-            print(f"[FAIL] Benchmark evaluated only {total_samples} samples (must be >= 50)!")
-            record_gate_result("G13", "FAIL", "check_sample_count", f"Sample count {total_samples} < threshold")
+        if total_samples < 1000:
+            print(f"[FAIL] Benchmark evaluated only {total_samples} samples (must be >= 1000)!")
+            record_gate_result("G13", "FAIL", "check_sample_count", f"Sample count {total_samples} < threshold 1000")
             return 1
 
         if cache_hit_rate != 0.0:
@@ -77,14 +77,52 @@ def run_performance_gate() -> int:
             record_gate_result("G13", "FAIL", "check_cache_hit_rate", f"Cache hit rate is {cache_hit_rate}")
             return 1
 
-        # Check failure injections
-        required_injections = ["dns_timeout", "db_locked", "disk_full", "geoip_missing"]
+        # Mathematical Invariant: E2E P50 >= sum(individual micro stage P50s)
+        stage_breakdown = data.get("stage_latency_breakdown_ms", {})
+        micro_stages_sum_p50 = sum(
+            st.get("p50_ms", 0.0)
+            for k, st in stage_breakdown.items()
+            if k != "full_pipeline_ingest_e2e" and isinstance(st, dict)
+        )
+        if p50 < micro_stages_sum_p50:
+            print(f"[FAIL] Mathematical invariant violated: E2E P50 ({p50} ms) is less than sum of micro-stages ({micro_stages_sum_p50} ms)!")
+            record_gate_result("G13", "FAIL", "check_e2e_invariant", f"E2E P50 {p50} < stages sum {micro_stages_sum_p50}")
+            return 1
+        print(f"[+] Invariant verified: E2E P50 ({p50:.2f} ms) >= sum of stages ({micro_stages_sum_p50:.2f} ms)")
+
+        # Check all 5 failure injections
+        required_injections = ["dns_timeout", "db_locked", "disk_full", "geoip_missing", "redis_down"]
         for inj in required_injections:
             if inj not in failure_inj or failure_inj[inj].get("status") != "PASS":
                 print(f"[FAIL] Failure injection {inj} was not executed or failed: {failure_inj.get(inj)}")
                 record_gate_result("G13", "FAIL", f"check_{inj}", str(failure_inj.get(inj)))
                 return 1
-        print(f"[+] All 4 failure injections verified: {list(failure_inj.keys())}")
+        print(f"[+] All 5 failure injections verified: {list(failure_inj.keys())}")
+
+        # Check disk hardware telemetry file
+        hw_file = PROJECT_ROOT / "evidence" / "benchmarks" / "disk_hardware.txt"
+        if not hw_file.exists():
+            print("[FAIL] evidence/benchmarks/disk_hardware.txt is missing!")
+            record_gate_result("G13", "FAIL", "check_disk_hw_file", "disk_hardware.txt missing")
+            return 1
+        print(f"[+] Physical disk hardware telemetry file verified ({hw_file.name})")
+
+        # Check concurrency tiers (10, 50, 100)
+        tiers = metadata.get("concurrency_scaling_tiers", {})
+        for tier_key in ["concurrency_10", "concurrency_50", "concurrency_100"]:
+            if tier_key not in tiers or tiers[tier_key].get("errors", 1) != 0:
+                print(f"[FAIL] Concurrency tier {tier_key} missing or had errors: {tiers.get(tier_key)}")
+                record_gate_result("G13", "FAIL", f"check_{tier_key}", str(tiers.get(tier_key)))
+                return 1
+        print("[+] Concurrency scaling verified across 10, 50, and 100 concurrent examiner tiers (0 errors).")
+
+        # Check soak test
+        soak = metadata.get("soak_test", {})
+        if not soak or soak.get("unhandled_crashes", 1) != 0:
+            print(f"[FAIL] Soak test missing or reported unhandled crashes: {soak}")
+            record_gate_result("G13", "FAIL", "check_soak_test", str(soak))
+            return 1
+        print(f"[+] Soak test verified: duration={soak.get('duration_seconds')}s, errors={soak.get('error_rate_pct')}%, crashes={soak.get('unhandled_crashes')}")
 
         details = {
             "total_samples": total_samples,
@@ -92,11 +130,13 @@ def run_performance_gate() -> int:
             "p95_ms": p95,
             "p99_ms": p99,
             "cold_start_ms": cold_start,
+            "micro_stages_sum_p50_ms": round(micro_stages_sum_p50, 2),
             "cache_hit_rate": cache_hit_rate,
             "physical_disk_hardware": disk_perf.get("physical_disk_hardware"),
             "write_throughput_mb_s": disk_perf.get("write_throughput_mb_s"),
             "failure_injections": list(failure_inj.keys()),
-            "soak_test": metadata.get("soak_test", {}),
+            "concurrency_tiers": tiers,
+            "soak_test": soak,
         }
 
         print("[PASS] Gate G13 Performance passed with empirical latency, physical disk, and zero-cache invariants verified.")

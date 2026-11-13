@@ -127,6 +127,17 @@ Per Rule R4 & R7:
   - Upgraded `scripts/evaluate_campaign_clustering.py` to execute a 50/50 stratified dev/test split (`seed=26106`). Similarity thresholds evaluated on dev only, and final empirical metrics evaluated on held-out test partition ($n=46$).
   - Measured new held-out numbers: Adjusted Rand Index (ARI) **0.9064**, Normalized Mutual Information (NMI) **0.9495**, Purity **1.0**, Noise False Positive Rate **0.0%**, with 100% hyperscaler ASN isolation on Google AS15169 and AWS AS16509.
 
+### 20. Working Tree Edit — `gates/g13_performance.py` & Full Spec Restoration
+- **Classification:** (a) Strictness enhancement / spec restoration.
+- **Details:**
+  - Restored full evaluation sample count requirement: $N \ge 1000$ distinct nonced emails from real public corpora.
+  - Enforced mathematical invariant check: `E2E P50 >= sum(individual micro stage P50s)` (empirically verified: 1714.38 ms >= 65.41 ms).
+  - Enforced all 5 required failure injection tests: `dns_timeout`, `db_locked`, `disk_full`, `geoip_missing`, and `redis_down` (verifying zero-downtime in-process queue fallback).
+  - Enforced physical disk hardware validation: queried Windows PowerShell `Get-PhysicalDisk` and `Get-Volume C`, confirming physical NVMe SSD `NFORCE 256NV 256GB - THBF152`, recorded in `evidence/benchmarks/disk_hardware.txt`.
+  - Installed `locust` (v2.47.0), authored `benchmarks/locustfile.py`, and verified concurrent load testing across 10, 50, and 100 user tiers in `evidence/benchmarks/locust_concurrency.json`.
+  - Enforced soak test validation: verified duration (1850.65s), 0 unhandled crashes, and 0.0% error rate.
+
+
 
 
 
