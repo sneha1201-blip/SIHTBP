@@ -63,13 +63,14 @@ GLOBAL_DNS_CACHE = DNSNegativeCache()
 
 class DkimSignatureResult(BaseModel):
     """Detailed evaluation of an individual DKIM-Signature header."""
+
     domain: str = ""
     selector: str = ""
     algorithm: str = ""
     canonicalization: str = ""
     signed_headers: List[str] = Field(default_factory=list)
-    body_hash_status: str = "NONE"      # MATCH, MISMATCH, NONE
-    signature_status: str = "NONE"      # PASS, FAIL, INVALID, EXPIRED, KEY_REVOKED, KEY_UNAVAILABLE, NONE
+    body_hash_status: str = "NONE"  # MATCH, MISMATCH, NONE
+    signature_status: str = "NONE"  # PASS, FAIL, INVALID, EXPIRED, KEY_REVOKED, KEY_UNAVAILABLE, NONE
     body_length: Optional[int] = None
     l_tag_abuse_detected: bool = False
     l_tag_explanation: Optional[str] = None
@@ -81,7 +82,8 @@ class DkimSignatureResult(BaseModel):
 
 class ArcChainResult(BaseModel):
     """Evaluation of Authenticated Received Chain (RFC 8617)."""
-    status: str = "NONE"                # PASS, FAIL, NONE
+
+    status: str = "NONE"  # PASS, FAIL, NONE
     chain_validation: Optional[str] = None  # pass, fail, none
     instances_count: int = 0
     details: List[Dict[str, Any]] = Field(default_factory=list)
@@ -90,8 +92,9 @@ class ArcChainResult(BaseModel):
 
 class AuthValidationResult(BaseModel):
     """Forensic evaluation of SPF, DKIM, DMARC, and ARC authentication."""
+
     # SPF Recomputed Verdict
-    spf_status: str = "NONE"       # PASS, FAIL, SOFTFAIL, NEUTRAL, NONE, PERMERROR, TEMPERROR, UNVERIFIABLE
+    spf_status: str = "NONE"  # PASS, FAIL, SOFTFAIL, NEUTRAL, NONE, PERMERROR, TEMPERROR, UNVERIFIABLE
     spf_domain: Optional[str] = None
     spf_client_ip: Optional[str] = None
     spf_helo: Optional[str] = None
@@ -99,14 +102,14 @@ class AuthValidationResult(BaseModel):
     spf_explanation: Optional[str] = None
 
     # DKIM Recomputed Verdict
-    dkim_status: str = "NONE"      # PASS, FAIL, NONE, INVALID, EXPIRED, KEY_REVOKED, KEY_UNAVAILABLE, BODY_HASH_MISMATCH
+    dkim_status: str = "NONE"  # PASS, FAIL, NONE, INVALID, EXPIRED, KEY_REVOKED, KEY_UNAVAILABLE, BODY_HASH_MISMATCH
     dkim_selector: Optional[str] = None
     dkim_domain: Optional[str] = None
     dkim_signatures: List[DkimSignatureResult] = Field(default_factory=list)
 
     # DMARC Recomputed Verdict (RFC 7489)
-    dmarc_status: str = "NONE"     # PASS, FAIL, NONE, UNVERIFIABLE
-    dmarc_policy: str = "none"     # reject, quarantine, none
+    dmarc_status: str = "NONE"  # PASS, FAIL, NONE, UNVERIFIABLE
+    dmarc_policy: str = "none"  # reject, quarantine, none
     dmarc_alignment_spf: bool = False
     dmarc_alignment_dkim: bool = False
     dmarc_org_domain: Optional[str] = None
@@ -121,7 +124,7 @@ class AuthValidationResult(BaseModel):
     discrepancies: List[str] = Field(default_factory=list)
 
     # Threat Scoring & Audit Trail
-    auth_score: float = 0.0        # 0.0 (safe) to 100.0 (complete failure/impersonation)
+    auth_score: float = 0.0  # 0.0 (safe) to 100.0 (complete failure/impersonation)
     dns_resolved_live: bool = False
     dns_key_snapshots: List[Dict[str, Any]] = Field(default_factory=list)
     details: Dict[str, Any] = Field(default_factory=dict)
@@ -223,10 +226,7 @@ async def async_resolve_txt_concurrent(
     import asyncio
 
     loop = asyncio.get_running_loop()
-    tasks = [
-        loop.run_in_executor(None, query_dns_txt_with_timeout, d, timeout, None)
-        for d in domains
-    ]
+    tasks = [loop.run_in_executor(None, query_dns_txt_with_timeout, d, timeout, None) for d in domains]
     results = await asyncio.gather(*tasks, return_exceptions=True)
     out: Dict[str, List[str]] = {}
     for d, res in zip(domains, results):
@@ -395,7 +395,9 @@ def verify_dkim_signatures(
                 if current_unix_time > x_val:
                     res_item.is_expired = True
                     res_item.signature_status = "EXPIRED"
-                    res_item.details = f"DKIM Signature expired at Unix timestamp {x_val} (current {current_unix_time})."
+                    res_item.details = (
+                        f"DKIM Signature expired at Unix timestamp {x_val} (current {current_unix_time})."
+                    )
             except (ValueError, TypeError) as exc:
                 logger.debug("Failed parsing DKIM x= expiration tag: %s", exc)
 
@@ -439,13 +441,15 @@ def verify_dkim_signatures(
 
         raw_txt_str = txt_res.decode("utf-8", errors="replace")
         res_item.dns_key_snapshot = raw_txt_str
-        dns_snapshots.append({
-            "domain": d_val,
-            "selector": s_val,
-            "fqdn": f"{s_val}._domainkey.{d_val}",
-            "txt_record": raw_txt_str,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        dns_snapshots.append(
+            {
+                "domain": d_val,
+                "selector": s_val,
+                "fqdn": f"{s_val}._domainkey.{d_val}",
+                "txt_record": raw_txt_str,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
 
         # 4. Check Key Revocation (empty p= tag per RFC 6376 Section 6.1.2)
         p_match = re.search(r"\bp=([^;\s]*)", raw_txt_str, re.IGNORECASE)
@@ -557,9 +561,16 @@ def verify_spf_pyspf(
     if not custom_records:
         try:
             import ipaddress
+
             ip_obj = ipaddress.ip_address(connecting_ip)
             if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local:
-                return "UNVERIFIABLE", domain, 0, f"Connecting IP {connecting_ip} is RFC 1918 private/local; cannot evaluate public SPF.", False
+                return (
+                    "UNVERIFIABLE",
+                    domain,
+                    0,
+                    f"Connecting IP {connecting_ip} is RFC 1918 private/local; cannot evaluate public SPF.",
+                    False,
+                )
         except ValueError:
             return "PERMERROR", domain, 0, f"Malformed connecting IP address: {connecting_ip}", False
 
@@ -577,12 +588,14 @@ def verify_spf_pyspf(
                 q.cache[(clean_k, "TXT")] = [[r.encode("utf-8")] for r in recs]
 
             original_dns_txt = q.dns_txt
+
             def patched_dns_txt(domainname: str, rr: str = "TXT", ignore_void: bool = False) -> List[bytes]:
                 clean_name = domainname.strip().rstrip(".").lower()
                 for k, recs in custom_records.items():
                     if k.strip().rstrip(".").lower() == clean_name:
                         return [r.encode("utf-8") for r in recs]
                 return original_dns_txt(domainname, rr, ignore_void)
+
             q.dns_txt = patched_dns_txt  # type: ignore[assignment]
 
         res, code, explanation = q.check()
@@ -672,12 +685,12 @@ def verify_dmarc_rfc7489(
     # 2. Evaluate SPF alignment (SPF must have PASSED)
     align_spf = False
     if spf_status == "PASS" and spf_domain:
-        is_strict = (aspf_mode == "s")
+        is_strict = aspf_mode == "s"
         align_spf = check_alignment(from_domain, spf_domain, strict=is_strict)
 
     # 3. Evaluate DKIM alignment (At least one DKIM signature must have PASSED)
     align_dkim = False
-    is_strict_dkim = (adkim_mode == "s")
+    is_strict_dkim = adkim_mode == "s"
     for sig in dkim_signatures:
         if sig.signature_status == "PASS" and sig.domain:
             if check_alignment(from_domain, sig.domain, strict=is_strict_dkim):
@@ -717,12 +730,16 @@ def verify_arc_chain(
         formatted_details = []
         for item in details_list:
             if isinstance(item, dict):
-                formatted_details.append({
-                    "instance": item.get("instance"),
-                    "cv": item.get("cv", b"").decode("utf-8", errors="replace") if isinstance(item.get("cv"), bytes) else str(item.get("cv")),
-                    "ams_valid": item.get("ams-valid"),
-                    "as_valid": item.get("as-valid"),
-                })
+                formatted_details.append(
+                    {
+                        "instance": item.get("instance"),
+                        "cv": item.get("cv", b"").decode("utf-8", errors="replace")
+                        if isinstance(item.get("cv"), bytes)
+                        else str(item.get("cv")),
+                        "ams_valid": item.get("ams-valid"),
+                        "as_valid": item.get("as-valid"),
+                    }
+                )
 
         status_mapped = "PASS" if cv_str.lower() == "pass" else ("FAIL" if cv_str.lower() == "fail" else "NONE")
 
@@ -925,7 +942,9 @@ def validate_protocol_authentication(
     # Discrepancy / Forgery Penalty
     if has_discrepancy:
         auth_score += 35.0
-        details["discrepancy"] = "Critical: Upstream Authentication-Results contradict recomputed cryptographic ground truth (potential MTA forgery/spoofing)."
+        details["discrepancy"] = (
+            "Critical: Upstream Authentication-Results contradict recomputed cryptographic ground truth (potential MTA forgery/spoofing)."
+        )
 
     # Cap score at 100.0
     auth_score = min(100.0, auth_score)

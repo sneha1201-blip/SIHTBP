@@ -128,19 +128,23 @@ async def verify_forensic_cases(session: AsyncSession) -> List[Dict[str, Any]]:
         campaign_names = [assoc.campaign.name for assoc in em.campaign_associations if assoc.campaign]
         campaign_str = campaign_names[0][:32] + "..." if campaign_names else "Standalone"
 
-        cases_summary.append({
-            "num": idx,
-            "subject": (em.subject[:48] + "...") if em.subject and len(em.subject) > 48 else em.subject,
-            "sender": (em.sender_email[:28] + "...") if em.sender_email and len(em.sender_email) > 28 else em.sender_email,
-            "origin": origin_str,
-            "score": score,
-            "verdict": verdict,
-            "campaign": campaign_str,
-            "vault": vault_status,
-            "hmac": "VALID" if audit_intact else "TAMPERED",
-            "sha256": em.sha256_hash,
-            "file_size": em.file_size_bytes,
-        })
+        cases_summary.append(
+            {
+                "num": idx,
+                "subject": (em.subject[:48] + "...") if em.subject and len(em.subject) > 48 else em.subject,
+                "sender": (em.sender_email[:28] + "...")
+                if em.sender_email and len(em.sender_email) > 28
+                else em.sender_email,
+                "origin": origin_str,
+                "score": score,
+                "verdict": verdict,
+                "campaign": campaign_str,
+                "vault": vault_status,
+                "hmac": "VALID" if audit_intact else "TAMPERED",
+                "sha256": em.sha256_hash,
+                "file_size": em.file_size_bytes,
+            }
+        )
     return cases_summary
 
 
@@ -157,14 +161,64 @@ def render_ascii_tables(counts: Dict[str, int], cases: List[Dict[str, Any]]) -> 
     print()
 
     # Forensic Test Cases Summary
-    print("+" + "-" * 5 + "+" + "-" * 46 + "+" + "-" * 26 + "+" + "-" * 8 + "+" + "-" * 12 + "+" + "-" * 10 + "+" + "-" * 8 + "+")
-    print(f"| {'#':<3} | {'Subject / Scenario':<44} | {'Origin Route / MTA':<24} | {'Score':<6} | {'Verdict':<10} | {'Vault':<8} | {'HMAC':<6} |")
-    print("+" + "=" * 5 + "+" + "=" * 46 + "+" + "=" * 26 + "+" + "=" * 8 + "+" + "=" * 12 + "+" + "=" * 10 + "+" + "=" * 8 + "+")
+    print(
+        "+"
+        + "-" * 5
+        + "+"
+        + "-" * 46
+        + "+"
+        + "-" * 26
+        + "+"
+        + "-" * 8
+        + "+"
+        + "-" * 12
+        + "+"
+        + "-" * 10
+        + "+"
+        + "-" * 8
+        + "+"
+    )
+    print(
+        f"| {'#':<3} | {'Subject / Scenario':<44} | {'Origin Route / MTA':<24} | {'Score':<6} | {'Verdict':<10} | {'Vault':<8} | {'HMAC':<6} |"
+    )
+    print(
+        "+"
+        + "=" * 5
+        + "+"
+        + "=" * 46
+        + "+"
+        + "=" * 26
+        + "+"
+        + "=" * 8
+        + "+"
+        + "=" * 12
+        + "+"
+        + "=" * 10
+        + "+"
+        + "=" * 8
+        + "+"
+    )
     for c in cases:
         print(
             f"| {c['num']:<3} | {c['subject']:<44} | {c['origin']:<24} | {c['score']:>5.1f} | {c['verdict']:<10} | {c['vault']:<8} | {c['hmac']:<6} |"
         )
-    print("+" + "-" * 5 + "+" + "-" * 46 + "+" + "-" * 26 + "+" + "-" * 8 + "+" + "-" * 12 + "+" + "-" * 10 + "+" + "-" * 8 + "+")
+    print(
+        "+"
+        + "-" * 5
+        + "+"
+        + "-" * 46
+        + "+"
+        + "-" * 26
+        + "+"
+        + "-" * 8
+        + "+"
+        + "-" * 12
+        + "+"
+        + "-" * 10
+        + "+"
+        + "-" * 8
+        + "+"
+    )
     print()
 
 
@@ -192,12 +246,29 @@ async def seed_default_users(session: AsyncSession) -> None:
     default_accounts = []
     if not (settings.BOOTSTRAP_ADMIN_USERNAME and settings.BOOTSTRAP_ADMIN_PASSWORD):
         default_accounts.append(
-            {"username": "admin", "email": "admin@aicte-india.org", "password": "AdminPassword@2026", "role": UserRole.ADMIN}
+            {
+                "username": "admin",
+                "email": "admin@aicte-india.org",
+                "password": "AdminPassword@2026",
+                "role": UserRole.ADMIN,
+            }
         )
-    default_accounts.extend([
-        {"username": "analyst", "email": "analyst@aicte-india.org", "password": os.getenv("ANALYST_BOOTSTRAP_PASSWORD", "AicteAnalystSecure@2026"), "role": UserRole.ANALYST},
-        {"username": "auditor", "email": "auditor@aicte-india.org", "password": os.getenv("AUDITOR_BOOTSTRAP_PASSWORD", "AicteAuditorSecure@2026"), "role": UserRole.AUDITOR},
-    ])
+    default_accounts.extend(
+        [
+            {
+                "username": "analyst",
+                "email": "analyst@aicte-india.org",
+                "password": os.getenv("ANALYST_BOOTSTRAP_PASSWORD", "AicteAnalystSecure@2026"),
+                "role": UserRole.ANALYST,
+            },
+            {
+                "username": "auditor",
+                "email": "auditor@aicte-india.org",
+                "password": os.getenv("AUDITOR_BOOTSTRAP_PASSWORD", "AicteAuditorSecure@2026"),
+                "role": UserRole.AUDITOR,
+            },
+        ]
+    )
 
     for acc in default_accounts:
         stmt = select(User).where((User.username == acc["username"]) | (User.email == acc["email"]))
@@ -218,7 +289,9 @@ async def initialize_and_verify(reset: bool = False, seed: bool = False) -> bool
     """Execute complete database initialization, optional seeding, and verification."""
     print_banner()
     vault_dir = get_vault_dir()
-    print(f"[*] Target Database Engine:  {'SQLite 3 (Local Zero-Setup)' if IS_SQLITE else 'PostgreSQL 16 (Enterprise)'}")
+    print(
+        f"[*] Target Database Engine:  {'SQLite 3 (Local Zero-Setup)' if IS_SQLITE else 'PostgreSQL 16 (Enterprise)'}"
+    )
     print(f"[*] Database Connection URL: {DATABASE_URL}")
     print(f"[*] Evidence Vault Root:     {vault_dir}")
     print()
@@ -267,8 +340,12 @@ async def initialize_and_verify(reset: bool = False, seed: bool = False) -> bool
         all_hmac_valid = all(c["hmac"] == "VALID" for c in cases) if cases else True
 
         print("----------------------------------------------------------------------------------------")
-        print(f"[*] Cryptographic Vault Status:     {'ALL EVIDENCE FILES INTACT (SHA-256 MATCH)' if all_vault_intact else 'INTEGRITY MISMATCH DETECTED'}")
-        print(f"[*] Audit Ledger Chain of Custody:  {'ALL HMAC-SHA256 SIGNATURES VERIFIED' if all_hmac_valid else 'SIGNATURE VERIFICATION FAILED'}")
+        print(
+            f"[*] Cryptographic Vault Status:     {'ALL EVIDENCE FILES INTACT (SHA-256 MATCH)' if all_vault_intact else 'INTEGRITY MISMATCH DETECTED'}"
+        )
+        print(
+            f"[*] Audit Ledger Chain of Custody:  {'ALL HMAC-SHA256 SIGNATURES VERIFIED' if all_hmac_valid else 'SIGNATURE VERIFICATION FAILED'}"
+        )
         print("[*] Zero-Setup Execution: READY FOR PRODUCTION DEPLOYMENT")
         print("----------------------------------------------------------------------------------------")
         print()
@@ -282,6 +359,7 @@ def init_db_and_verify(reset: bool = False, seed: bool = False) -> bool:
     Executes complete database schema migration, forensic seeding, and cryptographic
     verification, properly managing event loops and connection pool disposal.
     """
+
     async def _runner() -> bool:
         try:
             return await initialize_and_verify(reset=reset, seed=seed)
@@ -295,6 +373,7 @@ def init_db_and_verify(reset: bool = False, seed: bool = False) -> bool:
 
     if loop and loop.is_running():
         import concurrent.futures
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
             return pool.submit(asyncio.run, _runner()).result()
     else:

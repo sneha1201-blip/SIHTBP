@@ -22,8 +22,22 @@ from backend.app.parsers.mime_normalizer import (
 logger = logging.getLogger("eml_parser")
 
 DANGEROUS_EXTENSIONS = {
-    ".exe", ".scr", ".vbs", ".bat", ".cmd", ".ps1", ".xlsm", ".docm",
-    ".pptm", ".iso", ".img", ".hta", ".js", ".jar", ".cpl", ".dll"
+    ".exe",
+    ".scr",
+    ".vbs",
+    ".bat",
+    ".cmd",
+    ".ps1",
+    ".xlsm",
+    ".docm",
+    ".pptm",
+    ".iso",
+    ".img",
+    ".hta",
+    ".js",
+    ".jar",
+    ".cpl",
+    ".dll",
 }
 
 
@@ -173,4 +187,3 @@ def parse_eml(raw_bytes: bytes, filename: str = "evidence.eml") -> ParsedEmailDa
         simhash_body=simhash_body,
         attachments=attachments,
     )
-

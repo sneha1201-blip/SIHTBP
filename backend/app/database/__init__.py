@@ -62,4 +62,3 @@ __all__ = [
     "read_raw_evidence",
     "verify_evidence_integrity",
 ]
-

@@ -289,10 +289,7 @@ def test_arc_chain_validation():
     assert no_arc_res.instances_count == 0
 
     # Malformed ARC headers
-    broken_arc_msg = (
-        b"ARC-Seal: i=1; a=rsa-sha256; cv=none; d=test.com; s=s1; b=fake\r\n"
-        b"From: a@b.com\r\n\r\nHello"
-    )
+    broken_arc_msg = b"ARC-Seal: i=1; a=rsa-sha256; cv=none; d=test.com; s=s1; b=fake\r\nFrom: a@b.com\r\n\r\nHello"
     broken_res = verify_arc_chain(broken_arc_msg)
     assert broken_res.status in ("FAIL", "NONE")
 
@@ -375,29 +372,35 @@ def test_confusion_matrix_verification(corpus):
             custom_dns_records=DNS_FIXTURES,
         )
 
-        match_spf = (res.spf_status == meta["expected_spf"])
-        match_dkim = (res.dkim_status == meta["expected_dkim"])
-        match_dmarc = (res.dmarc_status == meta["expected_dmarc"])
-        match_disc = (res.has_discrepancy == meta["expected_discrepancy"])
+        match_spf = res.spf_status == meta["expected_spf"]
+        match_dkim = res.dkim_status == meta["expected_dkim"]
+        match_dmarc = res.dmarc_status == meta["expected_dmarc"]
+        match_disc = res.has_discrepancy == meta["expected_discrepancy"]
 
-        confusion_records.append({
-            "sample": name,
-            "spf_expected": meta["expected_spf"],
-            "spf_got": res.spf_status,
-            "spf_match": match_spf,
-            "dkim_expected": meta["expected_dkim"],
-            "dkim_got": res.dkim_status,
-            "dkim_match": match_dkim,
-            "dmarc_expected": meta["expected_dmarc"],
-            "dmarc_got": res.dmarc_status,
-            "dmarc_match": match_dmarc,
-            "disc_expected": meta["expected_discrepancy"],
-            "disc_got": res.has_discrepancy,
-            "disc_match": match_disc,
-        })
+        confusion_records.append(
+            {
+                "sample": name,
+                "spf_expected": meta["expected_spf"],
+                "spf_got": res.spf_status,
+                "spf_match": match_spf,
+                "dkim_expected": meta["expected_dkim"],
+                "dkim_got": res.dkim_status,
+                "dkim_match": match_dkim,
+                "dmarc_expected": meta["expected_dmarc"],
+                "dmarc_got": res.dmarc_status,
+                "dmarc_match": match_dmarc,
+                "disc_expected": meta["expected_discrepancy"],
+                "disc_got": res.has_discrepancy,
+                "disc_match": match_disc,
+            }
+        )
 
     # Assert 100% accuracy on all evaluated samples
-    mismatches = [c for c in confusion_records if not (c["spf_match"] and c["dkim_match"] and c["dmarc_match"] and c["disc_match"])]
+    mismatches = [
+        c
+        for c in confusion_records
+        if not (c["spf_match"] and c["dkim_match"] and c["dmarc_match"] and c["disc_match"])
+    ]
     assert len(mismatches) == 0, f"Confusion matrix mismatches: {mismatches}"
 
 
@@ -460,4 +463,3 @@ def test_dns_records_missing_or_timeout():
     assert res.spf_status in ("NONE", "UNKNOWN", "UNVERIFIABLE")
     assert res.dkim_status in ("NONE", "UNSIGNED", "UNVERIFIABLE")
     assert res.dmarc_status in ("NONE", "ABSENT", "UNVERIFIABLE")
-

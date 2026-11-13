@@ -32,6 +32,7 @@ DEFAULT_SQLITE_PATH = STORAGE_DIR / "forensic_platform.db"
 
 class Base(AsyncAttrs, DeclarativeBase):
     """Declarative Base class for all ORM models with async attribute support."""
+
     pass
 
 
@@ -81,12 +82,14 @@ if IS_SQLITE:
     }
 else:
     # PostgreSQL enterprise production connection pooling
-    engine_kwargs.update({
-        "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
-        "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20")),
-        "pool_pre_ping": True,
-        "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "3600")),
-    })
+    engine_kwargs.update(
+        {
+            "pool_size": int(os.getenv("DB_POOL_SIZE", "10")),
+            "max_overflow": int(os.getenv("DB_MAX_OVERFLOW", "20")),
+            "pool_pre_ping": True,
+            "pool_recycle": int(os.getenv("DB_POOL_RECYCLE", "3600")),
+        }
+    )
 
 # Global Async Engine
 engine: AsyncEngine = create_async_engine(DATABASE_URL, **engine_kwargs)
@@ -96,6 +99,7 @@ engine: AsyncEngine = create_async_engine(DATABASE_URL, **engine_kwargs)
 logger = logging.getLogger("database.session")
 
 if IS_SQLITE:
+
     @event.listens_for(engine.sync_engine, "connect")
     def _set_sqlite_pragmas(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
@@ -173,4 +177,3 @@ async def reset_database() -> None:
 async def close_database() -> None:
     """Properly dispose of database connection pools during application shutdown."""
     await engine.dispose()
-

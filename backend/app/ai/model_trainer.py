@@ -149,10 +149,40 @@ def load_full_curated_dataset() -> Tuple[List[str], List[str]]:
                     labels.append("BENIGN")
                 else:
                     # Classify threat types based on linguistic markers
-                    if any(w in text_lower for w in ["wire", "invoice", "bank transfer", "account number", "beneficiary", "rtgs", "remittance", "payment terms"]):
+                    if any(
+                        w in text_lower
+                        for w in [
+                            "wire",
+                            "invoice",
+                            "bank transfer",
+                            "account number",
+                            "beneficiary",
+                            "rtgs",
+                            "remittance",
+                            "payment terms",
+                        ]
+                    ):
                         texts.append(raw_text)
                         labels.append("BEC_FINANCIAL")
-                    elif any(w in text_lower for w in ["bitcoin", "wallet", "extortion", "lawsuit", "court", "subpoena", "police", "arrest", "fbi", "prosecution", "48 hours", "blackmail", "intake reduction", "zero admission"]):
+                    elif any(
+                        w in text_lower
+                        for w in [
+                            "bitcoin",
+                            "wallet",
+                            "extortion",
+                            "lawsuit",
+                            "court",
+                            "subpoena",
+                            "police",
+                            "arrest",
+                            "fbi",
+                            "prosecution",
+                            "48 hours",
+                            "blackmail",
+                            "intake reduction",
+                            "zero admission",
+                        ]
+                    ):
                         texts.append(raw_text)
                         labels.append("EXTORTION_COERCION")
                     else:
@@ -354,11 +384,11 @@ def generate_model_card(
     content = f"""# Forensic Model Card: Calibrated Multi-Class Email Threat Classifier
 **Smart India Hackathon 2026 | Problem Statement 26106**
 **AICTE Cyber Security Cell: AI-Powered Email Threat Detection, GeoLocation and Forensic Intelligence**
-**Execution Timestamp:** {meta['trained_at']}
-**Model Architecture:** `{meta['model_architecture']}`
-**Deterministic Seed:** `{meta['seed']}`
+**Execution Timestamp:** {meta["trained_at"]}
+**Model Architecture:** `{meta["model_architecture"]}`
+**Deterministic Seed:** `{meta["seed"]}`
 **Dataset Provenance:** Curated multi-source forensic corpus (Apache SpamAssassin easy_ham/hard_ham/spam, Jose Nazario Phishing Corpus, Enron Ham Slice, and Institutional Cyber Security Telemetry) deduplicated via 64-bit SimHash.
-**Total Corpus Samples:** {ds['total_samples']} (Train: {ds['train_samples']}, Holdout Test: {ds['holdout_test_samples']})
+**Total Corpus Samples:** {ds["total_samples"]} (Train: {ds["train_samples"]}, Holdout Test: {ds["holdout_test_samples"]})
 
 ---
 
@@ -366,15 +396,15 @@ def generate_model_card(
 
 | Evaluation Metric | Score | Verification Status |
 |---|---|---|
-| **Holdout Test Accuracy** | **{m['accuracy'] * 100:.2f}%** | **VERIFIED (Empirical on Real Corpora)** |
-| **Precision (Macro)** | **{m['precision_macro']:.4f}** | **VERIFIED** |
-| **Recall (Macro)** | **{m['recall_macro']:.4f}** | **VERIFIED** |
-| **F1-Score (Macro)** | **{m['f1_macro']:.4f}** | **VERIFIED** |
-| **F1-Score (Weighted)** | **{m['f1_weighted']:.4f}** | **VERIFIED** |
-| **ROC-AUC (One-vs-Rest Macro)** | **{m['roc_auc_ovr']:.4f}** | **VERIFIED** |
-| **PR-AUC (Average Precision Macro)** | **{m['pr_auc_ovr']:.4f}** | **VERIFIED** |
-| **False Positive Rate @ 95% Recall** | **{m['fpr_at_95_recall'] * 100:.2f}%** | **VERIFIED** |
-| **Expected Calibration Error (ECE)** | **{ece['ece_point']:.4f} (95% CI: [{ece['ece_95_ci_lower']:.4f}, {ece['ece_95_ci_upper']:.4f}])** | **VERIFIED (1,000 Bootstrap Resamples)** |
+| **Holdout Test Accuracy** | **{m["accuracy"] * 100:.2f}%** | **VERIFIED (Empirical on Real Corpora)** |
+| **Precision (Macro)** | **{m["precision_macro"]:.4f}** | **VERIFIED** |
+| **Recall (Macro)** | **{m["recall_macro"]:.4f}** | **VERIFIED** |
+| **F1-Score (Macro)** | **{m["f1_macro"]:.4f}** | **VERIFIED** |
+| **F1-Score (Weighted)** | **{m["f1_weighted"]:.4f}** | **VERIFIED** |
+| **ROC-AUC (One-vs-Rest Macro)** | **{m["roc_auc_ovr"]:.4f}** | **VERIFIED** |
+| **PR-AUC (Average Precision Macro)** | **{m["pr_auc_ovr"]:.4f}** | **VERIFIED** |
+| **False Positive Rate @ 95% Recall** | **{m["fpr_at_95_recall"] * 100:.2f}%** | **VERIFIED** |
+| **Expected Calibration Error (ECE)** | **{ece["ece_point"]:.4f} (95% CI: [{ece["ece_95_ci_lower"]:.4f}, {ece["ece_95_ci_upper"]:.4f}])** | **VERIFIED (1,000 Bootstrap Resamples)** |
 
 ---
 
@@ -415,10 +445,10 @@ if __name__ == "__main__":
     print(
         f"Model successfully trained and persisted.\n"
         f"  Total Samples:         {meta['dataset_statistics']['total_samples']}\n"
-        f"  Holdout Test Accuracy: {m['accuracy']*100:.2f}%\n"
+        f"  Holdout Test Accuracy: {m['accuracy'] * 100:.2f}%\n"
         f"  F1-Macro:              {m['f1_macro']:.4f}\n"
         f"  ROC-AUC:               {m['roc_auc_ovr']:.4f}\n"
         f"  PR-AUC:                {m['pr_auc_ovr']:.4f}\n"
         f"  ECE (10 bins):         {ece['ece_point']:.4f} (95% CI: [{ece['ece_95_ci_lower']:.4f}, {ece['ece_95_ci_upper']:.4f}])\n"
-        f"  FPR @ 95% Recall:      {m['fpr_at_95_recall']*100:.2f}%"
+        f"  FPR @ 95% Recall:      {m['fpr_at_95_recall'] * 100:.2f}%"
     )

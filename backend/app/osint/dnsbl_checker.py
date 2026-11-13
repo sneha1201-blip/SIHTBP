@@ -29,6 +29,7 @@ DEFAULT_DNSBL_ZONES = [
 
 class DNSBLListing(BaseModel):
     """Details of an individual DNSBL listing."""
+
     provider: str
     return_code: str
     description: str
@@ -36,6 +37,7 @@ class DNSBLListing(BaseModel):
 
 class DNSBLCheckResult(BaseModel):
     """Consolidated reputation evaluation across queried DNSBL zones."""
+
     ip: str
     is_listed: bool = False
     listings: List[DNSBLListing] = Field(default_factory=list)

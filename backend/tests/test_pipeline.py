@@ -57,6 +57,7 @@ def client():
 # 1. PARSER & REVERSE HOP-TRAVERSAL TESTS
 # =============================================================================
 
+
 def test_eml_parser():
     """Verify MIME parsing, header extraction, and SimHash computation."""
     parsed = parse_eml(SAMPLE_BEC_EML, filename="test_bec.eml")
@@ -91,6 +92,7 @@ def test_reverse_hop_traversal():
 # 2. PROTOCOL AUTHENTICATION & SPOOFING DETECTOR TESTS
 # =============================================================================
 
+
 def test_protocol_authentication():
     """Verify SPF, DKIM, and DMARC alignment validation both upstream claimed and cryptographically recomputed."""
     auth_header = "mx.ac.in; spf=pass smtp.mailfrom=no-reply@aicte-india.org; dkim=pass header.d=aicte-india.org header.s=k1; dmarc=pass p=reject"
@@ -106,6 +108,7 @@ def test_protocol_authentication():
 
     # Real cryptographic recomputation with signed fixture
     from backend.tests.fixtures.email_corpus import DNS_FIXTURES, build_corpus
+
     corpus = build_corpus()
     raw_bytes, meta = corpus["legit_signed_aicte.eml"]
     res = validate_protocol_authentication(
@@ -151,6 +154,7 @@ def test_spoof_detection_vip_and_homograph():
 # 3. AI BEC NLP & URL DE-OBFUSCATION TESTS
 # =============================================================================
 
+
 def test_nlp_bec_wire_fraud_detection():
     """Verify extraction of Indian banking coordinates and BEC classification."""
     body_text = (
@@ -181,6 +185,7 @@ def test_url_deobfuscation():
 # =============================================================================
 # 4. COURT-ADMISSIBLE FORENSIC PDF GENERATOR TEST
 # =============================================================================
+
 
 def test_forensic_pdf_generation():
     """Verify PDF creation under Section 63 BSA 2023 with valid ReportLab bytes."""
@@ -243,6 +248,7 @@ def test_forensic_pdf_generation():
 # =============================================================================
 # 5. REST API ENDPOINTS INTEGRATION TEST
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_api_analyze_and_report_endpoints():
@@ -368,12 +374,15 @@ async def test_pdf_report_aborts_with_409_on_vault_tamper():
 # 6. FIX 5 TESTS: PARTIAL PARSE, ZERO-SEED ISOLATION & CORPUS INGESTION
 # =============================================================================
 
+
 def test_corrupt_msg_partial_carving_no_invented_data():
     """Verify that corrupt OLE streams undergo partial ASCII carving without inventing synthetic recipients."""
     from backend.app.parsers.msg_parser import parse_msg
 
     # Corrupt binary stream simulating truncated/damaged OLE compound file
-    corrupt_ole_bytes = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 64 + b"Subject: Urgent Wire Notice\n" + b"\xFF" * 128
+    corrupt_ole_bytes = (
+        b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1" + b"\x00" * 64 + b"Subject: Urgent Wire Notice\n" + b"\xff" * 128
+    )
 
     parsed = parse_msg(corrupt_ole_bytes, filename="corrupt_invoice.msg")
 
@@ -469,20 +478,26 @@ def test_offline_verify_report_cli(tmp_path):
     expected_sha512 = hashlib.sha512(sample_content).hexdigest()
 
     # 1. Verification of authentic file must PASS
-    assert verify_evidence(
-        raw_path=evidence_file,
-        expected_sha256=expected_sha256,
-        expected_sha512=expected_sha512,
-        hmac_secret="test-hmac-secret-2026",
-    ) is True
+    assert (
+        verify_evidence(
+            raw_path=evidence_file,
+            expected_sha256=expected_sha256,
+            expected_sha512=expected_sha512,
+            hmac_secret="test-hmac-secret-2026",
+        )
+        is True
+    )
 
     # 2. Tampered hash must FAIL
     tampered_sha256 = "0" * 64
-    assert verify_evidence(
-        raw_path=evidence_file,
-        expected_sha256=tampered_sha256,
-        expected_sha512=expected_sha512,
-    ) is False
+    assert (
+        verify_evidence(
+            raw_path=evidence_file,
+            expected_sha256=tampered_sha256,
+            expected_sha512=expected_sha512,
+        )
+        is False
+    )
 
 
 def test_tamper_detection_vault_pdf_audit_chain(tmp_path):
@@ -534,4 +549,3 @@ def test_tamper_detection_vault_pdf_audit_chain(tmp_path):
         recorded_at="2026-11-12T20:00:00Z",
     )
     assert verify_hmac_signature(tampered_payload.encode("utf-8"), valid_hmac) is False
-

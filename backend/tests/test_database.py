@@ -68,12 +68,14 @@ async def test_session():
             db_path.unlink()
         except OSError as exc:
             import logging
+
             logging.getLogger("test_cleanup").debug("Temp DB unlink error: %s", exc)
 
 
 # =============================================================================
 # 1. CRYPTOGRAPHIC EVIDENCE VAULT TESTS
 # =============================================================================
+
 
 def test_hash_calculation():
     """Verify SHA-256 and MD5 hash calculations against known vectors."""
@@ -152,6 +154,7 @@ def test_hmac_signatures():
 # =============================================================================
 # 2. ORM MODELS & RELATIONSHIP TESTS
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_email_crud_and_cascade(test_session: AsyncSession, tmp_path):
@@ -272,6 +275,7 @@ async def test_email_sha256_unique_constraint(test_session: AsyncSession):
 # 3. FORENSIC SEED CASES & ATTRIBUTION TESTS
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_forensic_seeder_execution(test_session: AsyncSession):
     """Verify that seed_forensic_database seeds all 5 cases with accurate forensic parameters."""
@@ -288,9 +292,7 @@ async def test_forensic_seeder_execution(test_session: AsyncSession):
 
     # Verify Case 1 (Legitimate AICTE Circular)
     c1_stmt = (
-        select(Email)
-        .options(selectinload(Email.forensic_analysis))
-        .where(Email.subject.like("%[AICTE-OFFICIAL]%"))
+        select(Email).options(selectinload(Email.forensic_analysis)).where(Email.subject.like("%[AICTE-OFFICIAL]%"))
     )
     c1_email = (await test_session.execute(c1_stmt)).scalar_one()
     assert c1_email.forensic_analysis.verdict == "BENIGN"
@@ -355,6 +357,7 @@ async def test_forensic_seeder_execution(test_session: AsyncSession):
 # =============================================================================
 # 4. DISASTER RECOVERY & VAULT SWEEP INTEGRATION TESTS
 # =============================================================================
+
 
 def test_database_backup_and_restore_manifest(tmp_path):
     """Verify scripts/db_backup_restore.py creates valid backup and restores safely."""
@@ -443,6 +446,7 @@ def test_password_policy_and_account_lockout():
 # Hypothesis Property-Based Tests: Vault Integrity & Audit Ledger Chaining
 # =============================================================================
 
+
 @given(st.binary(min_size=1, max_size=5000))
 @hyp_settings(max_examples=30, deadline=None)
 def test_vault_integrity_property(data: bytes):
@@ -471,6 +475,7 @@ def test_vault_integrity_property(data: bytes):
 
         # Mutation tampering property: flip the first byte
         import stat
+
         target_path = Path(path_res)
         os.chmod(target_path, stat.S_IWRITE | stat.S_IREAD)
         raw_mutated = bytearray(data)
@@ -481,10 +486,15 @@ def test_vault_integrity_property(data: bytes):
         assert rep_mutated["intact"] is False
     finally:
         import shutil
+
         shutil.rmtree(temp_dir, ignore_errors=True)
 
 
-@given(st.lists(st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=3, max_size=15), min_size=2, max_size=8))
+@given(
+    st.lists(
+        st.text(alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-", min_size=3, max_size=15), min_size=2, max_size=8
+    )
+)
 @hyp_settings(max_examples=15, deadline=None)
 def test_audit_chain_tamper_detection_property(actions: list[str]):
     """Property test: arbitrary sequence of audit logs forms an unbroken hash chain.
@@ -517,7 +527,11 @@ def test_audit_chain_tamper_detection_property(actions: list[str]):
 
             # Tamper test: mutate the first record's HMAC signature
             if len(actions) > 0:
-                stmt = select(EvidenceAuditLog).order_by(EvidenceAuditLog.recorded_at.asc(), EvidenceAuditLog.id.asc()).limit(1)
+                stmt = (
+                    select(EvidenceAuditLog)
+                    .order_by(EvidenceAuditLog.recorded_at.asc(), EvidenceAuditLog.id.asc())
+                    .limit(1)
+                )
                 res = await db.execute(stmt)
                 first_rec = res.scalar_one()
                 first_rec.hmac_signature = "bad" * 21 + "f"
@@ -529,4 +543,3 @@ def test_audit_chain_tamper_detection_property(actions: list[str]):
         await engine.dispose()
 
     asyncio.run(_run())
-

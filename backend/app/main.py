@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Seed foundational RBAC accounts
     from backend.app.database.init_db import seed_default_users
     from backend.app.database.session import async_session_factory
+
     async with async_session_factory() as session:
         await seed_default_users(session)
     logger.info("Foundational RBAC user accounts verified.")
@@ -223,4 +224,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run("backend.app.main:app", host="0.0.0.0", port=8000, reload=True)
-

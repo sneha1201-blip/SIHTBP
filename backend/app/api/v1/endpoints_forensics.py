@@ -291,38 +291,43 @@ async def get_evidence_hops_geojson(
         if h.geo_lat is not None and h.geo_lon is not None:
             coord = [h.geo_lon, h.geo_lat]
             line_coordinates.append(coord)
-            features.append({
-                "type": "Feature",
-                "geometry": {
-                    "type": "Point",
-                    "coordinates": coord,
-                },
-                "properties": {
-                    "hop_order": h.hop_order,
-                    "ip": h.hop_ip,
-                    "city": h.geo_city,
-                    "country": h.geo_country,
-                    "asn": h.asn_number,
-                    "asn_org": h.asn_org,
-                    "node_type": h.node_type,
-                    "is_tor": h.is_tor,
-                    "is_vpn": h.is_vpn,
-                    "delay_seconds": h.delay_seconds,
-                },
-            })
+            features.append(
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": coord,
+                    },
+                    "properties": {
+                        "hop_order": h.hop_order,
+                        "ip": h.hop_ip,
+                        "city": h.geo_city,
+                        "country": h.geo_country,
+                        "asn": h.asn_number,
+                        "asn_org": h.asn_org,
+                        "node_type": h.node_type,
+                        "is_tor": h.is_tor,
+                        "is_vpn": h.is_vpn,
+                        "delay_seconds": h.delay_seconds,
+                    },
+                }
+            )
 
     if len(line_coordinates) >= 2:
-        features.insert(0, {
-            "type": "Feature",
-            "geometry": {
-                "type": "LineString",
-                "coordinates": line_coordinates,
+        features.insert(
+            0,
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": line_coordinates,
+                },
+                "properties": {
+                    "route_type": "MTA_TRANSIT_TRAJECTORY",
+                    "total_hops": len(hops),
+                },
             },
-            "properties": {
-                "route_type": "MTA_TRANSIT_TRAJECTORY",
-                "total_hops": len(hops),
-            },
-        })
+        )
 
     return {
         "type": "FeatureCollection",

@@ -45,6 +45,7 @@ from backend.app.osint.whois_client import (
 # 1. GeoIP Zero-Guessing Tests
 # =====================================================================
 
+
 def test_geoip_private_and_loopback_rejection():
     """Verify that private and loopback IPs strictly return null coordinates and UNRESOLVED status."""
     private_ips = ["127.0.0.1", "10.0.1.5", "192.168.1.1", "172.16.5.20", "::1", "fc00::1"]
@@ -97,6 +98,7 @@ def test_geoip_unresolved_public_ip():
 # 2. ASN Telemetry Tests
 # =====================================================================
 
+
 def test_asn_private_ip_rejection():
     """Verify private IPs return UNRESOLVED ASN with explanatory reason."""
     res = resolve_ip_asn("192.168.1.1")
@@ -138,6 +140,7 @@ def test_asn_fixture_resolution():
 # 3. Tor Exit Node & Anonymizer Tests
 # =====================================================================
 
+
 def test_tor_cache_loading_and_age(tmp_path: Path):
     """Verify loading Tor exit nodes from JSON snapshot, calculating age in hours."""
     snapshot_data = {
@@ -178,6 +181,7 @@ def test_tor_cache_loading_and_age(tmp_path: Path):
 # =====================================================================
 # 4. RFC 7483 RDAP Domain Intelligence Tests
 # =====================================================================
+
 
 def test_rdap_parse_nrd_detection():
     """Verify parsing RDAP JSON identifying Newly Registered Domain (< 30 days old)."""
@@ -243,6 +247,7 @@ async def test_rdap_unreachable_returns_unknown():
 # 5. Real-Time DNSBL Reputation Checker Tests
 # =====================================================================
 
+
 def test_dnsbl_reverse_ip_format():
     """Verify IPv4 octets are correctly reversed for DNSBL A-record queries."""
     assert reverse_ip_for_dnsbl("198.51.100.25") == "25.100.51.198"
@@ -278,6 +283,7 @@ def test_dnsbl_fixture_threat_actor_listing():
 # 6. Threat Feeds & OSINT Failure Injection Tests
 # =====================================================================
 
+
 @pytest.mark.asyncio
 async def test_threat_feed_download_version_and_lookup(tmp_path: Path):
     """Verify downloading, versioning, SHA-256 recording, and URL matching on threat feed."""
@@ -287,7 +293,9 @@ async def test_threat_feed_download_version_and_lookup(tmp_path: Path):
     feed_file.write_text("\n".join(sample_urls), encoding="utf-8")
 
     # 1. Lookup against fixture
-    lookup_hit = check_url_in_threat_feed("http://malicious-phish-bank.xyz/login", "phishtank", mock_feed_urls=sample_urls)
+    lookup_hit = check_url_in_threat_feed(
+        "http://malicious-phish-bank.xyz/login", "phishtank", mock_feed_urls=sample_urls
+    )
     assert lookup_hit["is_matched"] is True
     assert lookup_hit["feed_source"] == "FIXTURE"
 
@@ -326,4 +334,3 @@ def test_dnsbl_failure_injection_safe_degradation():
     res = query_dnsbl("203.0.113.5", timeout=0.05)
     # Even if live DNS fails or times out, it safely reports CLEAN/safe with zero crash
     assert res.status in ("CLEAN", "TIMEOUT", "UNRESOLVED")
-

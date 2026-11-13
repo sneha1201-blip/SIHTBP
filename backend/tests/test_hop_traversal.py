@@ -64,10 +64,7 @@ def test_microsoft_exchange_received_header():
 
 def test_gmail_workspace_received_header():
     """Verify parsing of Google Workspace / Gmail received header."""
-    raw = (
-        "Received: by 2002:a05:6512:3885:0:0:0:0 with SMTP id v5csp1234567lfg; "
-        "Wed, 11 Nov 2026 01:15:00 -0800 (PST)"
-    )
+    raw = "Received: by 2002:a05:6512:3885:0:0:0:0 with SMTP id v5csp1234567lfg; Wed, 11 Nov 2026 01:15:00 -0800 (PST)"
     hop = parse_received_header(raw, order=1)
 
     assert hop.mta_vendor == "Google Workspace / Gmail"
@@ -186,6 +183,7 @@ def test_forged_hop_temporal_anomaly():
 # Hypothesis Property-Based Fuzzing & 200+ Corpus Parse Stress Tests
 # =====================================================================
 
+
 @given(st.text(max_size=500))
 @hyp_settings(max_examples=100, deadline=None)
 def test_hop_parser_fuzz_arbitrary_strings(random_str: str):
@@ -260,4 +258,3 @@ def test_hop_parser_diverse_corpus_200_headers():
     # Real world corpora contain local pipe relays without public IPs; IP rate must be >= 75% and timestamps >= 95%
     assert ip_success_rate >= 75.0, f"Real header IP parse rate too low: {ip_success_rate:.2f}%"
     assert ts_success_rate >= 95.0, f"Timestamp parse rate too low: {ts_success_rate:.2f}%"
-

@@ -38,6 +38,7 @@ from backend.app.forensics.spoof_detector import (
 # 1. AI/NLP Machine Learning Intent Classification Tests
 # =====================================================================
 
+
 def test_model_pipeline_loaded():
     """Verify trained AI model pipeline is active with expected classes."""
     model = get_or_load_model()
@@ -167,6 +168,7 @@ def test_unseen_real_world_emails_no_false_positives():
 # 2. Advanced Spoofing & Confusable Homograph Tests
 # =====================================================================
 
+
 def test_confusable_skeleton_normalization():
     """Verify Unicode confusable character translation to ASCII."""
     # Cyrillic 'а' (U+0430) and 'е' (U+0435) and 'о' (U+043E)
@@ -222,6 +224,7 @@ def test_cousin_domain_levenshtein():
 # 3. URL De-obfuscation & Defanging Tests
 # =====================================================================
 
+
 def test_defanged_url_normalization():
     """Verify normalization of defanged URL schemes and bracketed dots."""
     assert normalize_defanged_url("hxxp://evil[.]com/login") == "http://evil.com/login"
@@ -257,6 +260,7 @@ def test_url_analyzer_with_nrd_and_payload():
 # =====================================================================
 # 4. Composite Threat Scorer & Hard Overrides Tests
 # =====================================================================
+
 
 def test_dkim_fail_plus_high_risk_url_hard_override():
     """Verify DKIM FAIL + high-risk URL triggers automatic PHISHING override."""
@@ -319,6 +323,7 @@ def test_tor_origin_hard_override():
 # =====================================================================
 # 5. Attachment Analysis, SSRF, & Adversarial Robustness Tests
 # =====================================================================
+
 
 def test_attachment_analyzer_double_extension():
     """Verify double extension evasion detection."""
@@ -461,5 +466,3 @@ def test_blind_evaluation_runner(tmp_path):
     assert res["labeled_samples"] == 1
     assert res["correct_predictions"] == 1
     assert res["accuracy"] == 1.0
-
-

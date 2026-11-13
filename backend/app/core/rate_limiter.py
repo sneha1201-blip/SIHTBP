@@ -70,4 +70,3 @@ limiter = InMemoryTokenBucketLimiter(rate_per_minute=settings.RATE_LIMIT_PER_MIN
 async def rate_limit_guard(request: Request) -> None:
     """FastAPI dependency injecting rate-limiting verification."""
     await limiter.check(request)
-

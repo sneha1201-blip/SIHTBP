@@ -36,18 +36,44 @@ CONFUSABLE_MAP: Dict[str, str] = {
     "\u043d": "h",  # Cyrillic en
     "\u043a": "k",  # Cyrillic ka
     # Cyrillic capital letters
-    "\u0410": "A", "\u0412": "B", "\u0421": "C", "\u0415": "E", "\u041d": "H",
-    "\u0406": "I", "\u041a": "K", "\u041c": "M", "\u041e": "O", "\u0420": "P",
-    "\u0422": "T", "\u0425": "X", "\u0423": "Y",
+    "\u0410": "A",
+    "\u0412": "B",
+    "\u0421": "C",
+    "\u0415": "E",
+    "\u041d": "H",
+    "\u0406": "I",
+    "\u041a": "K",
+    "\u041c": "M",
+    "\u041e": "O",
+    "\u0420": "P",
+    "\u0422": "T",
+    "\u0425": "X",
+    "\u0423": "Y",
     # Greek
-    "\u03b1": "a", "\u03bf": "o", "\u03c1": "p", "\u03c5": "u", "\u03bd": "v", "\u03ba": "k",
-    "\u0391": "A", "\u0392": "B", "\u0395": "E", "\u0397": "H", "\u0399": "I", "\u039a": "K",
-    "\u039c": "M", "\u039d": "N", "\u039f": "O", "\u03a1": "P", "\u03a4": "T", "\u03a7": "X",
+    "\u03b1": "a",
+    "\u03bf": "o",
+    "\u03c1": "p",
+    "\u03c5": "u",
+    "\u03bd": "v",
+    "\u03ba": "k",
+    "\u0391": "A",
+    "\u0392": "B",
+    "\u0395": "E",
+    "\u0397": "H",
+    "\u0399": "I",
+    "\u039a": "K",
+    "\u039c": "M",
+    "\u039d": "N",
+    "\u039f": "O",
+    "\u03a1": "P",
+    "\u03a4": "T",
+    "\u03a7": "X",
 }
 
 
 class SpoofDetectionResult(BaseModel):
     """Forensic evaluation of spoofing, impersonation, and homographs."""
+
     display_spoof_flag: bool = False
     lookalike_flag: bool = False
     homograph_flag: bool = False
@@ -228,9 +254,7 @@ def detect_spoofing(
     is_lookalike, target_prot = check_cousin_domain(sender_domain, prot_domains)
     if is_lookalike and not is_homograph:
         spoof_score += 35.0
-        reasons.append(
-            f"Lookalike cousin domain detected: '{sender_domain}' mimics protected domain '{target_prot}'"
-        )
+        reasons.append(f"Lookalike cousin domain detected: '{sender_domain}' mimics protected domain '{target_prot}'")
 
     spoof_score = min(100.0, spoof_score)
 

@@ -167,16 +167,8 @@ def evaluate_pairwise_signals(
             scores.append(0.95)
             has_attribution_match = True
 
-    dom1 = (
-        email.sender_email.split("@")[-1].lower()
-        if email.sender_email and "@" in email.sender_email
-        else ""
-    )
-    dom2 = (
-        prev.sender_email.split("@")[-1].lower()
-        if prev.sender_email and "@" in prev.sender_email
-        else ""
-    )
+    dom1 = email.sender_email.split("@")[-1].lower() if email.sender_email and "@" in email.sender_email else ""
+    dom2 = prev.sender_email.split("@")[-1].lower() if prev.sender_email and "@" in prev.sender_email else ""
     if dom1 and dom2 and dom1 == dom2:
         if dom1 not in settings.PUBLIC_MAIL_DOMAINS:
             signals.append(f"Shared threat actor sender domain: {dom1}")
@@ -207,14 +199,16 @@ async def cluster_email_dynamically(
         candidate_iocs = extract_email_ioc_values(email)
 
     # 1. Inspect existing active campaigns
-    camp_stmt = select(Campaign).options(
-        selectinload(Campaign.email_associations)
-        .selectinload(CampaignEmail.email)
-        .selectinload(Email.header_hops),
-        selectinload(Campaign.email_associations)
-        .selectinload(CampaignEmail.email)
-        .selectinload(Email.threat_indicators),
-    ).order_by(Campaign.last_seen.desc())
+    camp_stmt = (
+        select(Campaign)
+        .options(
+            selectinload(Campaign.email_associations).selectinload(CampaignEmail.email).selectinload(Email.header_hops),
+            selectinload(Campaign.email_associations)
+            .selectinload(CampaignEmail.email)
+            .selectinload(Email.threat_indicators),
+        )
+        .order_by(Campaign.last_seen.desc())
+    )
     camp_res = await db.execute(camp_stmt)
     existing_campaigns = camp_res.scalars().all()
 
@@ -415,102 +409,118 @@ def generate_stix21_bundle(
 
     # 1. Threat Actor SDO
     actor_id = f"threat-actor--{uuid.uuid4()}"
-    objects.append({
-        "type": "threat-actor",
-        "spec_version": "2.1",
-        "id": actor_id,
-        "created": now_str,
-        "modified": now_str,
-        "name": f"Actor Group ({campaign.name})",
-        "threat_actor_types": ["cybercriminal"],
-        "sophistication": "intermediate",
-        "resource_level": "organization",
-        "primary_motivation": "financial-gain",
-    })
+    objects.append(
+        {
+            "type": "threat-actor",
+            "spec_version": "2.1",
+            "id": actor_id,
+            "created": now_str,
+            "modified": now_str,
+            "name": f"Actor Group ({campaign.name})",
+            "threat_actor_types": ["cybercriminal"],
+            "sophistication": "intermediate",
+            "resource_level": "organization",
+            "primary_motivation": "financial-gain",
+        }
+    )
 
     # 2. Campaign SDO
     camp_id = f"campaign--{campaign.id}"
-    objects.append({
-        "type": "campaign",
-        "spec_version": "2.1",
-        "id": camp_id,
-        "created": ensure_utc(campaign.first_seen).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "modified": ensure_utc(campaign.last_seen).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-        "name": campaign.name,
-        "description": campaign.description or "Automated cyber threat campaign",
-        "objective": "Targeted Spear Phishing & BEC Remittance Fraud",
-    })
+    objects.append(
+        {
+            "type": "campaign",
+            "spec_version": "2.1",
+            "id": camp_id,
+            "created": ensure_utc(campaign.first_seen).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            "modified": ensure_utc(campaign.last_seen).strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+            "name": campaign.name,
+            "description": campaign.description or "Automated cyber threat campaign",
+            "objective": "Targeted Spear Phishing & BEC Remittance Fraud",
+        }
+    )
 
     # SRO: Threat Actor -> Campaign
-    objects.append({
-        "type": "relationship",
-        "spec_version": "2.1",
-        "id": f"relationship--{uuid.uuid4()}",
-        "created": now_str,
-        "modified": now_str,
-        "relationship_type": "attributed-to",
-        "source_ref": camp_id,
-        "target_ref": actor_id,
-    })
-
-    # 3. Observables & Indicators per Email
-    for em in emails:
-        # Create Email Address SCO for Sender
-        sender_email_val = em.sender_email or "unknown@domain.local"
-        sender_addr_id = f"email-addr--{uuid.uuid5(uuid.NAMESPACE_DNS, sender_email_val)}"
-        objects.append({
-            "type": "email-addr",
-            "spec_version": "2.1",
-            "id": sender_addr_id,
-            "value": sender_email_val,
-        })
-
-        # Email Message SCO (STIX 2.1 SCO does not contain created/modified)
-        em_msg_id = f"email-message--{uuid.uuid4()}"
-        objects.append({
-            "type": "email-message",
-            "spec_version": "2.1",
-            "id": em_msg_id,
-            "is_multipart": False,
-            "subject": em.subject or "Threat Email",
-            "from_ref": sender_addr_id,
-            "body": em.body_plain[:500] if em.body_plain else "",
-        })
-
-        # SRO: Email -> Campaign
-        objects.append({
+    objects.append(
+        {
             "type": "relationship",
             "spec_version": "2.1",
             "id": f"relationship--{uuid.uuid4()}",
             "created": now_str,
             "modified": now_str,
             "relationship_type": "attributed-to",
-            "source_ref": em_msg_id,
-            "target_ref": camp_id,
-        })
+            "source_ref": camp_id,
+            "target_ref": actor_id,
+        }
+    )
+
+    # 3. Observables & Indicators per Email
+    for em in emails:
+        # Create Email Address SCO for Sender
+        sender_email_val = em.sender_email or "unknown@domain.local"
+        sender_addr_id = f"email-addr--{uuid.uuid5(uuid.NAMESPACE_DNS, sender_email_val)}"
+        objects.append(
+            {
+                "type": "email-addr",
+                "spec_version": "2.1",
+                "id": sender_addr_id,
+                "value": sender_email_val,
+            }
+        )
+
+        # Email Message SCO (STIX 2.1 SCO does not contain created/modified)
+        em_msg_id = f"email-message--{uuid.uuid4()}"
+        objects.append(
+            {
+                "type": "email-message",
+                "spec_version": "2.1",
+                "id": em_msg_id,
+                "is_multipart": False,
+                "subject": em.subject or "Threat Email",
+                "from_ref": sender_addr_id,
+                "body": em.body_plain[:500] if em.body_plain else "",
+            }
+        )
+
+        # SRO: Email -> Campaign
+        objects.append(
+            {
+                "type": "relationship",
+                "spec_version": "2.1",
+                "id": f"relationship--{uuid.uuid4()}",
+                "created": now_str,
+                "modified": now_str,
+                "relationship_type": "attributed-to",
+                "source_ref": em_msg_id,
+                "target_ref": camp_id,
+            }
+        )
 
         # Infrastructure IPs (SCO)
         for h in em.header_hops:
             if h.hop_ip and (h.hop_order == 1 or h.is_tor or h.is_datacenter):
                 ip_type = "ipv6-addr" if ":" in h.hop_ip else "ipv4-addr"
                 ip_sco_id = f"{ip_type}--{uuid.uuid5(uuid.NAMESPACE_DNS, h.hop_ip)}"
-                objects.append({
-                    "type": ip_type,
-                    "spec_version": "2.1",
-                    "id": ip_sco_id,
-                    "value": h.hop_ip,
-                })
+                objects.append(
+                    {
+                        "type": ip_type,
+                        "spec_version": "2.1",
+                        "id": ip_sco_id,
+                        "value": h.hop_ip,
+                    }
+                )
                 # Relationship: Campaign uses Infrastructure IP
-                objects.append({
-                    "type": "relationship",
-                    "spec_version": "2.1",
-                    "id": f"relationship--{uuid.uuid4()}",
-                    "created": now_str,
-                    "modified": now_str,
-                    "relationship_type": "uses",
-                    "source_ref": camp_id,
-                    "target_ref": ip_sco_id,
-                })
+                objects.append(
+                    {
+                        "type": "relationship",
+                        "spec_version": "2.1",
+                        "id": f"relationship--{uuid.uuid4()}",
+                        "created": now_str,
+                        "modified": now_str,
+                        "relationship_type": "uses",
+                        "source_ref": camp_id,
+                        "target_ref": ip_sco_id,
+                    }
+                )
 
         # Indicators (SDO)
         for ioc in em.threat_indicators:
@@ -526,28 +536,32 @@ def generate_stix21_bundle(
 
             if pattern:
                 ind_id = f"indicator--{uuid.uuid4()}"
-                objects.append({
-                    "type": "indicator",
-                    "spec_version": "2.1",
-                    "id": ind_id,
-                    "created": now_str,
-                    "modified": now_str,
-                    "name": f"Indicator: {ioc.ioc_value[:32]}",
-                    "pattern": pattern,
-                    "pattern_type": "stix",
-                    "valid_from": now_str,
-                    "indicator_types": ["malicious-activity"],
-                })
-                objects.append({
-                    "type": "relationship",
-                    "spec_version": "2.1",
-                    "id": f"relationship--{uuid.uuid4()}",
-                    "created": now_str,
-                    "modified": now_str,
-                    "relationship_type": "indicates",
-                    "source_ref": ind_id,
-                    "target_ref": camp_id,
-                })
+                objects.append(
+                    {
+                        "type": "indicator",
+                        "spec_version": "2.1",
+                        "id": ind_id,
+                        "created": now_str,
+                        "modified": now_str,
+                        "name": f"Indicator: {ioc.ioc_value[:32]}",
+                        "pattern": pattern,
+                        "pattern_type": "stix",
+                        "valid_from": now_str,
+                        "indicator_types": ["malicious-activity"],
+                    }
+                )
+                objects.append(
+                    {
+                        "type": "relationship",
+                        "spec_version": "2.1",
+                        "id": f"relationship--{uuid.uuid4()}",
+                        "created": now_str,
+                        "modified": now_str,
+                        "relationship_type": "indicates",
+                        "source_ref": ind_id,
+                        "target_ref": camp_id,
+                    }
+                )
 
     return {
         "type": "bundle",

@@ -71,21 +71,15 @@ DNS_FIXTURES: Dict[str, List[str]] = {
     f"{SELECTOR}._domainkey.{PRIMARY_DOMAIN}": [f"v=DKIM1; k=rsa; p={_pub_b64}"],
     PRIMARY_DOMAIN: [f"v=spf1 ip4:{CONNECTING_IP} -all"],
     f"_dmarc.{PRIMARY_DOMAIN}": ["v=DMARC1; p=reject; aspf=r; adkim=r; pct=100"],
-
     # Attacker Keys & Policies
     f"badsel._domainkey.{ATTACKER_DOMAIN}": [f"v=DKIM1; k=rsa; p={_attacker_b64}"],
     ATTACKER_DOMAIN: [f"v=spf1 ip4:{UNAUTHORIZED_IP} -all"],
     f"_dmarc.{ATTACKER_DOMAIN}": ["v=DMARC1; p=none"],
-
     # Revoked Key Record (p= tag is empty per RFC 6376 Section 6.1.2)
     f"revoked._domainkey.{PRIMARY_DOMAIN}": ["v=DKIM1; k=rsa; p="],
-
     # SPF PermError with 12 nested includes (exceeding 10-lookup limit)
-    "spf-overflow.org": [
-        "v=spf1 " + " ".join([f"include:sub{i}.spf-overflow.org" for i in range(12)]) + " -all"
-    ],
+    "spf-overflow.org": ["v=spf1 " + " ".join([f"include:sub{i}.spf-overflow.org" for i in range(12)]) + " -all"],
     "_dmarc.spf-overflow.org": ["v=DMARC1; p=reject; aspf=r; adkim=r"],
-
     # Victim Domain for Upstream Forgery Testing
     "victim.gov.in": [f"v=spf1 ip4:{CONNECTING_IP} -all"],
     "_dmarc.victim.gov.in": ["v=DMARC1; p=reject; aspf=r; adkim=r"],
@@ -133,11 +127,15 @@ def build_corpus() -> Dict[str, Tuple[bytes, Dict[str, Any]]]:
     )
 
     # 2. Tampered Body (DKIM body hash mismatch)
-    eml_tampered_body = sig_authentic + base_headers + (
-        b"\r\n"
-        b"Dear Institutional Head,\r\n\r\n"
-        b"CRITICAL: Transfer institutional funds to account 9876543210 immediately!\r\n"
-        b"Regards,\r\nAICTE Cyber Security Cell\r\n"
+    eml_tampered_body = (
+        sig_authentic
+        + base_headers
+        + (
+            b"\r\n"
+            b"Dear Institutional Head,\r\n\r\n"
+            b"CRITICAL: Transfer institutional funds to account 9876543210 immediately!\r\n"
+            b"Regards,\r\nAICTE Cyber Security Cell\r\n"
+        )
     )
     corpus["tampered_body.eml"] = (
         eml_tampered_body,
@@ -266,7 +264,9 @@ def build_corpus() -> Dict[str, Tuple[bytes, Dict[str, Any]]]:
         _priv_pem,
         length=True,
     )
-    injected_payload = b"\r\n\r\n[MALICIOUS INJECTION]: Click here immediately to avoid suspension: http://evil-phish.net\r\n"
+    injected_payload = (
+        b"\r\n\r\n[MALICIOUS INJECTION]: Click here immediately to avoid suspension: http://evil-phish.net\r\n"
+    )
     corpus["l_tag_abuse_injected.eml"] = (
         sig_l_tag + raw_authentic + injected_payload,
         {

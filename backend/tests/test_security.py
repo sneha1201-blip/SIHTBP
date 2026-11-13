@@ -64,6 +64,7 @@ async def sec_session() -> AsyncGenerator[AsyncSession, None]:
             db_path.unlink()
         except OSError as exc:
             import logging
+
             logging.getLogger("test_cleanup").debug("Temp DB unlink error: %s", exc)
 
 
@@ -80,6 +81,7 @@ def auditor_token() -> str:
 # =============================================================================
 # 1. INPUT VALIDATION & STREAMING CAP TESTS (P0/P1)
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_oversize_upload_rejected(analyst_token: str, monkeypatch):
@@ -145,6 +147,7 @@ def test_filename_sanitization_path_traversal():
 # 2. AUTHENTICATION & RBAC ROLE TESTS (P0/P1)
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_unauthenticated_access_rejected_with_401():
     """Verify all protected API routes reject unauthenticated requests with HTTP 401."""
@@ -208,6 +211,7 @@ def test_argon2_password_hashing():
 # 3. HASH-CHAINED AUDIT LOG & TAMPER DETECTION TESTS (P0)
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_tampered_audit_log_chain_detection(sec_session: AsyncSession):
     """Verify hash-chained audit log successfully detects modified records or broken links."""
@@ -261,12 +265,12 @@ async def test_tampered_audit_log_chain_detection(sec_session: AsyncSession):
 # 4. PROTOCOL & RATE LIMITING DEFENSE TESTS
 # =============================================================================
 
+
 def test_forged_dkim_header_validation():
     """Verify protocol validation safely catches forged or invalid DKIM headers."""
     headers = {
         "dkim-signature": [
-            "v=1; a=rsa-sha256; c=relaxed/relaxed; d=spoofed-domain.gov; s=badkey; "
-            "bh=fakehash==; b=forgedsignature=="
+            "v=1; a=rsa-sha256; c=relaxed/relaxed; d=spoofed-domain.gov; s=badkey; bh=fakehash==; b=forgedsignature=="
         ],
         "received": ["from mail.spoofer.net (198.51.100.1) by mx.target.edu; Mon, 02 Nov 2026 10:00:00 +0000"],
     }
@@ -303,6 +307,7 @@ async def test_rate_limiter_denies_flood():
 # =============================================================================
 # 5. DOCKER & STARTUP MANDATORY SECRET ENFORCEMENT
 # =============================================================================
+
 
 def test_startup_refusal_when_secrets_missing():
     """Verify application startup is strictly aborted when mandatory secrets are missing outside DEBUG."""
@@ -385,6 +390,7 @@ async def test_first_user_bootstrap_from_env_vars():
             assert admin_user.is_active is True
 
             from backend.app.core.security import verify_password
+
             assert verify_password("StrongBootstrapPassword#2026", admin_user.password_hash)
 
         await engine.dispose()
@@ -530,4 +536,3 @@ async def test_vault_integrity_sweep_endpoint():
         assert "verified" in body
         assert "corrupted" in body
         assert "integrity_rate_pct" in body
-

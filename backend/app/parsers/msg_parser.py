@@ -25,9 +25,7 @@ from backend.app.parsers.mime_normalizer import (
 logger = logging.getLogger("msg_parser")
 
 
-def carve_partial_msg_stream(
-    raw_bytes: bytes, filename: str, sha256_hash: str, md5_hash: str
-) -> ParsedEmailData:
+def carve_partial_msg_stream(raw_bytes: bytes, filename: str, sha256_hash: str, md5_hash: str) -> ParsedEmailData:
     """Best-effort ASCII carving from corrupted OLE streams.
 
     Flags the forensic parsing status as 'PARTIAL_PARSE_CORRUPT_OLE_STREAM' and records
@@ -54,7 +52,7 @@ def carve_partial_msg_stream(
     if sender_raw:
         if "<" in sender_raw and ">" in sender_raw:
             parts = sender_raw.split("<")
-            sender_display = parts[0].strip(' "\'')
+            sender_display = parts[0].strip(" \"'")
             sender_email = parts[1].split(">")[0].strip().lower()
         else:
             sender_email = sender_raw.strip().lower()
@@ -113,6 +111,7 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
     # Tier 1: extract_msg library
     try:
         import extract_msg
+
         msg = extract_msg.Message(io.BytesIO(raw_bytes))
 
         subject = msg.subject or ""
@@ -121,7 +120,7 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
         sender_display = None
         if "<" in sender_raw and ">" in sender_raw:
             parts = sender_raw.split("<")
-            sender_display = parts[0].strip(' "\'')
+            sender_display = parts[0].strip(" \"'")
             sender_email = parts[1].split(">")[0].strip().lower()
         else:
             sender_email = sender_raw.strip().lower()
@@ -134,9 +133,17 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
 
         date_header = msg.date
         raw_body = msg.body
-        body_plain: Optional[str] = raw_body.decode("utf-8", errors="replace") if isinstance(raw_body, bytes) else (str(raw_body) if raw_body is not None else None)
+        body_plain: Optional[str] = (
+            raw_body.decode("utf-8", errors="replace")
+            if isinstance(raw_body, bytes)
+            else (str(raw_body) if raw_body is not None else None)
+        )
         raw_html = msg.htmlBody
-        body_html: Optional[str] = raw_html.decode("utf-8", errors="replace") if isinstance(raw_html, bytes) else (str(raw_html) if raw_html is not None else None)
+        body_html: Optional[str] = (
+            raw_html.decode("utf-8", errors="replace")
+            if isinstance(raw_html, bytes)
+            else (str(raw_html) if raw_html is not None else None)
+        )
 
         # Received headers
         received_headers: list[str] = []
@@ -195,6 +202,7 @@ def parse_msg(raw_bytes: bytes, filename: str = "evidence.msg") -> ParsedEmailDa
     # Tier 2: EML parser (in case file is RFC 822 ASCII mislabeled as .msg)
     try:
         from backend.app.parsers.eml_parser import parse_eml
+
         eml_candidate = parse_eml(raw_bytes, filename=filename)
         if eml_candidate.headers_dict or eml_candidate.received_headers or eml_candidate.sender_email:
             return eml_candidate

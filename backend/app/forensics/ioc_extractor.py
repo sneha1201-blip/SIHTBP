@@ -19,10 +19,11 @@ logger = logging.getLogger("ioc_extractor")
 
 class ExtractedIOC(BaseModel):
     """Normalized Indicator of Compromise."""
-    ioc_type: str         # URL, DOMAIN, IP, HASH, EMAIL_ADDR
+
+    ioc_type: str  # URL, DOMAIN, IP, HASH, EMAIL_ADDR
     raw_value: str
     defanged_value: str
-    context: str          # EMAIL_BODY, HTML_HREF, ATTACHMENT, SENDER, HEADER
+    context: str  # EMAIL_BODY, HTML_HREF, ATTACHMENT, SENDER, HEADER
     is_defanged: bool = True
     metadata: dict = {}
 
@@ -35,12 +36,8 @@ URL_REGEX = re.compile(
 IPV4_REGEX = re.compile(
     r"\b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\b"
 )
-DOMAIN_REGEX = re.compile(
-    r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b"
-)
-EMAIL_REGEX = re.compile(
-    r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
-)
+DOMAIN_REGEX = re.compile(r"\b(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}\b")
+EMAIL_REGEX = re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b")
 
 
 def defang_ioc(val: str, ioc_type: str) -> str:
@@ -185,4 +182,3 @@ def extract_iocs(
         )
 
     return iocs
-

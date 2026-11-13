@@ -35,9 +35,16 @@ def get_protected_brands() -> List[str]:
         except Exception as exc:
             logger.debug("Failed loading protected_brands.json: %s", exc)
     return [
-        "aicte-india.org", "gov.in", "nic.in", "microsoft.com",
-        "google.com", "apple.com", "amazon.com", "sbi.co.in",
-        "hdfcbank.com", "paypal.com",
+        "aicte-india.org",
+        "gov.in",
+        "nic.in",
+        "microsoft.com",
+        "google.com",
+        "apple.com",
+        "amazon.com",
+        "sbi.co.in",
+        "hdfcbank.com",
+        "paypal.com",
     ]
 
 
@@ -57,6 +64,7 @@ def is_ssrf_forbidden_host(host_str: str) -> tuple[bool, Optional[str]]:
 
 class RedirectHop(BaseModel):
     """An individual hop in an HTTP redirect chain."""
+
     step: int
     url: str
     status_code: int
@@ -65,6 +73,7 @@ class RedirectHop(BaseModel):
 
 class URLAnalysisResult(BaseModel):
     """Detailed forensic analysis of an individual URL."""
+
     raw_url: str
     normalized_url: str
     domain: str
@@ -81,19 +90,56 @@ class URLAnalysisResult(BaseModel):
 
 
 CREDENTIAL_KEYWORDS = [
-    "login", "signin", "auth", "verify", "verification", "password",
-    "credential", "account", "update", "portal", "token", "session",
-    "secure", "banking", "wallet", "biometric", "rectification",
-    "reauth", "sso-login", "passcode", "validate",
+    "login",
+    "signin",
+    "auth",
+    "verify",
+    "verification",
+    "password",
+    "credential",
+    "account",
+    "update",
+    "portal",
+    "token",
+    "session",
+    "secure",
+    "banking",
+    "wallet",
+    "biometric",
+    "rectification",
+    "reauth",
+    "sso-login",
+    "passcode",
+    "validate",
 ]
 
 HOSTILE_TLDS = [
-    ".ru", ".top", ".xyz", ".live", ".work", ".click", ".su",
-    ".tk", ".ml", ".ga", ".cf", ".gq", ".buzz", ".monster",
+    ".ru",
+    ".top",
+    ".xyz",
+    ".live",
+    ".work",
+    ".click",
+    ".su",
+    ".tk",
+    ".ml",
+    ".ga",
+    ".cf",
+    ".gq",
+    ".buzz",
+    ".monster",
 ]
 
 DANGEROUS_PAYLOAD_EXTS = [
-    ".exe", ".xlsm", ".docm", ".scr", ".zip", ".iso", ".vbs", ".hta", ".bat",
+    ".exe",
+    ".xlsm",
+    ".docm",
+    ".scr",
+    ".zip",
+    ".iso",
+    ".vbs",
+    ".hta",
+    ".bat",
 ]
 
 
@@ -139,7 +185,9 @@ def normalize_defanged_url(url_str: str) -> str:
     """Normalize defanged URL formatting into standard RFC 3986 format."""
     clean = url_str.strip()
     clean = re.sub(r"^hxxps?://", lambda m: "https://" if "s" in m.group(0) else "http://", clean, flags=re.IGNORECASE)
-    clean = re.sub(r"^h[\*]{2}ps?://", lambda m: "https://" if "s" in m.group(0) else "http://", clean, flags=re.IGNORECASE)
+    clean = re.sub(
+        r"^h[\*]{2}ps?://", lambda m: "https://" if "s" in m.group(0) else "http://", clean, flags=re.IGNORECASE
+    )
     clean = clean.replace("[.]", ".").replace("(.)", ".").replace("[:]", ":")
     clean = clean.replace("[//]", "//")
     return clean

@@ -26,6 +26,7 @@ logger = logging.getLogger("geo_resolver")
 
 class GeoLocation(BaseModel):
     """Geographical coordinates and precision metadata for an IP address."""
+
     ip: str
     country: Optional[str] = None
     city: Optional[str] = None
@@ -101,8 +102,16 @@ def resolve_ip_geo(
         entry = custom_geo_db[clean_ip]
         lat = entry.get("latitude") if entry.get("latitude") is not None else entry.get("lat")
         lon = entry.get("longitude") if entry.get("longitude") is not None else entry.get("lon")
-        radius = entry.get("accuracy_radius_km") if entry.get("accuracy_radius_km") is not None else entry.get("accuracy_radius", 20)
-        b_date = entry.get("db_build_date") if entry.get("db_build_date") is not None else entry.get("build_date", "2026-11-01T00:00:00Z")
+        radius = (
+            entry.get("accuracy_radius_km")
+            if entry.get("accuracy_radius_km") is not None
+            else entry.get("accuracy_radius", 20)
+        )
+        b_date = (
+            entry.get("db_build_date")
+            if entry.get("db_build_date") is not None
+            else entry.get("build_date", "2026-11-01T00:00:00Z")
+        )
         return GeoLocation(
             ip=clean_ip,
             country=entry.get("country"),

@@ -19,9 +19,12 @@ from backend.app.forensics.spoof_detector import SpoofDetectionResult
 
 class CompositeThreatScore(BaseModel):
     """Unified composite forensic score, categorical verdict, and explainability report."""
+
     threat_score: float
     verdict: str  # BENIGN, SUSPICIOUS, PHISHING, BEC, MALICIOUS, UNCERTAIN
-    ps_verdict: str = "legitimate"  # Official PS 26106 5-class verdict: legitimate, suspicious, impersonated, phishing, fraud-related
+    ps_verdict: str = (
+        "legitimate"  # Official PS 26106 5-class verdict: legitimate, suspicious, impersonated, phishing, fraud-related
+    )
     is_uncertain: bool = False
     score_breakdown: Dict[str, Any]
     reasons: List[str]
@@ -131,7 +134,9 @@ def compute_threat_score(
     if not critical_override and 35.0 <= final_score <= 50.0 and nlp_res.confidence < 0.45:
         is_uncertain = True
         verdict = "UNCERTAIN"
-        reasons.append("Verdict UNCERTAIN: Intermediate threat score with low model posterior confidence; analyst triage recommended")
+        reasons.append(
+            "Verdict UNCERTAIN: Intermediate threat score with low model posterior confidence; analyst triage recommended"
+        )
     elif spoof_res.display_spoof_flag and nlp_res.is_bec_financial:
         verdict = "BEC"
     elif auth_res.dkim_status in ("FAIL", "INVALID", "BODY_HASH_MISMATCH") and url_subscore >= 50.0:
@@ -201,4 +206,3 @@ def compute_threat_score(
         score_breakdown=score_breakdown,
         reasons=reasons,
     )
-

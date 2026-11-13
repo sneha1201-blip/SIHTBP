@@ -190,27 +190,29 @@ async def execute_forensic_pipeline(
             if is_bp:
                 is_bulletproof_origin = True
 
-        enriched_hops.append({
-            "hop_order": hop.hop_order,
-            "by_mta": hop.by_mta,
-            "from_mta": hop.from_mta,
-            "hop_ip": hop.hop_ip,
-            "is_private_ip": hop.is_private_ip,
-            "is_reliable": hop.is_reliable,
-            "protocol": hop.protocol,
-            "hop_timestamp": hop.timestamp,
-            "delay_seconds": hop.delay_seconds,
-            "geo_country": geo.country,
-            "geo_city": geo.city,
-            "geo_lat": geo.latitude,
-            "geo_lon": geo.longitude,
-            "asn_number": asn.asn_number,
-            "asn_org": asn.asn_org,
-            "node_type": hop.node_type,
-            "is_tor": is_tor,
-            "is_vpn": is_vpn,
-            "is_datacenter": asn.is_datacenter,
-        })
+        enriched_hops.append(
+            {
+                "hop_order": hop.hop_order,
+                "by_mta": hop.by_mta,
+                "from_mta": hop.from_mta,
+                "hop_ip": hop.hop_ip,
+                "is_private_ip": hop.is_private_ip,
+                "is_reliable": hop.is_reliable,
+                "protocol": hop.protocol,
+                "hop_timestamp": hop.timestamp,
+                "delay_seconds": hop.delay_seconds,
+                "geo_country": geo.country,
+                "geo_city": geo.city,
+                "geo_lat": geo.latitude,
+                "geo_lon": geo.longitude,
+                "asn_number": asn.asn_number,
+                "asn_org": asn.asn_org,
+                "node_type": hop.node_type,
+                "is_tor": is_tor,
+                "is_vpn": is_vpn,
+                "is_datacenter": asn.is_datacenter,
+            }
+        )
 
     # 5. Protocol Authentication (SPF/DKIM/DMARC/ARC)
     if job:

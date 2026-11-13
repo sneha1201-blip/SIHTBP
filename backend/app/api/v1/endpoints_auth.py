@@ -201,6 +201,7 @@ async def update_user_status(
 ) -> Dict[str, Any]:
     """Enable or disable a user account (Requires ADMIN role)."""
     import uuid as _uuid
+
     try:
         u_uuid = _uuid.UUID(user_id)
     except ValueError:

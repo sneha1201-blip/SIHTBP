@@ -31,6 +31,7 @@ CACHE_TTL_SECONDS = 86400  # 24 hours
 
 class DomainIntel(BaseModel):
     """Authoritative RDAP telemetry for an internet domain."""
+
     domain: str
     domain_age_days: Optional[int] = None
     registrar: Optional[str] = None

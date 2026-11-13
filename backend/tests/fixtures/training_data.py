@@ -240,7 +240,6 @@ BENCHMARK_SAMPLES: List[Tuple[str, str]] = [
         "The computing center has renewed the institutional network license for MathWorks tools. Follow the standard intranet guide to update your local license file.",
         "BENIGN",
     ),
-
     # =========================================================================
     # 2. PHISHING & CREDENTIAL HARVESTING SAMPLES
     # =========================================================================
@@ -434,7 +433,6 @@ BENCHMARK_SAMPLES: List[Tuple[str, str]] = [
         "To prevent loss of portal access during counseling rounds, re-verify your password here: http://aicte-approval-verify.site/sso",
         "PHISHING",
     ),
-
     # =========================================================================
     # 3. BEC & FINANCIAL FRAUD SAMPLES (Wire Scams, Account Diversions)
     # =========================================================================
@@ -594,7 +592,6 @@ BENCHMARK_SAMPLES: List[Tuple[str, str]] = [
         "Wire funds to Account: 44019283741, IFSC: BARB0000412.",
         "BEC_FINANCIAL",
     ),
-
     # =========================================================================
     # 4. EXTORTION & REGULATORY COERCION SAMPLES
     # =========================================================================

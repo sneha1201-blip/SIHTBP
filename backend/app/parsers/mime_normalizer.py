@@ -29,7 +29,9 @@ def compute_simhash(text: str) -> str:
 
     v = [0] * 64
     for token in tokens:
-        token_hash = int.from_bytes(hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()[:8], byteorder="big")
+        token_hash = int.from_bytes(
+            hashlib.md5(token.encode("utf-8"), usedforsecurity=False).digest()[:8], byteorder="big"
+        )
         for i in range(64):
             bit = (token_hash >> i) & 1
             v[i] += 1 if bit else -1
@@ -37,7 +39,7 @@ def compute_simhash(text: str) -> str:
     fingerprint = 0
     for i in range(64):
         if v[i] > 0:
-            fingerprint |= (1 << i)
+            fingerprint |= 1 << i
 
     return f"0x{fingerprint:016x}"
 
@@ -55,6 +57,7 @@ def compute_hamming_distance(simhash1: str, simhash2: str) -> int:
 
 class AttachmentMeta(BaseModel):
     """Metadata for extracted email attachments."""
+
     filename: str
     content_type: str
     size_bytes: int
@@ -95,4 +98,3 @@ class ParsedEmailData(BaseModel):
 
     # Attachments
     attachments: List[AttachmentMeta] = Field(default_factory=list)
-

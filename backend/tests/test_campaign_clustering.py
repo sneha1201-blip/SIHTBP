@@ -213,9 +213,9 @@ async def test_dynamic_campaign_clustering_and_stix_bundle(campaign_test_session
     # -------------------------------------------------------------
     # VERIFICATION: >= 2 Distinct Campaigns & 1 Isolated Sample
     # -------------------------------------------------------------
-    camp_stmt = select(Campaign).options(
-        selectinload(Campaign.email_associations)
-    ).order_by(Campaign.total_emails.desc())
+    camp_stmt = (
+        select(Campaign).options(selectinload(Campaign.email_associations)).order_by(Campaign.total_emails.desc())
+    )
     camp_res = await db.execute(camp_stmt)
     all_campaigns = camp_res.scalars().all()
 
@@ -242,10 +242,14 @@ async def test_dynamic_campaign_clustering_and_stix_bundle(campaign_test_session
     # STIX 2.1 BUNDLE GENERATION & VALIDATION
     # -------------------------------------------------------------
     c1_camp = all_campaigns[0]
-    emails_query = select(Email).options(
-        selectinload(Email.header_hops),
-        selectinload(Email.threat_indicators),
-    ).where(Email.id.in_([a.email_id for a in c1_camp.email_associations]))
+    emails_query = (
+        select(Email)
+        .options(
+            selectinload(Email.header_hops),
+            selectinload(Email.threat_indicators),
+        )
+        .where(Email.id.in_([a.email_id for a in c1_camp.email_associations]))
+    )
     c1_emails_db = (await db.execute(emails_query)).scalars().all()
 
     stix_bundle = generate_stix21_bundle(c1_camp, c1_emails_db)
@@ -315,9 +319,24 @@ async def test_unrelated_google_asn_emails_do_not_cluster(campaign_test_session:
     now = datetime.now(timezone.utc)
 
     google_unrelated = [
-        ("GCP Monthly Billing Statement", "Your monthly invoice for Google Cloud services is available to download.", "billing@google.com", "209.85.220.41"),
-        ("Invitation: Quarterly Academic Sync", "You have been invited to the Academic Review Sync on Google Meet at 3pm.", "calendar@google.com", "209.85.220.42"),
-        ("Security Alert: New Linux Sign-in", "Your Google account was signed in from a new Chrome device on Linux.", "accounts@google.com", "209.85.220.43"),
+        (
+            "GCP Monthly Billing Statement",
+            "Your monthly invoice for Google Cloud services is available to download.",
+            "billing@google.com",
+            "209.85.220.41",
+        ),
+        (
+            "Invitation: Quarterly Academic Sync",
+            "You have been invited to the Academic Review Sync on Google Meet at 3pm.",
+            "calendar@google.com",
+            "209.85.220.42",
+        ),
+        (
+            "Security Alert: New Linux Sign-in",
+            "Your Google account was signed in from a new Chrome device on Linux.",
+            "accounts@google.com",
+            "209.85.220.43",
+        ),
     ]
 
     for i, (subject, body, sender, ip) in enumerate(google_unrelated):
@@ -590,9 +609,30 @@ async def test_analyst_campaign_label_merge_split(campaign_test_session: AsyncSe
     db.add(camp2)
     await db.flush()
 
-    em1 = Email(id=uuid.uuid4(), sha256_hash="1"*64, md5_hash="1"*32, file_name="e1.eml", file_size_bytes=100, raw_storage_path="v/e1")
-    em2 = Email(id=uuid.uuid4(), sha256_hash="2"*64, md5_hash="2"*32, file_name="e2.eml", file_size_bytes=100, raw_storage_path="v/e2")
-    em3 = Email(id=uuid.uuid4(), sha256_hash="3"*64, md5_hash="3"*32, file_name="e3.eml", file_size_bytes=100, raw_storage_path="v/e3")
+    em1 = Email(
+        id=uuid.uuid4(),
+        sha256_hash="1" * 64,
+        md5_hash="1" * 32,
+        file_name="e1.eml",
+        file_size_bytes=100,
+        raw_storage_path="v/e1",
+    )
+    em2 = Email(
+        id=uuid.uuid4(),
+        sha256_hash="2" * 64,
+        md5_hash="2" * 32,
+        file_name="e2.eml",
+        file_size_bytes=100,
+        raw_storage_path="v/e2",
+    )
+    em3 = Email(
+        id=uuid.uuid4(),
+        sha256_hash="3" * 64,
+        md5_hash="3" * 32,
+        file_name="e3.eml",
+        file_size_bytes=100,
+        raw_storage_path="v/e3",
+    )
     db.add_all([em1, em2, em3])
     await db.flush()
 
@@ -636,9 +676,10 @@ async def test_analyst_campaign_label_merge_split(campaign_test_session: AsyncSe
         assert resp_merge.status_code == 200
 
         # Verify audit logs created
-        stmt_audit = select(EvidenceAuditLog).where(EvidenceAuditLog.action_performed.in_(["CAMPAIGN_LABELED", "CAMPAIGN_SPLIT", "CAMPAIGN_MERGED"]))
+        stmt_audit = select(EvidenceAuditLog).where(
+            EvidenceAuditLog.action_performed.in_(["CAMPAIGN_LABELED", "CAMPAIGN_SPLIT", "CAMPAIGN_MERGED"])
+        )
         logs = (await db.execute(stmt_audit)).scalars().all()
         assert len(logs) == 3
 
         app.dependency_overrides.clear()
-

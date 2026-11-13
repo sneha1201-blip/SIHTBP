@@ -75,6 +75,7 @@ class Settings(BaseModel):
                 self.VAULT_HMAC_SECRET = "insecure-dev-vault-hmac-secret-only-for-local-testing-32b"
             if not self.JWT_SECRET_KEY:
                 self.JWT_SECRET_KEY = "insecure-dev-jwt-secret-only-for-local-testing-key-32b"
+
     CORS_ORIGINS: List[str] = [
         "http://localhost:3000",
         "http://127.0.0.1:3000",
@@ -95,12 +96,12 @@ class Settings(BaseModel):
         15169,  # Google LLC
         16509,  # Amazon.com, Inc. / AWS
         14618,  # Amazon.com, Inc. / AWS
-        8075,   # Microsoft Corporation
+        8075,  # Microsoft Corporation
         13335,  # Cloudflare, Inc.
         32934,  # Meta Platforms, Inc. / Facebook
         20940,  # Akamai International B.V.
         54113,  # Fastly, Inc.
-        2635,   # Yahoo / Oath
+        2635,  # Yahoo / Oath
         46484,  # Mimecast
         36351,  # SoftLayer / IBM Cloud
         16276,  # OVH SAS

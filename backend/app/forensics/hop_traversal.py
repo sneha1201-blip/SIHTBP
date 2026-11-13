@@ -24,6 +24,7 @@ logger = logging.getLogger("hop_traversal")
 
 class HopAnalysis(BaseModel):
     """Detailed forensic evaluation of an individual MTA transit hop."""
+
     hop_order: int
     raw_header: str
     by_mta: Optional[str] = None

@@ -39,7 +39,10 @@ OLE_MSG_MAGIC = b"\xd0\xcf\x11\xe0\xa1\xb1\x1a\xe1"
 
 # Standard RFC 822 Header field prefixes (case-insensitive)
 COMMON_RFC822_HEADER_PATTERNS = [
-    re.compile(rb"^(?:from|to|cc|bcc|date|subject|received|message-id|return-path|delivered-to|mime-version|content-type|x-[\w-]+):", re.IGNORECASE | re.MULTILINE),
+    re.compile(
+        rb"^(?:from|to|cc|bcc|date|subject|received|message-id|return-path|delivered-to|mime-version|content-type|x-[\w-]+):",
+        re.IGNORECASE | re.MULTILINE,
+    ),
 ]
 
 
@@ -170,4 +173,3 @@ async def stream_and_validate_upload(
     validate_email_bytes(raw_bytes, sanitized_name)
 
     return raw_bytes, sanitized_name
-

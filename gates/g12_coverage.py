@@ -77,12 +77,47 @@ def run_coverage_gate() -> int:
             if target in norm_path:
                 core_coverage[target] = f"{pct:.1f}%"
 
+    REQUIRED_MODULE_THRESHOLDS = {
+        "eml_parser.py": 90.0,
+        "msg_parser.py": 90.0,
+        "mime_normalizer.py": 90.0,
+        "auth_validator.py": 90.0,
+        "threat_scorer.py": 90.0,
+        "spoof_detector.py": 90.0,
+        "campaign_clusterer.py": 90.0,
+    }
+
     print(f"[*] Overall Test Coverage: {overall_pct}% (Empirically measured)")
     print(f"[*] Core module coverage: {json.dumps(core_coverage, indent=2)}")
 
-    if overall_pct < 70.0:
-        print(f"[FAIL] Overall coverage {overall_pct}% is below 70.0% threshold.")
-        record_gate_result("G12", "FAIL", "verify_coverage_threshold", f"Overall coverage is {overall_pct}%")
+    module_failures = []
+    for mod_name, threshold in REQUIRED_MODULE_THRESHOLDS.items():
+        val_str = core_coverage.get(mod_name, "0.0%").rstrip("%")
+        try:
+            val = float(val_str)
+        except ValueError:
+            val = 0.0
+        if val < threshold:
+            module_failures.append(f"{mod_name}: {val}% < required {threshold}%")
+
+    if overall_pct < 80.0:
+        print(f"[FAIL] Overall coverage {overall_pct}% is below 80.0% threshold.")
+        record_gate_result(
+            "G12",
+            "FAIL",
+            "verify_overall_coverage_threshold",
+            f"Overall coverage {overall_pct}% is below 80.0% threshold. Module failures: {module_failures}",
+        )
+        return 1
+
+    if module_failures:
+        print(f"[FAIL] Core module coverage below required >=90%:\n" + "\n".join(module_failures))
+        record_gate_result(
+            "G12",
+            "FAIL",
+            "verify_per_module_coverage_threshold",
+            f"Module failures below 90%: {module_failures}",
+        )
         return 1
 
     details = {

@@ -24,6 +24,7 @@ logger = logging.getLogger("asn_lookup")
 
 class ASNInfo(BaseModel):
     """Autonomous System intelligence record."""
+
     asn_number: Optional[int] = None
     asn_org: Optional[str] = None
     is_datacenter: bool = False
@@ -91,11 +92,23 @@ def resolve_ip_asn(
                     asn_org=org,
                     is_datacenter=any(
                         term in org_lower
-                        for term in ["hosting", "cloud", "vps", "server", "telecom", "datacenter", "ovh", "hetzner", "digitalocean", "linode", "aws", "amazon"]
+                        for term in [
+                            "hosting",
+                            "cloud",
+                            "vps",
+                            "server",
+                            "telecom",
+                            "datacenter",
+                            "ovh",
+                            "hetzner",
+                            "digitalocean",
+                            "linode",
+                            "aws",
+                            "amazon",
+                        ]
                     ),
                     is_bulletproof=any(
-                        term in org_lower
-                        for term in ["alexhost", "alservice", "bulletproof", "offshore", "floki"]
+                        term in org_lower for term in ["alexhost", "alservice", "bulletproof", "offshore", "floki"]
                     ),
                     resolution_status="RESOLVED",
                     source="MAXMIND_MMDB",

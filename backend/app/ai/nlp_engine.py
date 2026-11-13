@@ -49,6 +49,7 @@ def get_or_load_model(reload: bool = False) -> Any:
             logger.warning("Failed to load model from %s (%s); retraining pipeline", MODEL_FILE, exc)
 
     from backend.app.ai.model_trainer import train_and_evaluate_model
+
     train_and_evaluate_model()
     _MODEL_PIPELINE = joblib.load(MODEL_FILE)
     return _MODEL_PIPELINE
@@ -56,6 +57,7 @@ def get_or_load_model(reload: bool = False) -> Any:
 
 class TokenAttribution(BaseModel):
     """Explainable AI feature attribution for top contributing tokens."""
+
     token: str
     weight: float
     intent: str
@@ -63,6 +65,7 @@ class TokenAttribution(BaseModel):
 
 class NLPAnalysisResult(BaseModel):
     """Forensic evaluation of email textual content and psychological triggers."""
+
     nlp_score: float = 0.0
     category: str = "BENIGN"  # BEC_FINANCIAL, PHISHING, EXTORTION_COERCION, BENIGN
     predicted_class: str = "BENIGN"
@@ -94,9 +97,18 @@ DEADLINE_REGEX = re.compile(
 )
 
 INSTITUTIONAL_TARGETS = [
-    "AICTE", "All India Council for Technical Education", "Ministry of Education",
-    "UGC", "University Grants Commission", "National Board of Accreditation", "NBA",
-    "State Bank of India", "SBI", "Bank of Baroda", "ICICI Bank", "Punjab National Bank",
+    "AICTE",
+    "All India Council for Technical Education",
+    "Ministry of Education",
+    "UGC",
+    "University Grants Commission",
+    "National Board of Accreditation",
+    "NBA",
+    "State Bank of India",
+    "SBI",
+    "Bank of Baroda",
+    "ICICI Bank",
+    "Punjab National Bank",
 ]
 
 
@@ -240,20 +252,20 @@ def analyze_email_content(subject: Optional[str], body: Optional[str]) -> NLPAna
     reasons: List[str] = []
     if pred_class == "BEC_FINANCIAL":
         reasons.append(
-            f"AI Intent: Business Email Compromise / Wire Diversion ({confidence*100:.1f}% confidence). "
+            f"AI Intent: Business Email Compromise / Wire Diversion ({confidence * 100:.1f}% confidence). "
             f"Banking coordinates extracted: IFSC {extracted_entities['ifsc_codes']}, Accounts {extracted_entities['bank_accounts']}"
         )
     elif pred_class == "PHISHING":
-        reasons.append(
-            f"AI Intent: Credential Harvesting / Impersonation Lure ({confidence*100:.1f}% confidence)."
-        )
+        reasons.append(f"AI Intent: Credential Harvesting / Impersonation Lure ({confidence * 100:.1f}% confidence).")
     elif pred_class == "EXTORTION_COERCION":
         reasons.append(
-            f"AI Intent: Regulatory Coercion / Administrative Penalty Threat ({confidence*100:.1f}% confidence). "
+            f"AI Intent: Regulatory Coercion / Administrative Penalty Threat ({confidence * 100:.1f}% confidence). "
             f"High-pressure deadline cues: {extracted_entities['deadlines']}"
         )
     elif pred_class == "BENIGN":
-        reasons.append(f"AI Intent: Authentic Routine Institutional Correspondence ({confidence*100:.1f}% confidence).")
+        reasons.append(
+            f"AI Intent: Authentic Routine Institutional Correspondence ({confidence * 100:.1f}% confidence)."
+        )
 
     # 5. Calibrated NLP Threat Score (0.0 to 100.0)
     score = 0.0

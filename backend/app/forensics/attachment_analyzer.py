@@ -32,15 +32,41 @@ logger = logging.getLogger("attachment_analyzer")
 
 # Dangerous executable extensions
 EXECUTABLE_EXTENSIONS = {
-    ".exe", ".scr", ".bat", ".cmd", ".vbs", ".vbe", ".js", ".jse",
-    ".wsf", ".wsh", ".ps1", ".psm1", ".hta", ".cpl", ".jar", ".iso",
-    ".img", ".pif", ".com",
+    ".exe",
+    ".scr",
+    ".bat",
+    ".cmd",
+    ".vbs",
+    ".vbe",
+    ".js",
+    ".jse",
+    ".wsf",
+    ".wsh",
+    ".ps1",
+    ".psm1",
+    ".hta",
+    ".cpl",
+    ".jar",
+    ".iso",
+    ".img",
+    ".pif",
+    ".com",
 }
 
 # Double extension decoy patterns (e.g. filename.pdf.exe)
 DECOY_EXTENSIONS = {
-    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
-    ".txt", ".jpg", ".jpeg", ".png", ".csv",
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".csv",
 }
 
 # HTML smuggling signatures
@@ -51,19 +77,33 @@ HTML_SMUGGLING_REGEX = re.compile(
 
 # Macro auto-exec triggers
 AUTOEXEC_TRIGGERS = [
-    "autoopen", "document_open", "workbook_open", "auto_open", "autoexec",
-    "documentopen", "workbookopen", "document_close",
+    "autoopen",
+    "document_open",
+    "workbook_open",
+    "auto_open",
+    "autoexec",
+    "documentopen",
+    "workbookopen",
+    "document_close",
 ]
 
 # Macro suspicious API keywords
 SUSPICIOUS_MACRO_APIS = [
-    "shell", "wscript.shell", "powershell", "cmd.exe", "createobject",
-    "urldownloadtofile", "winhttprequest", "xmlhttp", "environ",
+    "shell",
+    "wscript.shell",
+    "powershell",
+    "cmd.exe",
+    "createobject",
+    "urldownloadtofile",
+    "winhttprequest",
+    "xmlhttp",
+    "environ",
 ]
 
 
 class AttachmentAnalysisResult(BaseModel):
     """Detailed forensic security evaluation of an email attachment."""
+
     filename: str
     size_bytes: int
     sha256: str
@@ -135,7 +175,9 @@ def analyze_archive(raw_bytes: bytes, max_ratio: float = 100.0) -> Dict[str, Any
                 ratio = total_uncompressed / compressed_size
                 if ratio > max_ratio or (total_uncompressed > 50 * 1024 * 1024 and compressed_size < 100 * 1024):
                     results["is_zip_bomb"] = True
-                    results["threats"].append(f"Zip bomb anomaly: Decompression ratio {ratio:.1f}x exceeds safe threshold ({max_ratio}x)")
+                    results["threats"].append(
+                        f"Zip bomb anomaly: Decompression ratio {ratio:.1f}x exceeds safe threshold ({max_ratio}x)"
+                    )
                     results["threat_score"] += 80.0
 
     except zipfile.BadZipFile:
@@ -165,7 +207,7 @@ def analyze_office_macros(raw_bytes: bytes) -> Dict[str, Any]:
             results["threats"].append("VBA macro code detected in document")
             results["threat_score"] += 30.0
 
-            for (_, _, _, vba_code) in vbaparser.extract_macros():
+            for _, _, _, vba_code in vbaparser.extract_macros():
                 code_lower = vba_code.lower()
 
                 # Check auto-exec

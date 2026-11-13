@@ -80,19 +80,14 @@ async def get_campaign_graph(
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Return nodes and edges representing threat campaign relationships for Cytoscape / D3 graph visualization."""
-    stmt = (
-        select(Campaign)
-        .options(
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.header_hops),
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.threat_indicators),
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.forensic_analysis),
-        )
+    stmt = select(Campaign).options(
+        selectinload(Campaign.email_associations).selectinload(CampaignEmail.email).selectinload(Email.header_hops),
+        selectinload(Campaign.email_associations)
+        .selectinload(CampaignEmail.email)
+        .selectinload(Email.threat_indicators),
+        selectinload(Campaign.email_associations)
+        .selectinload(CampaignEmail.email)
+        .selectinload(Email.forensic_analysis),
     )
 
     if cluster_type:
@@ -108,22 +103,26 @@ async def get_campaign_graph(
     def add_node(node_id: str, label: str, node_type: str, metadata: dict | None = None):
         if node_id not in seen_node_ids:
             seen_node_ids.add(node_id)
-            nodes.append({
-                "id": node_id,
-                "label": label,
-                "type": node_type,
-                "metadata": metadata or {},
-            })
+            nodes.append(
+                {
+                    "id": node_id,
+                    "label": label,
+                    "type": node_type,
+                    "metadata": metadata or {},
+                }
+            )
 
     def add_edge(source: str, target: str, relationship: str, metadata: dict | None = None):
         edge_id = f"{source}->{target}:{relationship}"
-        edges.append({
-            "id": edge_id,
-            "source": source,
-            "target": target,
-            "relationship": relationship,
-            "metadata": metadata or {},
-        })
+        edges.append(
+            {
+                "id": edge_id,
+                "source": source,
+                "target": target,
+                "relationship": relationship,
+                "metadata": metadata or {},
+            }
+        )
 
     for camp in campaigns:
         camp_node_id = f"campaign_{camp.id}"
@@ -230,16 +229,11 @@ async def export_all_campaigns_stix(
     db: AsyncSession = Depends(get_db),
 ) -> Dict[str, Any]:
     """Export all attributed campaigns and associated observables as a STIX 2.1 bundle."""
-    stmt = (
-        select(Campaign)
-        .options(
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.header_hops),
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.threat_indicators),
-        )
+    stmt = select(Campaign).options(
+        selectinload(Campaign.email_associations).selectinload(CampaignEmail.email).selectinload(Email.header_hops),
+        selectinload(Campaign.email_associations)
+        .selectinload(CampaignEmail.email)
+        .selectinload(Email.threat_indicators),
     )
     res = await db.execute(stmt)
     campaigns = res.scalars().all()
@@ -269,9 +263,7 @@ async def export_single_campaign_stix(
     stmt = (
         select(Campaign)
         .options(
-            selectinload(Campaign.email_associations)
-            .selectinload(CampaignEmail.email)
-            .selectinload(Email.header_hops),
+            selectinload(Campaign.email_associations).selectinload(CampaignEmail.email).selectinload(Email.header_hops),
             selectinload(Campaign.email_associations)
             .selectinload(CampaignEmail.email)
             .selectinload(Email.threat_indicators),

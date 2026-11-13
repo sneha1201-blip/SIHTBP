@@ -184,7 +184,8 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
     )
 
     c1_received = [
-        "from mail-gateway.vjti.ac.in (115.112.82.14) by mx01.vjti.ac.in with ESMTPS id v4982 for <principal@vjti.ac.in>; " + c1_date_str,
+        "from mail-gateway.vjti.ac.in (115.112.82.14) by mx01.vjti.ac.in with ESMTPS id v4982 for <principal@vjti.ac.in>; "
+        + c1_date_str,
         "from relay.nic.in (164.100.24.12) by mail-gateway.vjti.ac.in with ESMTPS id r8391; " + c1_date_str,
         "from mta01.delhi.nic.in (164.100.24.88) by relay.nic.in with ESMTPA id nic-9213; " + c1_date_str,
     ]
@@ -436,7 +437,8 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
 
     c2_received = [
         "from relay.smtp-inbound.iitb.ac.in (103.21.124.5) by mail.iitb.ac.in with ESMTP id iitb-9912; " + c2_date_str,
-        "from mail.aicte-emergency-portal.org (185.174.136.42) by relay.smtp-inbound.iitb.ac.in with ESMTPS id rom-1142; " + c2_date_str,
+        "from mail.aicte-emergency-portal.org (185.174.136.42) by relay.smtp-inbound.iitb.ac.in with ESMTPS id rom-1142; "
+        + c2_date_str,
     ]
     c2_auth_results = (
         "relay.smtp-inbound.iitb.ac.in; spf=softfail (aicte-emergency-portal.org: 185.174.136.42 is neither permitted nor denied) "
@@ -662,7 +664,8 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
     c3_received = [
         "from mx01.nitk.edu.in (210.212.201.2) by mailbox.nitk.edu.in with ESMTP id nitk-4412; " + c3_date_str,
         "from relay02.mx-inbound-eu.com (195.154.122.9) by mx01.nitk.edu.in with ESMTPS id eu-8821; " + c3_date_str,
-        "from tor-exit-05.ip-zone.net (185.220.101.5) by relay02.mx-inbound-eu.com with ESMTP id tor-4410; " + c3_date_str,
+        "from tor-exit-05.ip-zone.net (185.220.101.5) by relay02.mx-inbound-eu.com with ESMTP id tor-4410; "
+        + c3_date_str,
     ]
     c3_auth_results = (
         "mx01.nitk.edu.in; spf=fail (portal-aicte.com: 185.220.101.5 is not permitted) "
@@ -917,7 +920,8 @@ async def seed_forensic_database(session: AsyncSession) -> Dict[str, int]:
 
     c4_received = [
         "from edge-mx.annauniv.edu (14.139.161.2) by mail.annauniv.edu with ESMTP id anna-2910; " + c4_date_str,
-        "from smtp-out.xn--icte-india-e1a.org (193.109.69.52) by edge-mx.annauniv.edu with ESMTPS id sey-0012; " + c4_date_str,
+        "from smtp-out.xn--icte-india-e1a.org (193.109.69.52) by edge-mx.annauniv.edu with ESMTPS id sey-0012; "
+        + c4_date_str,
     ]
     c4_auth_results = (
         "edge-mx.annauniv.edu; spf=pass (xn--icte-india-e1a.org: 193.109.69.52 is permitted) "

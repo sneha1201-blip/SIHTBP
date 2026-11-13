@@ -46,33 +46,23 @@ class Email(Base):
 
     __tablename__ = "emails"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     sha256_hash: Mapped[str] = mapped_column(
         String(64), unique=True, index=True, nullable=False, doc="Cryptographic SHA-256 digest"
     )
     md5_hash: Mapped[str] = mapped_column(
         String(32), index=True, nullable=False, doc="Legacy MD5 digest for SIEM correlation"
     )
-    file_name: Mapped[str] = mapped_column(
-        String(255), nullable=False, doc="Original file name of uploaded evidence"
-    )
-    file_size_bytes: Mapped[int] = mapped_column(
-        Integer, nullable=False, doc="Size of raw evidence file in bytes"
-    )
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False, doc="Original file name of uploaded evidence")
+    file_size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, doc="Size of raw evidence file in bytes")
     raw_storage_path: Mapped[str] = mapped_column(
         String(512), nullable=False, doc="Absolute or relative path within immutable storage vault"
     )
     rfc822_msg_id: Mapped[Optional[str]] = mapped_column(
         String(255), index=True, nullable=True, doc="RFC 822 Message-ID header"
     )
-    subject: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, doc="Decoded email subject line"
-    )
-    sender_raw: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, doc="Raw unparsed From: header"
-    )
+    subject: Mapped[Optional[str]] = mapped_column(Text, nullable=True, doc="Decoded email subject line")
+    sender_raw: Mapped[Optional[str]] = mapped_column(Text, nullable=True, doc="Raw unparsed From: header")
     sender_email: Mapped[Optional[str]] = mapped_column(
         String(255), index=True, nullable=True, doc="Extracted sender email address"
     )
@@ -82,21 +72,15 @@ class Email(Base):
     return_path: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, doc="Envelope Return-Path / bounce address"
     )
-    reply_to: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, doc="Explicit Reply-To address"
-    )
+    reply_to: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, doc="Explicit Reply-To address")
     recipient_list: Mapped[List[str]] = mapped_column(
         JSON, default=list, nullable=False, doc="List of To, Cc, Bcc recipient email addresses"
     )
     date_header: Mapped[Optional[datetime]] = mapped_column(
         DateTime(timezone=True), nullable=True, doc="Timestamp declared in Date: header"
     )
-    body_plain: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, doc="Decoded plaintext body"
-    )
-    body_html: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True, doc="Raw HTML body content"
-    )
+    body_plain: Mapped[Optional[str]] = mapped_column(Text, nullable=True, doc="Decoded plaintext body")
+    body_html: Mapped[Optional[str]] = mapped_column(Text, nullable=True, doc="Raw HTML body content")
     simhash_body: Mapped[Optional[str]] = mapped_column(
         String(64), index=True, nullable=True, doc="Locality-sensitive SimHash for fuzzy clustering"
     )
@@ -164,18 +148,14 @@ class HeaderHop(Base):
 
     __tablename__ = "header_hops"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), index=True, nullable=False
     )
     hop_order: Mapped[int] = mapped_column(
         Integer, nullable=False, doc="1 = originating hop, ascending towards destination"
     )
-    by_mta: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, doc="Receiving MTA server hostname"
-    )
+    by_mta: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, doc="Receiving MTA server hostname")
     from_mta: Mapped[Optional[str]] = mapped_column(
         String(255), nullable=True, doc="Claimed sender MTA server hostname"
     )
@@ -200,15 +180,9 @@ class HeaderHop(Base):
     geo_country: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, doc="MaxMind GeoIP2 country resolution"
     )
-    geo_city: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, doc="MaxMind GeoIP2 city resolution"
-    )
-    geo_lat: Mapped[Optional[float]] = mapped_column(
-        Float, nullable=True, doc="Geographical latitude"
-    )
-    geo_lon: Mapped[Optional[float]] = mapped_column(
-        Float, nullable=True, doc="Geographical longitude"
-    )
+    geo_city: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, doc="MaxMind GeoIP2 city resolution")
+    geo_lat: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Geographical latitude")
+    geo_lon: Mapped[Optional[float]] = mapped_column(Float, nullable=True, doc="Geographical longitude")
     asn_number: Mapped[Optional[int]] = mapped_column(
         Integer, index=True, nullable=True, doc="Autonomous System Number (ASN)"
     )
@@ -218,12 +192,8 @@ class HeaderHop(Base):
     node_type: Mapped[Optional[str]] = mapped_column(
         String(64), nullable=True, doc="ORIGINATING, INTERNAL, RELAY, TOR_EXIT, DATACENTER_PROXY"
     )
-    is_tor: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, doc="Confirmed Tor exit node flag"
-    )
-    is_vpn: Mapped[bool] = mapped_column(
-        Boolean, default=False, nullable=False, doc="Commercial VPN anonymizer flag"
-    )
+    is_tor: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, doc="Confirmed Tor exit node flag")
+    is_vpn: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, doc="Commercial VPN anonymizer flag")
     is_datacenter: Mapped[bool] = mapped_column(
         Boolean, default=False, nullable=False, doc="Hosting / Cloud Datacenter range (non-residential)"
     )
@@ -231,9 +201,7 @@ class HeaderHop(Base):
     # Relationships
     email: Mapped["Email"] = relationship("Email", back_populates="header_hops")
 
-    __table_args__ = (
-        Index("ix_header_hops_email_order", "email_id", "hop_order"),
-    )
+    __table_args__ = (Index("ix_header_hops_email_order", "email_id", "hop_order"),)
 
     def __repr__(self) -> str:
         return f"<HeaderHop #{self.hop_order} ip={self.hop_ip} asn={self.asn_number} tor={self.is_tor}>"
@@ -270,9 +238,7 @@ class ForensicAnalysis(Base):
 
     __tablename__ = "forensic_analyses"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("emails.id", ondelete="CASCADE"),
@@ -283,21 +249,13 @@ class ForensicAnalysis(Base):
     spf_status: Mapped[str] = mapped_column(
         String(32), default="NONE", nullable=False, doc="PASS, FAIL, SOFTFAIL, NEUTRAL, NONE, TEMPERROR"
     )
-    spf_domain: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, doc="Domain verified under SPF check"
-    )
+    spf_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, doc="Domain verified under SPF check")
     dkim_status: Mapped[str] = mapped_column(
         String(32), default="NONE", nullable=False, doc="PASS, FAIL, NONE, INVALID"
     )
-    dkim_selector: Mapped[Optional[str]] = mapped_column(
-        String(128), nullable=True, doc="DKIM selector key identifier"
-    )
-    dkim_domain: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, doc="Signing domain in d= tag"
-    )
-    dmarc_status: Mapped[str] = mapped_column(
-        String(32), default="NONE", nullable=False, doc="PASS, FAIL, NONE"
-    )
+    dkim_selector: Mapped[Optional[str]] = mapped_column(String(128), nullable=True, doc="DKIM selector key identifier")
+    dkim_domain: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, doc="Signing domain in d= tag")
+    dmarc_status: Mapped[str] = mapped_column(String(32), default="NONE", nullable=False, doc="PASS, FAIL, NONE")
     dmarc_policy: Mapped[Optional[str]] = mapped_column(
         String(32), nullable=True, doc="Published policy (reject, quarantine, none)"
     )
@@ -363,18 +321,14 @@ class ThreatIndicator(Base):
 
     __tablename__ = "threat_indicators"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True), ForeignKey("emails.id", ondelete="CASCADE"), index=True, nullable=False
     )
     ioc_type: Mapped[str] = mapped_column(
         String(32), index=True, nullable=False, doc="URL, DOMAIN, IP, HASH, EMAIL_ADDR"
     )
-    ioc_value: Mapped[str] = mapped_column(
-        Text, nullable=False, doc="Raw or extracted IOC string"
-    )
+    ioc_value: Mapped[str] = mapped_column(Text, nullable=False, doc="Raw or extracted IOC string")
     context: Mapped[Optional[str]] = mapped_column(
         String(128), nullable=True, doc="Where IOC was discovered: EMAIL_BODY, HEADER_RECEIVED, ATTACHMENT, SENDER"
     )
@@ -384,9 +338,7 @@ class ThreatIndicator(Base):
     domain_age_days: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True, doc="WHOIS newly registered domain age"
     )
-    registrar: Mapped[Optional[str]] = mapped_column(
-        String(255), nullable=True, doc="Domain registrar name"
-    )
+    registrar: Mapped[Optional[str]] = mapped_column(String(255), nullable=True, doc="Domain registrar name")
     reputation_score: Mapped[Optional[float]] = mapped_column(
         Float, nullable=True, doc="Threat intelligence reputation (0-100 malicious scale)"
     )
@@ -398,9 +350,7 @@ class ThreatIndicator(Base):
     # Relationships
     email: Mapped["Email"] = relationship("Email", back_populates="threat_indicators")
 
-    __table_args__ = (
-        Index("ix_threat_indicators_type_val", "ioc_type"),
-    )
+    __table_args__ = (Index("ix_threat_indicators_type_val", "ioc_type"),)
 
     def __repr__(self) -> str:
         return f"<ThreatIndicator type={self.ioc_type} val='{self.ioc_value[:30]}'>"
@@ -426,20 +376,22 @@ class Campaign(Base):
 
     __tablename__ = "campaigns"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    name: Mapped[str] = mapped_column(
-        String(255), nullable=False, doc="Tactical operation or cluster identifier"
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, doc="Tactical operation or cluster identifier")
     description: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True, doc="Forensic summary of campaign vector and targeting"
     )
     cluster_type: Mapped[str] = mapped_column(
-        String(64), index=True, nullable=False, doc="Clustering pivot: ASN, IP_SUBNET, SENDER_DOMAIN, SIMHASH, COMPOSITE"
+        String(64),
+        index=True,
+        nullable=False,
+        doc="Clustering pivot: ASN, IP_SUBNET, SENDER_DOMAIN, SIMHASH, COMPOSITE",
     )
     cluster_key: Mapped[str] = mapped_column(
-        String(255), index=True, nullable=False, doc="Unique clustering key (e.g. ASN number, IP subnet CIDR, or SimHash value)"
+        String(255),
+        index=True,
+        nullable=False,
+        doc="Unique clustering key (e.g. ASN number, IP subnet CIDR, or SimHash value)",
     )
     severity: Mapped[str] = mapped_column(
         String(32), default="MEDIUM", nullable=False, doc="LOW, MEDIUM, HIGH, CRITICAL"
@@ -454,7 +406,11 @@ class Campaign(Base):
         Integer, default=0, nullable=False, doc="Aggregated count of attributed victim emails"
     )
     campaign_metadata: Mapped[Optional[Dict[str, Any]]] = mapped_column(
-        "metadata", JSON, default=dict, nullable=True, doc="Campaign telemetry, infrastructure tags, and threat actor notes"
+        "metadata",
+        JSON,
+        default=dict,
+        nullable=True,
+        doc="Campaign telemetry, infrastructure tags, and threat actor notes",
     )
 
     # Relationships
@@ -493,9 +449,7 @@ class CampaignEmail(Base):
 
     __tablename__ = "campaign_emails"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     campaign_id: Mapped[uuid.UUID] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("campaigns.id", ondelete="CASCADE"),
@@ -522,9 +476,7 @@ class CampaignEmail(Base):
     campaign: Mapped["Campaign"] = relationship("Campaign", back_populates="email_associations")
     email: Mapped["Email"] = relationship("Email", back_populates="campaign_associations")
 
-    __table_args__ = (
-        UniqueConstraint("campaign_id", "email_id", name="uq_campaign_email"),
-    )
+    __table_args__ = (UniqueConstraint("campaign_id", "email_id", name="uq_campaign_email"),)
 
     def __repr__(self) -> str:
         return f"<CampaignEmail campaign_id={self.campaign_id} email_id={self.email_id} score={self.similarity_score}>"
@@ -546,9 +498,7 @@ class EvidenceAuditLog(Base):
 
     __tablename__ = "evidence_audit_logs"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         Uuid(as_uuid=True),
         ForeignKey("emails.id", ondelete="CASCADE"),
@@ -635,27 +585,15 @@ class User(Base):
 
     __tablename__ = "users"
 
-    id: Mapped[uuid.UUID] = mapped_column(
-        Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4
-    )
-    username: Mapped[str] = mapped_column(
-        String(64), unique=True, index=True, nullable=False
-    )
-    email: Mapped[str] = mapped_column(
-        String(255), unique=True, index=True, nullable=False
-    )
-    password_hash: Mapped[str] = mapped_column(
-        String(255), nullable=False
-    )
+    id: Mapped[uuid.UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    username: Mapped[str] = mapped_column(String(64), unique=True, index=True, nullable=False)
+    email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
+    password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(
         String(32), default=UserRole.ANALYST, nullable=False, doc="ADMIN, ANALYST, or AUDITOR"
     )
-    is_active: Mapped[bool] = mapped_column(
-        Boolean, default=True, nullable=False
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, nullable=False
-    )
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now, nullable=False)
 
     def __repr__(self) -> str:
         return f"<User username={self.username} role={self.role}>"
@@ -670,4 +608,3 @@ class User(Base):
             "is_active": self.is_active,
             "created_at": self.created_at.isoformat(),
         }
-

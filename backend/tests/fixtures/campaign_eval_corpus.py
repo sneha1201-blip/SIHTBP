@@ -150,7 +150,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": [],
         "attachment_hashes": [],
     },
-
     # =========================================================================
     # CAMPAIGN 2: AICTE Deficiency Audit Phishing (10 samples)
     # Ground Truth: campaign_aicte_audit
@@ -286,7 +285,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": ["http://aicte-compliance-review.top/affidavit/submit"],
         "attachment_hashes": [],
     },
-
     # =========================================================================
     # CAMPAIGN 3: Microsoft 365 Credential Harvester (10 samples)
     # Ground Truth: campaign_credential_harvest
@@ -422,7 +420,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": ["https://login.microsoftonline.portal-auth365.cc/verify"],
         "attachment_hashes": [],
     },
-
     # =========================================================================
     # CAMPAIGN 4: RBI Remittance Advance Fee Scam (10 samples)
     # Ground Truth: campaign_lottery_advance_fee
@@ -558,7 +555,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": [],
         "attachment_hashes": [],
     },
-
     # =========================================================================
     # CAMPAIGN 5: Overdue Invoice Macro Malware (10 samples)
     # Ground Truth: campaign_invoice_malware
@@ -694,7 +690,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": [],
         "attachment_hashes": ["e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"],
     },
-
     # =========================================================================
     # CAMPAIGN 6: Income Tax Refund Fraud (10 samples)
     # Ground Truth: campaign_tax_refund_fraud
@@ -830,7 +825,6 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "urls": ["http://incometax-efiling-notice.top/claim/bank"],
         "attachment_hashes": [],
     },
-
     # =========================================================================
     # NOISE / UNCLUSTERED SAMPLES (12 samples)
     # Ground Truth: None (must NOT cluster together, must NOT cluster into campaigns)
@@ -993,4 +987,3 @@ CAMPAIGN_EVAL_CORPUS: List[Dict[str, Any]] = [
         "attachment_hashes": [],
     },
 ]
-

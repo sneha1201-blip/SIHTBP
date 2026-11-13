@@ -54,7 +54,9 @@ async def stream_forensic_pdf_report(
         raise HTTPException(status_code=404, detail=f"Evidence not found for UUID: {evidence_id}")
 
     # 1. Cryptographic Vault Integrity Verification before Report Generation
-    vault_path = Path(email.raw_storage_path) if email.raw_storage_path else get_vault_dir() / f"{email.sha256_hash}.raw"
+    vault_path = (
+        Path(email.raw_storage_path) if email.raw_storage_path else get_vault_dir() / f"{email.sha256_hash}.raw"
+    )
     if not vault_path.exists():
         vault_path = get_vault_dir() / f"{email.sha256_hash}.raw"
 
@@ -183,4 +185,3 @@ async def stream_forensic_pdf_report(
             "X-Statutory-Authority": "Section 63 Bharatiya Sakshya Adhiniyam, 2023",
         },
     )
-
