@@ -20,6 +20,15 @@ STORAGE_DIR = PROJECT_ROOT / "storage"
 VAULT_DIR = STORAGE_DIR / "vault"
 GEOIP_DIR = STORAGE_DIR / "geoip"
 
+# Auto-load .env file if present in project root
+_env_path = PROJECT_ROOT / ".env"
+if _env_path.is_file():
+    for _line in _env_path.read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip())
+
 
 class Settings(BaseModel):
     """Core application settings with environment variable override support."""

@@ -1,11 +1,21 @@
 import axios from 'axios';
 import { FullForensicDossier, CampaignGraphData } from './types';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+export function getApiBase(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname || 'localhost';
+    return `${protocol}//${hostname}:8000/api/v1`;
+  }
+  return 'http://localhost:8000/api/v1';
+}
 
 export const apiClient = axios.create({
-  baseURL: API_BASE,
-  timeout: 30000,
+  baseURL: getApiBase(),
+  timeout: 60000,
 });
 
 // Manage authentication token in browser storage
@@ -44,8 +54,9 @@ export function setStoredUser(user: { username: string; role: string; email?: st
   }
 }
 
-// Request interceptor ensuring Bearer token is attached
+// Request interceptor ensuring Bearer token is attached and baseURL is dynamic
 apiClient.interceptors.request.use((config) => {
+  config.baseURL = getApiBase();
   const token = getAuthToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -89,7 +100,7 @@ export interface AuthResponse {
 }
 
 export async function loginUser(credentials: LoginCredentials): Promise<AuthResponse> {
-  const response = await axios.post<AuthResponse>(`${API_BASE}/auth/login`, credentials);
+  const response = await axios.post<AuthResponse>(`${getApiBase()}/auth/login`, credentials);
   if (response.data && response.data.access_token) {
     setAuthToken(response.data.access_token);
     setStoredUser({
@@ -137,7 +148,7 @@ export async function streamJobProgress(
   onProgress?: (job: ForensicJobState) => void
 ): Promise<FullForensicDossier> {
   const token = getAuthToken();
-  const streamUrl = `${API_BASE}/forensics/jobs/${jobId}/stream`;
+  const streamUrl = `${getApiBase()}/forensics/jobs/${jobId}/stream`;
 
   const response = await fetch(streamUrl, {
     method: 'GET',
@@ -217,9 +228,7 @@ export async function analyzeEmailFile(
   const formData = new FormData();
   formData.append('file', file);
 
-  const initResponse = await apiClient.post<ForensicJobState>('/forensics/analyze', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const initResponse = await apiClient.post<ForensicJobState>('/forensics/analyze', formData);
 
   const job = initResponse.data;
   if (onProgress) {
@@ -238,9 +247,7 @@ export async function analyzeEmailHeaders(
   const formData = new FormData();
   formData.append('raw_headers', rawHeaders);
 
-  const initResponse = await apiClient.post<ForensicJobState>('/forensics/analyze', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  const initResponse = await apiClient.post<ForensicJobState>('/forensics/analyze', formData);
 
   const job = initResponse.data;
   if (onProgress) {

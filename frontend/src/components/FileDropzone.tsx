@@ -82,7 +82,12 @@ export function FileDropzone({ onSuccess, onCancel }: FileDropzoneProps) {
       onSuccess(dossier);
     } catch (err: any) {
       console.error('Analysis failed:', err);
-      setErrorMsg(err?.message || 'Forensic analysis failed. Please verify server connection.');
+      const detailMsg =
+        err?.response?.data?.detail ||
+        (err?.message === 'Network Error'
+          ? 'Network Error: Unable to reach backend API at port 8000. Please verify the backend service is running and accessible.'
+          : err?.message || 'Forensic analysis failed. Please verify server connection.');
+      setErrorMsg(detailMsg);
     } finally {
       setIsAnalyzing(false);
     }

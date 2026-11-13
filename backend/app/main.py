@@ -81,6 +81,7 @@ def create_application() -> FastAPI:
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        allow_private_network=True,
         expose_headers=["Content-Disposition", "X-Evidence-SHA256", "X-Statutory-Authority"],
     )
 

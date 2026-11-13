@@ -35,7 +35,12 @@ export function HeaderPasteModal({ onSuccess, onCancel }: HeaderPasteModalProps)
       onSuccess(dossier);
     } catch (err: any) {
       console.error('Header analysis failed:', err);
-      setErrorMsg(err?.message || 'Header analysis failed. Please verify headers syntax.');
+      const detailMsg =
+        err?.response?.data?.detail ||
+        (err?.message === 'Network Error'
+          ? 'Network Error: Unable to reach backend API at port 8000. Please verify the backend service is running and accessible.'
+          : err?.message || 'Header analysis failed. Please verify headers syntax.');
+      setErrorMsg(detailMsg);
     } finally {
       setIsAnalyzing(false);
     }
