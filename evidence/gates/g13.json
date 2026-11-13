@@ -1,18 +1,18 @@
 {
   "gate_id": "G13",
   "status": "PASS",
-  "commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
-  "timestamp": "2026-11-13T01:46:40.540072+00:00",
+  "commit": "45a608755f0ec9d42a89383364a8415dd615ade3",
+  "timestamp": "2026-11-13T02:05:47.339914+00:00",
   "command": "g13_performance_runner",
   "details": {
-    "total_samples": 50,
-    "p50_ms": 1575.77,
-    "p95_ms": 1618.53,
-    "p99_ms": 1631.55,
-    "cold_start_ms": 4227.84,
+    "total_samples": 1000,
+    "p50_ms": 1714.38,
+    "p95_ms": 2027.34,
+    "p99_ms": 4742.68,
+    "cold_start_ms": 7569.99,
     "cache_hit_rate": 0.0,
     "physical_disk_hardware": "Physical NVMe/SSD",
-    "write_throughput_mb_s": 839.58,
+    "write_throughput_mb_s": 75.88,
     "failure_injections": [
       "dns_timeout",
       "db_locked",
@@ -21,12 +21,12 @@
     ],
     "soak_test": {
       "label": "SHORT-SOAK",
-      "duration_seconds": 80.63,
-      "requests_evaluated": 49,
-      "throughput_requests_per_sec": 0.61,
+      "duration_seconds": 1850.65,
+      "requests_evaluated": 999,
+      "throughput_requests_per_sec": 0.54,
       "error_rate_pct": 0.0,
       "unhandled_crashes": 0
     }
   },
-  "raw_output": "{\n  \"total_samples\": 50,\n  \"p50_ms\": 1575.77,\n  \"p95_ms\": 1618.53,\n  \"p99_ms\": 1631.55,\n  \"cold_start_ms\": 4227.84,\n  \"cache_hit_rate\": 0.0,\n  \"physical_disk_hardware\": \"Physical NVMe/SSD\",\n  \"write_throughput_mb_s\": 839.58,\n  \"failure_injections\": [\n    \"dns_timeout\",\n    \"db_locked\",\n    \"disk_full\",\n    \"geoip_missing\"\n  ],\n  \"soak_test\": {\n    \"label\": \"SHORT-SOAK\",\n    \"duration_seconds\": 80.63,\n    \"requests_evaluated\": 49,\n    \"throughput_requests_per_sec\": 0.61,\n    \"error_rate_pct\": 0.0,\n    \"unhandled_crashes\": 0\n  }\n}"
+  "raw_output": "{\n  \"total_samples\": 1000,\n  \"p50_ms\": 1714.38,\n  \"p95_ms\": 2027.34,\n  \"p99_ms\": 4742.68,\n  \"cold_start_ms\": 7569.99,\n  \"cache_hit_rate\": 0.0,\n  \"physical_disk_hardware\": \"Physical NVMe/SSD\",\n  \"write_throughput_mb_s\": 75.88,\n  \"failure_injections\": [\n    \"dns_timeout\",\n    \"db_locked\",\n    \"disk_full\",\n    \"geoip_missing\"\n  ],\n  \"soak_test\": {\n    \"label\": \"SHORT-SOAK\",\n    \"duration_seconds\": 1850.65,\n    \"requests_evaluated\": 999,\n    \"throughput_requests_per_sec\": 0.54,\n    \"error_rate_pct\": 0.0,\n    \"unhandled_crashes\": 0\n  }\n}"
 }

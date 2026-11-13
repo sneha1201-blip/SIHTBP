@@ -1,0 +1,174 @@
+{
+  "benchmark_metadata": {
+    "sih_problem_statement_id": "26106",
+    "statutory_mandate": "Section 63 Bharatiya Sakshya Adhiniyam, 2023 (BSA)",
+    "git_commit": "45a608755f0ec9d42a89383364a8415dd615ade3",
+    "execution_timestamp": "2026-11-13T02:02:56.162567+00:00",
+    "environment": {
+      "operating_system": "Windows 11 (10.0.26200)",
+      "processor_architecture": "Intel64 Family 6 Model 126 Stepping 5, GenuineIntel",
+      "python_version": "3.12.14",
+      "sqlite_version": "3.53.1",
+      "storage_backend": "Physical NVMe/SSD (Measured write: 75.88 MB/s, WAL Mode + fsync)",
+      "disk_db_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\benchmark_ba75ac7c27c0.db",
+      "vault_storage_path": "C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\storage\\benchmarks\\vault_ba75ac7c27c0",
+      "db_size_bytes": 7790592,
+      "vault_size_bytes": 1876775
+    },
+    "evaluations_summary": {
+      "total_unique_samples_evaluated": 1000,
+      "steady_state_samples": 999,
+      "cold_start_latency_ms": 7569.99,
+      "steady_state_wall_time_sec": 1850.654,
+      "steady_state_throughput_eps": 0.54,
+      "duplicate_hashes_prevented": true,
+      "cache_bypass_verified": true,
+      "e2e_exceeds_stages_invariant_verified": true
+    },
+    "failure_injections": {
+      "dns_timeout": {
+        "status": "PASS",
+        "behavior": "Graceful fallback: SPF=NONE, DKIM=NONE, DMARC=NONE",
+        "elapsed_ms": 1512.06
+      },
+      "db_locked": {
+        "status": "PASS",
+        "behavior": "Handled expected lock exception gracefully: database is locked"
+      },
+      "disk_full": {
+        "status": "FAIL",
+        "behavior": "Did not catch ENOSPC"
+      },
+      "geoip_missing": {
+        "status": "FAIL",
+        "error": "cannot import name 'resolve_ip_geolocation' from 'backend.app.osint.geo_resolver' (C:\\Users\\HP\\.gemini\\antigravity\\scratch\\SIHTBP\\backend\\app\\osint\\geo_resolver.py)"
+      }
+    },
+    "soak_test": {
+      "label": "SHORT-SOAK",
+      "duration_seconds": 1850.65,
+      "requests_evaluated": 999,
+      "throughput_requests_per_sec": 0.54,
+      "error_rate_pct": 0.0,
+      "unhandled_crashes": 0
+    },
+    "physical_disk_benchmark": {
+      "physical_disk_hardware": "Physical NVMe/SSD",
+      "write_throughput_mb_s": 75.88,
+      "test_payload_mb": 32,
+      "sync_enforced": true
+    }
+  },
+  "stage_latency_breakdown_ms": {
+    "dual_hashing_vault_store": {
+      "mean_ms": 5.72,
+      "p50_ms": 4.93,
+      "p90_ms": 6.16,
+      "p95_ms": 7.16,
+      "p99_ms": 29.17,
+      "min_ms": 3.49,
+      "max_ms": 158.33,
+      "stddev_ms": 6.19
+    },
+    "mime_rfc822_parsing": {
+      "mean_ms": 5.3,
+      "p50_ms": 4.65,
+      "p90_ms": 8.12,
+      "p95_ms": 9.63,
+      "p99_ms": 13.46,
+      "min_ms": 2.55,
+      "max_ms": 17.48,
+      "stddev_ms": 2.26
+    },
+    "hop_traversal_geoip_asn": {
+      "mean_ms": 0.14,
+      "p50_ms": 0.12,
+      "p90_ms": 0.2,
+      "p95_ms": 0.22,
+      "p99_ms": 0.25,
+      "min_ms": 0.1,
+      "max_ms": 0.46,
+      "stddev_ms": 0.04
+    },
+    "protocol_auth_dkim_spf_dmarc": {
+      "mean_ms": 16.8,
+      "p50_ms": 0.13,
+      "p90_ms": 0.22,
+      "p95_ms": 0.23,
+      "p99_ms": 0.47,
+      "min_ms": 0.12,
+      "max_ms": 3029.33,
+      "stddev_ms": 218.58
+    },
+    "spoof_homoglyph_detection": {
+      "mean_ms": 0.8,
+      "p50_ms": 0.64,
+      "p90_ms": 1.23,
+      "p95_ms": 1.31,
+      "p99_ms": 1.49,
+      "min_ms": 0.6,
+      "max_ms": 2.13,
+      "stddev_ms": 0.27
+    },
+    "ioc_extraction_url_deobfuscation": {
+      "mean_ms": 0.51,
+      "p50_ms": 0.47,
+      "p90_ms": 1.01,
+      "p95_ms": 1.17,
+      "p99_ms": 1.62,
+      "min_ms": 0.03,
+      "max_ms": 3.12,
+      "stddev_ms": 0.39
+    },
+    "nlp_intent_and_entity_extraction": {
+      "mean_ms": 19.6,
+      "p50_ms": 15.6,
+      "p90_ms": 30.4,
+      "p95_ms": 34.88,
+      "p99_ms": 75.58,
+      "min_ms": 11.3,
+      "max_ms": 168.7,
+      "stddev_ms": 12.17
+    },
+    "threat_scoring_formula": {
+      "mean_ms": 0.03,
+      "p50_ms": 0.02,
+      "p90_ms": 0.04,
+      "p95_ms": 0.04,
+      "p99_ms": 0.06,
+      "min_ms": 0.02,
+      "max_ms": 0.23,
+      "stddev_ms": 0.01
+    },
+    "database_orm_persistence": {
+      "mean_ms": 0.09,
+      "p50_ms": 0.08,
+      "p90_ms": 0.14,
+      "p95_ms": 0.15,
+      "p99_ms": 0.22,
+      "min_ms": 0.06,
+      "max_ms": 0.64,
+      "stddev_ms": 0.04
+    },
+    "pdf_generation_section63_bsa": {
+      "mean_ms": 46.53,
+      "p50_ms": 38.77,
+      "p90_ms": 80.64,
+      "p95_ms": 83.46,
+      "p99_ms": 83.46,
+      "min_ms": 29.6,
+      "max_ms": 83.46,
+      "stddev_ms": 17.43
+    },
+    "full_pipeline_ingest_e2e": {
+      "mean_ms": 1800.88,
+      "p50_ms": 1714.38,
+      "p90_ms": 1905.69,
+      "p95_ms": 2027.34,
+      "p99_ms": 4742.68,
+      "min_ms": 1558.3,
+      "max_ms": 4968.63,
+      "stddev_ms": 471.08
+    }
+  }
+}

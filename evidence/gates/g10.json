@@ -1,8 +1,8 @@
 {
   "gate_id": "G10",
   "status": "BLOCKED",
-  "commit": "107868bae3cf8e0593fa436a241dbcd029003bf4",
-  "timestamp": "2026-11-13T01:57:17.529367+00:00",
+  "commit": "45a608755f0ec9d42a89383364a8415dd615ade3",
+  "timestamp": "2026-11-13T02:03:50.001494+00:00",
   "command": "check_docker_availability",
   "details": {
     "backup_restore_manifest": "VERIFIED (SHA-256 verified roundtrip)",
