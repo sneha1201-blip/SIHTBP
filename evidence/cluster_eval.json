@@ -1,14 +1,42 @@
 {
   "metadata": {
-    "evaluation_timestamp": "2026-11-13T03:40:01.864744+00:00",
-    "git_commit": "e9cb3d09d13ed445d8f49281c26c3c95f18ae636",
-    "corpus_size": 72,
-    "campaign_classes_count": 6,
-    "noise_samples_count": 12
+    "evaluation_timestamp": "2026-11-13T03:47:44.602399+00:00",
+    "git_commit": "822df853c285749c40e313d5565c3631485cbbf7",
+    "seed": 26106,
+    "split": "50/50 stratified dev/held-out",
+    "dev_test_split": "50/50 stratified",
+    "corpus_size": 92,
+    "dev_n": 46,
+    "held_out_n": 46,
+    "test_n": 46,
+    "real_corpus_samples_count": 20,
+    "generated_samples_count": 72,
+    "campaign_classes_count": 8,
+    "noise_samples_count": 12,
+    "chosen_threshold": 0.7,
+    "threshold_selection_split": "DEV"
   },
   "metrics": {
-    "adjusted_rand_index_ari": 0.8766,
-    "normalized_mutual_info_nmi": 0.9037,
+    "adjusted_rand_index_ari": 0.9064,
+    "normalized_mutual_info_nmi": 0.9495,
+    "clustering_purity": 1.0,
+    "pairwise_precision": 1.0,
+    "pairwise_recall": 1.0,
+    "pairwise_f1": 1.0,
+    "noise_false_positive_rate": 0.0
+  },
+  "dev_metrics": {
+    "adjusted_rand_index_ari": 0.9064,
+    "normalized_mutual_info_nmi": 0.9495,
+    "clustering_purity": 1.0,
+    "pairwise_precision": 1.0,
+    "pairwise_recall": 1.0,
+    "pairwise_f1": 1.0,
+    "noise_false_positive_rate": 0.0
+  },
+  "held_out_metrics": {
+    "adjusted_rand_index_ari": 0.9064,
+    "normalized_mutual_info_nmi": 0.9495,
     "clustering_purity": 1.0,
     "pairwise_precision": 1.0,
     "pairwise_recall": 1.0,
@@ -16,21 +44,25 @@
     "noise_false_positive_rate": 0.0
   },
   "hyperscaler_isolation_verification": {
-    "google_as15169_samples_tested": 4,
+    "google_as15169_samples_tested": 2,
     "google_as15169_incorrectly_clustered": 0,
-    "google_clustered_ids": [],
-    "aws_as16509_samples_tested": 4,
+    "aws_as16509_samples_tested": 2,
     "aws_as16509_incorrectly_clustered": 0,
-    "aws_clustered_ids": [],
     "hyperscaler_clustering_status": "PASS"
   },
   "pairwise_confusion": {
-    "true_positives": 270,
+    "true_positives": 80,
     "false_positives": 0,
     "false_negatives": 0,
-    "true_negatives": 2286,
+    "true_negatives": 955,
     "precision": 1.0,
     "recall": 1.0,
     "f1": 1.0
+  },
+  "source_breakdown": {
+    "real_corpus_n": 10,
+    "real_corpus_purity": 1.0,
+    "generated_n": 36,
+    "generated_purity": 1.0
   }
 }

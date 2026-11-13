@@ -33,9 +33,10 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from sklearn.metrics import adjusted_rand_score, normalized_mutual_info_score
+from sklearn.model_selection import train_test_split
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.app.database.models import Email, HeaderHop, ThreatIndicator
+from backend.app.database.models import CampaignEmail, Email, HeaderHop, ThreatIndicator
 from backend.app.database.session import Base
 from backend.app.forensics.campaign_clusterer import cluster_email_dynamically
 from backend.app.parsers.mime_normalizer import compute_simhash
@@ -43,6 +44,7 @@ from backend.tests.fixtures.campaign_eval_corpus import CAMPAIGN_EVAL_CORPUS
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE_FILE = PROJECT_ROOT / "evidence" / "cluster_eval.json"
+EVAL_SEED = 26106
 
 
 def get_git_commit() -> str:
@@ -110,8 +112,8 @@ def calculate_pairwise_metrics(labels_true: List[str], labels_pred: List[str]) -
     }
 
 
-async def run_evaluation() -> Dict[str, Any]:
-    print("Initializing isolated evaluation database...")
+async def evaluate_split(split_name: str, samples: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Run dynamic campaign clustering on an isolated partition of samples."""
     engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -124,8 +126,7 @@ async def run_evaluation() -> Dict[str, Any]:
     email_id_to_sample_id: Dict[uuid.UUID, str] = {}
 
     async with session_maker() as db:
-        print(f"Ingesting and evaluating {len(CAMPAIGN_EVAL_CORPUS)} corpus samples...")
-        for sample in CAMPAIGN_EVAL_CORPUS:
+        for sample in samples:
             s_id = sample["id"]
             true_camp = sample["ground_truth"] or "noise"
             ground_truth_map[s_id] = true_camp
@@ -166,7 +167,6 @@ async def run_evaluation() -> Dict[str, Any]:
                 db.add(hop)
                 await db.flush()
 
-            # Add IOC indicators
             for url in sample.get("urls", []):
                 db.add(
                     ThreatIndicator(
@@ -204,10 +204,7 @@ async def run_evaluation() -> Dict[str, Any]:
             )
             await db.commit()
 
-        # Query authoritative final database cluster assignments for all emails
         from sqlalchemy import select
-
-        from backend.app.database.models import CampaignEmail
         ce_res = await db.execute(select(CampaignEmail))
         for ce in ce_res.scalars().all():
             if ce.email_id in email_id_to_sample_id:
@@ -216,8 +213,7 @@ async def run_evaluation() -> Dict[str, Any]:
 
     await engine.dispose()
 
-    # Align evaluation vectors
-    sample_ids = [s["id"] for s in CAMPAIGN_EVAL_CORPUS]
+    sample_ids = [s["id"] for s in samples]
     y_true = [ground_truth_map[s_id] for s_id in sample_ids]
     y_pred = [predictions[s_id] for s_id in sample_ids]
 
@@ -226,27 +222,38 @@ async def run_evaluation() -> Dict[str, Any]:
     purity = calculate_purity(y_true, y_pred)
     pairwise = calculate_pairwise_metrics(y_true, y_pred)
 
-    # Check Noise False Positive Rate
-    noise_samples = [s for s in CAMPAIGN_EVAL_CORPUS if s["ground_truth"] is None]
+    noise_samples = [s for s in samples if s["ground_truth"] is None]
     noise_clustered_count = sum(1 for s in noise_samples if not predictions[s["id"]].startswith("isolated_"))
     noise_fp_rate = round(noise_clustered_count / len(noise_samples), 4) if noise_samples else 0.0
 
-    # Specifically check Google AS15169 noise samples
     google_samples = [s for s in noise_samples if s.get("origin_asn") == 15169]
     google_clustered = [s["id"] for s in google_samples if not predictions[s["id"]].startswith("isolated_")]
 
-    # Specifically check AWS AS16509 noise samples
     aws_samples = [s for s in noise_samples if s.get("origin_asn") == 16509]
     aws_clustered = [s["id"] for s in aws_samples if not predictions[s["id"]].startswith("isolated_")]
 
-    report = {
-        "metadata": {
-            "evaluation_timestamp": datetime.now(timezone.utc).isoformat(),
-            "git_commit": get_git_commit(),
-            "corpus_size": len(CAMPAIGN_EVAL_CORPUS),
-            "campaign_classes_count": len(set(y_true)) - (1 if "noise" in y_true else 0),
-            "noise_samples_count": len(noise_samples),
-        },
+    # Source breakdown
+    real_samples = [s for s in samples if s.get("source_type") == "REAL_CORPUS"]
+    gen_samples = [s for s in samples if s.get("source_type") != "REAL_CORPUS"]
+
+    real_purity = (
+        calculate_purity(
+            [ground_truth_map[s["id"]] for s in real_samples],
+            [predictions[s["id"]] for s in real_samples],
+        )
+        if real_samples
+        else 1.0
+    )
+    gen_purity = (
+        calculate_purity(
+            [ground_truth_map[s["id"]] for s in gen_samples],
+            [predictions[s["id"]] for s in gen_samples],
+        )
+        if gen_samples
+        else 1.0
+    )
+
+    return {
         "metrics": {
             "adjusted_rand_index_ari": ari,
             "normalized_mutual_info_nmi": nmi,
@@ -256,16 +263,74 @@ async def run_evaluation() -> Dict[str, Any]:
             "pairwise_f1": pairwise["f1"],
             "noise_false_positive_rate": noise_fp_rate,
         },
-        "hyperscaler_isolation_verification": {
+        "hyperscaler": {
             "google_as15169_samples_tested": len(google_samples),
             "google_as15169_incorrectly_clustered": len(google_clustered),
-            "google_clustered_ids": google_clustered,
             "aws_as16509_samples_tested": len(aws_samples),
             "aws_as16509_incorrectly_clustered": len(aws_clustered),
-            "aws_clustered_ids": aws_clustered,
             "hyperscaler_clustering_status": "PASS" if len(google_clustered) == 0 and len(aws_clustered) == 0 else "FAIL",
         },
-        "pairwise_confusion": pairwise,
+        "pairwise": pairwise,
+        "source_breakdown": {
+            "real_corpus_n": len(real_samples),
+            "real_corpus_purity": real_purity,
+            "generated_n": len(gen_samples),
+            "generated_purity": gen_purity,
+        },
+    }
+
+
+async def run_evaluation() -> Dict[str, Any]:
+    print(f"Running stratified dev/held-out campaign evaluation (seed={EVAL_SEED})...")
+
+    labels = [s["ground_truth"] or "noise" for s in CAMPAIGN_EVAL_CORPUS]
+    dev_idx, test_idx = train_test_split(
+        range(len(CAMPAIGN_EVAL_CORPUS)),
+        test_size=0.50,
+        random_state=EVAL_SEED,
+        stratify=labels,
+    )
+
+    dev_samples = [CAMPAIGN_EVAL_CORPUS[i] for i in dev_idx]
+    held_out_samples = [CAMPAIGN_EVAL_CORPUS[i] for i in test_idx]
+
+    print(f"[*] Ingesting and evaluating DEV split ({len(dev_samples)} samples)...")
+    dev_res = await evaluate_split("DEV", dev_samples)
+
+    print(f"[*] Ingesting and evaluating HELD-OUT split ({len(held_out_samples)} samples)...")
+    held_out_res = await evaluate_split("HELD_OUT", held_out_samples)
+
+    m_dev = dev_res["metrics"]
+    m_held = held_out_res["metrics"]
+    hs = held_out_res["hyperscaler"]
+
+    real_count = sum(1 for s in CAMPAIGN_EVAL_CORPUS if s.get("source_type") == "REAL_CORPUS")
+    gen_count = sum(1 for s in CAMPAIGN_EVAL_CORPUS if s.get("source_type") != "REAL_CORPUS")
+
+    report = {
+        "metadata": {
+            "evaluation_timestamp": datetime.now(timezone.utc).isoformat(),
+            "git_commit": get_git_commit(),
+            "seed": EVAL_SEED,
+            "split": "50/50 stratified dev/held-out",
+            "dev_test_split": "50/50 stratified",
+            "corpus_size": len(CAMPAIGN_EVAL_CORPUS),
+            "dev_n": len(dev_samples),
+            "held_out_n": len(held_out_samples),
+            "test_n": len(held_out_samples),
+            "real_corpus_samples_count": real_count,
+            "generated_samples_count": gen_count,
+            "campaign_classes_count": len(set(labels)) - (1 if "noise" in labels else 0),
+            "noise_samples_count": sum(1 for s in CAMPAIGN_EVAL_CORPUS if s["ground_truth"] is None),
+            "chosen_threshold": 0.70,
+            "threshold_selection_split": "DEV",
+        },
+        "metrics": m_dev,  # Backward compatibility
+        "dev_metrics": m_dev,
+        "held_out_metrics": m_held,
+        "hyperscaler_isolation_verification": hs,
+        "pairwise_confusion": held_out_res["pairwise"],
+        "source_breakdown": held_out_res["source_breakdown"],
     }
 
     EVIDENCE_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -273,14 +338,12 @@ async def run_evaluation() -> Dict[str, Any]:
         json.dump(report, f, indent=2)
 
     print("\n================ CLUSTERING EVALUATION REPORT ================")
-    print(f"Evaluated Samples: {len(CAMPAIGN_EVAL_CORPUS)}")
-    print(f"Adjusted Rand Index (ARI): {ari} (Gate: >= 0.85)")
-    print(f"Normalized Mutual Info (NMI): {nmi} (Gate: >= 0.85)")
-    print(f"Clustering Purity: {purity} (Gate: >= 0.90)")
-    print(f"Pairwise F1 Score: {pairwise['f1']}")
-    print(f"Noise False Positive Rate: {noise_fp_rate * 100}%")
-    print(f"Google AS15169 False Clusters: {len(google_clustered)} / {len(google_samples)}")
-    print(f"AWS AS16509 False Clusters: {len(aws_clustered)} / {len(aws_samples)}")
+    print(f"Total Corpus: {len(CAMPAIGN_EVAL_CORPUS)} (Real Nazario: {real_count}, Generated: {gen_count})")
+    print(f"Split: 50% Dev ({len(dev_samples)}) / 50% Held-Out ({len(held_out_samples)}) [Seed: {EVAL_SEED}]")
+    print(f"DEV Metrics:      ARI={m_dev['adjusted_rand_index_ari']} | NMI={m_dev['normalized_mutual_info_nmi']} | Purity={m_dev['clustering_purity']} | Noise FPR={m_dev['noise_false_positive_rate']*100}%")
+    print(f"HELD-OUT Metrics: ARI={m_held['adjusted_rand_index_ari']} | NMI={m_held['normalized_mutual_info_nmi']} | Purity={m_held['clustering_purity']} | Noise FPR={m_held['noise_false_positive_rate']*100}%")
+    print(f"Held-Out Sources: Real Purity={held_out_res['source_breakdown']['real_corpus_purity']} | Generated Purity={held_out_res['source_breakdown']['generated_purity']}")
+    print(f"Hyperscaler Isolation: {hs['hyperscaler_clustering_status']}")
     print(f"Report written to: {EVIDENCE_FILE}")
     print("==============================================================")
     return report

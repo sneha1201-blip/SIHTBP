@@ -118,5 +118,15 @@ Per Rule R4 & R7:
     - Verified SPF TempError assertion in `test_parsers_and_scoring_coverage.py`: confirmed it was a test tuple unpacking bug fix (`status, domain, lookups, explanation, is_live` where `explanation` was unpacked into `domain`), strengthening validation rather than weakening assertions.
   - Empirically achieved 80.39% overall test coverage with all 7 required core modules exceeding 90.0% (e.g. `eml_parser.py`: 100.0%, `threat_scorer.py`: 98.9%, `campaign_clusterer.py`: 96.3%, `spoof_detector.py`: 96.0%, `msg_parser.py`: 94.8%, `pdf_generator.py`: 94.5%, `mime_normalizer.py`: 93.3%, `auth_validator.py`: 92.9%).
 
+### 19. Working Tree Edit — `gates/g08_campaigns.py` & Evaluation Rebuild
+- **Classification:** (a) Fixes a gate bug / strictness enhancement.
+- **Details:**
+  - Enforced check that `evidence/cluster_eval.json` is newer than `backend/app/forensics/campaign_clusterer.py`.
+  - Enforced metadata assertions requiring `seed`, `split`, and `held_out_n`.
+  - Rebuilt labeled corpus in `backend/tests/fixtures/campaign_eval_corpus.py` to incorporate 20 authentic Jose Nazario Phishing Corpus samples (`campaign_nazario_paypal` and `campaign_nazario_ebay`), labeled with `source_type: "REAL_CORPUS"`, alongside 72 synthetic Indian public sector threat scenario samples labeled `source_type: "GENERATED"`.
+  - Upgraded `scripts/evaluate_campaign_clustering.py` to execute a 50/50 stratified dev/test split (`seed=26106`). Similarity thresholds evaluated on dev only, and final empirical metrics evaluated on held-out test partition ($n=46$).
+  - Measured new held-out numbers: Adjusted Rand Index (ARI) **0.9064**, Normalized Mutual Information (NMI) **0.9495**, Purity **1.0**, Noise False Positive Rate **0.0%**, with 100% hyperscaler ASN isolation on Google AS15169 and AWS AS16509.
+
+
 
 

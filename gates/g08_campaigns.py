@@ -46,24 +46,36 @@ def verify_cluster_eval_metrics() -> tuple[bool, str, dict]:
     if not eval_file.exists():
         return False, "evidence/cluster_eval.json does not exist", {}
 
+    clusterer_file = PROJECT_ROOT / "backend" / "app" / "forensics" / "campaign_clusterer.py"
+    if clusterer_file.exists() and eval_file.stat().st_mtime < clusterer_file.stat().st_mtime:
+        return False, f"evidence/cluster_eval.json is older than {clusterer_file.name}", {}
+
     try:
         data = json.loads(eval_file.read_text(encoding="utf-8"))
-        m = data.get("metrics", {})
+        meta = data.get("metadata", {})
+        if "seed" not in meta:
+            return False, "cluster_eval.json metadata is missing 'seed'", data
+        if "split" not in meta and "dev_test_split" not in meta:
+            return False, "cluster_eval.json metadata is missing split documentation", data
+        if "held_out_n" not in meta and "test_n" not in meta:
+            return False, "cluster_eval.json metadata is missing held-out sample count ('held_out_n')", data
+
+        m = data.get("held_out_metrics") or data.get("metrics", {})
         ari = m.get("adjusted_rand_index_ari", 0.0)
         nmi = m.get("normalized_mutual_info_nmi", 0.0)
         purity = m.get("clustering_purity", 0.0)
         noise_fp = m.get("noise_false_positive_rate", 1.0)
 
         if ari < 0.85:
-            return False, f"ARI ({ari}) is below required threshold (0.85)", data
+            return False, f"Held-out ARI ({ari}) is below required threshold (0.85)", data
         if nmi < 0.85:
-            return False, f"NMI ({nmi}) is below required threshold (0.85)", data
+            return False, f"Held-out NMI ({nmi}) is below required threshold (0.85)", data
         if purity < 0.90:
-            return False, f"Clustering Purity ({purity}) is below required threshold (0.90)", data
+            return False, f"Held-out Clustering Purity ({purity}) is below required threshold (0.90)", data
         if noise_fp > 0.0:
-            return False, f"Noise False Positive Rate ({noise_fp}) must be 0.0", data
+            return False, f"Held-out Noise False Positive Rate ({noise_fp}) must be 0.0", data
 
-        msg = f"Clustering metrics verified: ARI={ari}, NMI={nmi}, Purity={purity}, Noise FPR={noise_fp}"
+        msg = f"Held-out clustering metrics verified: ARI={ari}, NMI={nmi}, Purity={purity}, Noise FPR={noise_fp}"
         return True, msg, data
     except Exception as e:
         return False, f"Failed parsing cluster_eval.json: {e}", {}
