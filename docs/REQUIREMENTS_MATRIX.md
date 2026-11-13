@@ -7,7 +7,8 @@
 **Theme:** Blockchain & Cybersecurity  
 **Category:** Software  
 **Legal Admissibility Standard:** Section 63 of the Bharatiya Sakshya Adhiniyam (BSA), 2023  
-**Status:** **AUTHORITATIVE** (Derived verbatim from official SIH portal json via `docs/PS_26106_OFFICIAL.json`, SHA-256: `6ad5eb7495824359871cddc038c01a80bd49a670e6a1a39891bc12e4f42e212f`)
+**Status:** **AUTHORITATIVE** (Derived verbatim from official SIH portal json via `docs/PS_26106_OFFICIAL.json`, SHA-256: `6ad5eb7495824359871cddc038c01a80bd49a670e6a1a39891bc12e4f42e212f`)  
+**Generation Mode:** Dynamically generated from verified gate execution artifacts (`evidence/gates/g*.json`).  
 
 ---
 
@@ -40,49 +41,36 @@
 | **PS-BG-03** | *Defense against hidden redirection links, obfuscated URLs, and evasion chains* | `backend/app/ai/url_analyzer.py` | `backend/tests/test_ai_detection.py` | G07 | `evidence/model_card.md` | **DONE** |
 | **PS-BG-04** | *Tracing source path, sender infrastructure, and origin clues for law enforcement/cyber teams* | `backend/app/forensics/hop_traversal.py`, `campaign_clusterer.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` | **DONE** |
 | **PS-CORE-01** | *Correlate email headers, SMTP relay paths, SPF/DKIM/DMARC results, IP reputation, and domain intelligence* | `backend/app/forensics/auth_validator.py`, `hop_traversal.py`, `geo_resolver.py` | `backend/tests/test_protocol_auth.py`, `test_hop_traversal.py` | G06, G07 | `evidence/real_headers_eval.json`, `evidence/benchmark_results.json` | **DONE** |
-| **PS-CORE-02** | *Detect phishing, spoofed, impersonated, and fraudulent emails in real time or near real time* | `backend/app/ai/threat_scorer.py`, `job_queue.py` | `backend/tests/test_pipeline.py`, `scripts/benchmark_e2e.py` | G13 | `evidence/benchmark_results.json` (P50: 1575ms) | **DONE** |
-| **PS-CORE-03** | *Maintain legal, privacy, and evidentiary standards (Section 63 BSA 2023)* | `backend/app/reporting/pdf_generator.py`, `vault.py`, `models.py` | `backend/tests/test_pipeline.py`, `test_database.py` | G09 | `evidence/step9.md` | **BLOCKED: awaiting Section 63 BSA Gazette statute text & human signatory attestation** |
+| **PS-CORE-02** | *Detect phishing, spoofed, impersonated, and fraudulent emails in real time or near real time* | `backend/app/ai/threat_scorer.py`, `job_queue.py` | `backend/tests/test_pipeline.py`, `scripts/benchmark_e2e.py` | G13 | `evidence/benchmark_results.json` | **DONE** |
+| **PS-CORE-03** | *Maintain legal, privacy, and evidentiary standards (Section 63 BSA 2023)* | `backend/app/reporting/pdf_generator.py`, `vault.py`, `models.py` | `backend/tests/test_pipeline.py`, `test_database.py` | G09 | `evidence/gates/g09.json` | **BLOCKED: awaiting Section 63 BSA Gazette statute text & human signatory attestation** |
 | **PS-SOL-01** | *Ingest raw email content, metadata, headers, attachments, and carve .msg/.eml streams* | `backend/app/parsers/eml_parser.py`, `msg_parser.py`, `upload_validator.py` | `backend/tests/test_parsers_and_scoring_coverage.py` | G12 | `evidence/coverage.json` | **DONE** |
 | **PS-SOL-02** | *Validate sender authentication mechanisms (SPF, DKIM, DMARC, ARC)* | `backend/app/forensics/auth_validator.py` | `backend/tests/test_protocol_auth.py` | G04 | `evidence/gates/g04.json` | **BLOCKED: awaiting >=20 real signed .eml in tests/fixtures/real/** |
-| **PS-SOL-03** | *Reconstruct relay paths and extract originating IP from earliest reliable sending node* | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` (86.75% IP rate, 99.75% TS rate) | **DONE** |
+| **PS-SOL-03** | *Reconstruct relay paths and extract originating IP from earliest reliable sending node* | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` | **DONE** |
 | **PS-SOL-04** | *Analyze originating IP addresses and associated geolocation data* | `backend/app/osint/geo_resolver.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` | **BLOCKED: awaiting MaxMind License Key & ground_truth.csv** |
-| **PS-SOL-05** | *Actionable alerts, visual trace maps, and forensic dashboard* | `frontend/src/app/threat-map/page.tsx`, `dashboard/`, `analytics/` | `gates/g11_frontend.py` | G11 | `evidence/gates/g11.json` | **DONE** |
+| **PS-SOL-05** | *Actionable alerts, visual trace maps, and forensic dashboard* | `frontend/src/app/page.tsx`, `components/` | `frontend/e2e/soc_journey.spec.ts` | G11 | `evidence/gates/g11.json`, `evidence/e2e/` | **DONE** |
 | **PS-COMP-1A** | *NLP-based analysis of subject lines, body text, urgency cues, social engineering* | `backend/app/ai/nlp_engine.py` | `backend/tests/test_ai_detection.py` | G07 | `evidence/model_card.md` | **DONE** |
 | **PS-COMP-1B** | *Detection of phishing indicators: spoofed senders, deceptive domains, dangerous attachments* | `backend/app/forensics/attachment_analyzer.py`, `spoof_detector.py` | `backend/tests/test_ai_detection.py` | G07 | `evidence/model_card.md` | **DONE** |
 | **PS-COMP-1C** | *5-class AI/ML verdict: legitimate, suspicious, impersonated, phishing, fraud-related* | `backend/app/ai/threat_scorer.py`, `model_trainer.py` | `backend/tests/test_parsers_and_scoring_coverage.py` | G07 | `evidence/evaluation.json` | **DONE** |
 | **PS-COMP-1D** | *Business email compromise detection: payment diversion, fake invoices, credential harvesting* | `backend/app/ai/nlp_engine.py` (Banking NER: IFSC, accounts, SWIFT) | `backend/tests/test_ai_detection.py` | G07 | `evidence/model_card.md` | **DONE** |
 | **PS-COMP-2A** | *Deep header analysis: Return-Path, Received, Message-ID, Reply-To, DKIM, SPF, DMARC* | `backend/app/forensics/hop_traversal.py`, `auth_validator.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` | **DONE** |
 | **PS-COMP-2B** | *Detection of routing anomalies, forged sender fields, relay manipulation, clock skew (>300s)* | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` | **DONE** |
-| **PS-COMP-2C** | *Validation of authorized infrastructure vs suspicious relay paths* | `backend/app/forensics/auth_validator.py`, `hop_traversal.py` | `backend/tests/test_protocol_auth.py` | G04 | `evidence/gates/g04.json` | **BLOCKED: awaiting >=20 real signed .eml** |
+| **PS-COMP-2C** | *Validation of authorized infrastructure vs suspicious relay paths* | `backend/app/forensics/auth_validator.py`, `hop_traversal.py` | `backend/tests/test_protocol_auth.py` | G04 | `evidence/gates/g04.json` | **BLOCKED: awaiting >=20 real signed .eml in tests/fixtures/real/** |
 | **PS-COMP-3A** | *Earliest reliable sending node extraction & trust boundary isolation* | `backend/app/forensics/hop_traversal.py` | `backend/tests/test_hop_traversal.py` | G06 | `evidence/real_headers_eval.json` | **DONE** |
 | **PS-COMP-3B** | *IP geolocation mapping (country, region, city, ISP, proxy status)* | `backend/app/osint/geo_resolver.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` | **BLOCKED: awaiting MaxMind License Key & ground_truth.csv** |
-| **PS-COMP-3C** | *Correlation with VPN, Tor, open relay, botnet, or cloud infrastructure* | `backend/app/osint/tor_detector.py`, `dnsbl_checker.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` (Tor list: 1250+ nodes) | **DONE** |
-| **PS-COMP-3D** | *Domain intelligence: WHOIS/RDAP, DNS, MX, newly registered domains (<30d)* | `backend/app/osint/whois_client.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` | **DONE** |
-| **PS-COMP-4A** | *Threat intelligence correlation: IOC overlap, blacklists, domain clusters* | `backend/app/osint/threat_feeds.py`, `campaign_clusterer.py` | `backend/tests/test_campaign_clustering.py` | G08 | `evidence/cluster_eval.json` | **DONE** |
-| **PS-COMP-4B** | *Graph-based relationship analysis between domains, IPs, aliases, reply chains* | `backend/app/forensics/campaign_clusterer.py` (Multi-signal >=2 families) | `backend/tests/test_campaign_clustering.py` | G08 | `evidence/cluster_eval.json` (ARI: 0.8766, NMI: 0.9037) | **DONE** |
-| **PS-COMP-4C** | *Attribution assessment: compromised account, spoofed domain, anonymized infra, actor* | `backend/app/forensics/campaign_clusterer.py`, `threat_scorer.py` | `backend/tests/test_campaign_clustering.py` | G08 | `evidence/campaign_bundle.json` (STIX 2.1) | **DONE** |
-| **PS-COMP-5A** | *Real-time high-risk email alerts before user interaction* | `backend/app/api/v1/endpoints_forensics.py`, `threat_scorer.py` | `backend/tests/test_ai_detection.py` | G07 | `evidence/evaluation.json` | **DONE** |
-| **PS-COMP-5B** | *Analyst dashboard: fraud score, spoofing indicators, trace path, map, confidence* | `frontend/src/app/page.tsx`, `threat-map/page.tsx`, `reports/page.tsx` | `gates/g11_frontend.py` | G11 | `evidence/gates/g11.json` | **DONE** |
-| **PS-COMP-5C** | *Generation of structured forensic reports for legal review & LEA support (Sec 63 BSA)* | `backend/app/reporting/pdf_generator.py`, `scripts/verify_report.py` | `backend/tests/test_pipeline.py` | G09 | `evidence/step9.md` | **BLOCKED: awaiting statute text & signatory** |
-| **PS-COMP-5D** | *Searchable case management view grouping related fraudulent emails into campaigns* | `frontend/src/app/analytics/page.tsx`, `endpoints_campaigns.py` | `gates/g11_frontend.py` | G11 | `evidence/gates/g11.json` | **DONE** |
-| **PS-COMP-6A** | *Controlled handling of personal data and metadata (privacy safeguards)* | `backend/app/core/config.py`, `upload_validator.py` | `backend/tests/test_security.py` | G03 | `evidence/security/bandit.json` | **DONE** |
-| **PS-COMP-6B** | *Logging, evidence preservation, and chain-of-custody (WORM Vault + HMAC Chaining)* | `backend/app/database/vault.py`, `models.py` | `backend/tests/test_database.py` | G01, G03 | `evidence/gates/g01.json`, `evidence/gates/g03.json` | **DONE** |
-| **PS-COMP-6C** | *Configurable retention and masking mechanisms for sensitive communication data* | `backend/app/core/config.py`, `pdf_generator.py` | `backend/tests/test_pipeline.py` | G09 | `evidence/step9.md` | **DONE** |
-| **PS-OUT-01** | *Early & Accurate Detection: High-precision detection of fraudulent/phishing attacks* | `backend/app/ai/model_trainer.py`, `nlp_engine.py` | `gates/g07_detection.py` | G07 | `evidence/model_card.md` (94.26% Holdout, ROC-AUC 0.9660) | **DONE** |
-| **PS-OUT-02** | *Deep Forensic Tracing: Trace suspicious origin paths and identify source infra* | `backend/app/forensics/hop_traversal.py`, `parsers/eml_parser.py` | `gates/g06_headers.py` | G06 | `evidence/real_headers_eval.json` (400 headers evaluated) | **DONE** |
-| **PS-OUT-03** | *Enhanced Investigation: Geolocation, domain intelligence, sender attribution mapping* | `backend/app/forensics/campaign_clusterer.py`, `whois_client.py` | `gates/g08_campaigns.py` | G08 | `evidence/cluster_eval.json` (Purity: 1.0, Noise FPR: 0.0%) | **DONE** |
-| **PS-OUT-04** | *Mitigation of Impact: Reduction in financial loss and confidential disclosure (BEC)* | `backend/app/ai/nlp_engine.py` (IFSC, SWIFT, wire diversion patterns) | `backend/tests/test_ai_detection.py` | G07 | `evidence/model_card.md` | **DONE** |
-| **PS-OUT-05** | *Institutional Readiness: Incident response, forensic examinations, LEA coordination* | `backend/app/reporting/pdf_generator.py`, `vault.py`, `database/` | `gates/g09_legal.py`, `gates/g10_architecture.py` | G09, G10 | `evidence/FINAL_REPORT.md` | **BLOCKED: awaiting Docker daemon & legal signatory** |
+| **PS-COMP-3C** | *Correlation with VPN, Tor, open relay, botnet, or cloud infrastructure* | `backend/app/osint/tor_detector.py`, `dnsbl_checker.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` | **BLOCKED: awaiting MaxMind License Key & ground_truth.csv** |
+| **PS-COMP-3D** | *Domain intelligence: WHOIS/RDAP, DNS, MX, newly registered domains (<30d)* | `backend/app/osint/whois_client.py` | `backend/tests/test_osint_geoip.py` | G05 | `evidence/gates/g05.json` | **BLOCKED: awaiting MaxMind License Key & ground_truth.csv** |
+| **PS-COMP-4A** | *Confidence-based fraud scoring (0-100) with weighted mathematical formula* | `backend/app/ai/threat_scorer.py` | `backend/tests/test_parsers_and_scoring_coverage.py` | G07 | `evidence/model_card.md` | **DONE** |
+| **PS-COMP-4B** | *Graph-based correlation & campaign clustering across multiple incidents* | `backend/app/forensics/campaign_clusterer.py` | `backend/tests/test_campaign_clusterer.py` | G08 | `evidence/cluster_eval.json` | **DONE** |
+| **PS-COMP-4C** | *Interactive visual trace maps and SOC forensic dashboard with Cytoscape graph* | `frontend/src/app/page.tsx`, `components/` | `frontend/e2e/soc_journey.spec.ts` | G11 | `evidence/gates/g11.json`, `evidence/e2e/` | **DONE** |
+| **PS-COMP-4D** | *Export court-admissible forensic report compliant with Section 63 BSA 2023* | `backend/app/reporting/pdf_generator.py` | `backend/tests/test_pipeline.py` | G09 | `evidence/gates/g09.json` | **BLOCKED: awaiting Section 63 BSA Gazette statute text & human signatory attestation** |
 
 ---
 
-## 3. Summary of Status
+## 3. Statutory Attestation & Custody Field Traceability
 
-- **Total Official Clauses / Deliverables Mapped:** 35
-- **Verified DONE (Command-generated evidence exists):** 29 (82.9%)
-- **Legitimately BLOCKED (Awaiting external unsupplied user inputs per Rule R3):** 6 (17.1%)
-  1. `PS-CORE-03` / `PS-COMP-5C`: Section 63 BSA Gazette statute text & human signatory attestation (G09)
-  2. `PS-SOL-02` / `PS-COMP-2C`: >=20 real-world signed `.eml` files in `tests/fixtures/real/` (G04)
-  3. `PS-SOL-04` / `PS-COMP-3B`: MaxMind license key (`.mmdb`) & ground truth CSV (G05)
-  4. `PS-OUT-05`: Host Docker daemon for containerized orchestration (G10)
-- **NOT DONE / UNIMPLEMENTED:** 0 (Zero unimplemented requirements)
+| Field Category | Schedule Section | Extraction Mode | Admissibility Handling | Audit Verification Status |
+|---|---|---|---|---|
+| Technical Device Identifiers | Part A (1, 2) | Automated | Extracted from OS environment (Node, CPU, OS, MAC, UTC/IST timestamp) | **VERIFIED (Draft Mode)** |
+| Cryptographic Dual Digest | Part A (6) | Automated | Simultaneous calculation of SHA-256 and SHA-512 hashes from raw MIME byte payload | **VERIFIED (HMAC & Hash-Chain Protected)** |
+| Lawful Control Affirmation | Part A (3, 4, 5) | Manual | Checkbox selection & affirmative declaration by lawful custodian | **REQUIRES HUMAN ATTESTATION** |
+| Expert Qualifications & Signature | Part B (1-4) | Manual | Certified Examiner / Digital Forensics Expert credentials and handwritten/digital signature | **REQUIRES HUMAN ATTESTATION** |
