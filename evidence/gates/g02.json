@@ -1,8 +1,8 @@
 {
   "gate_id": "G02",
   "status": "PASS",
-  "commit": "45a608755f0ec9d42a89383364a8415dd615ade3",
-  "timestamp": "2026-11-13T02:02:15.904436+00:00",
+  "commit": "507ebce300b8cc394567a14b1d9bae781347fccc",
+  "timestamp": "2026-11-13T02:32:49.017368+00:00",
   "command": "mutation_canary_run (10 mutants)",
   "details": {
     "total": 10,
